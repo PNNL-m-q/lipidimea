@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing &mdash; pyliquid  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Citing" href="citing.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> pyliquid
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../guides/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../guides/installation.html#from-pypi">From PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/installation.html#from-source">From Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../guides/installation.html#dependencies">Dependencies</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../lipids.html"><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lipids.html#module-reference">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../msms.html"><code class="docutils literal notranslate"><span class="pre">pyliquid.msms</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../msms.html#module-reference">Module Reference</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="disclaimer.html">Disclaimer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="citing.html">Citing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#feedback">Feedback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#fixing-bugs-or-implementing-features">Fixing Bugs or Implementing Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#writing-documentation">Writing Documentation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#creating-user-guides">Creating User Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#submitting-a-pull-request">Submitting a Pull Request</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#versioning-scheme">Versioning Scheme</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coding-style">Coding Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#naming-conventions">Naming Conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#docstring-format">Docstring Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adding-entries-to-sphinx-documentation">Adding Entries to Sphinx Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pyliquid</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Contributing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/project_info/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline"></a></h1>
+<p>We welcome and appreciate any and all contributions.
+Any effort will be given due credit.</p>
+<section id="feedback">
+<h2>Feedback<a class="headerlink" href="#feedback" title="Permalink to this headline"></a></h2>
+<p>To report a bug or propose a new feature, please open an issue <a class="reference external" href="https://github.com/PNNL-m-q/pyliquid/issues">here</a>.</p>
+<p>When reporting bugs, please include:</p>
+<ul class="simple">
+<li><p>Your operating system and version.</p></li>
+<li><p>The version(s) of the package dependency (or dependencies) that produce the bug</p></li>
+<li><p>Detailed steps to reproduce the bug</p></li>
+<li><p>Any details about your local setup that might be helpful in troubleshooting</p></li>
+<li><p>add the “bug” label (from menu on right when creating new issue)</p></li>
+</ul>
+<p>When proposing a new feature:</p>
+<ul class="simple">
+<li><p>Explain in detail how it would work</p></li>
+<li><p>Keep the scope as narrow as possible</p></li>
+<li><p>Where possible, include code/pseudocode snippets to explain implementation or expected behavior</p></li>
+<li><p>add the “enhancement” label (from menu on right when creating new issue)</p></li>
+</ul>
+</section>
+<section id="fixing-bugs-or-implementing-features">
+<h2>Fixing Bugs or Implementing Features<a class="headerlink" href="#fixing-bugs-or-implementing-features" title="Permalink to this headline"></a></h2>
+<p>Look through the Github issues for bugs or proposed features.
+If you want to start working on a bug or feature, please write short message on the issue tracker
+to prevent duplicate work.
+Bugfixes and implemented features should be submitted as pull requests.</p>
+</section>
+<section id="writing-documentation">
+<h2>Writing Documentation<a class="headerlink" href="#writing-documentation" title="Permalink to this headline"></a></h2>
+<p>We welcome the addition of more documentation, or improvements to existing documentation.
+This include the documentation you are reading now, docstrings, tutorials, or even on the web as blog posts or articles.
+Please reference the documentation guidelines below.
+Changes to documentation should be submitted as pull requests.</p>
+<section id="creating-user-guides">
+<h3>Creating User Guides<a class="headerlink" href="#creating-user-guides" title="Permalink to this headline"></a></h3>
+<p>User guides are helpful for demonstrating how to perform complex data processing tasks. The Sphinx documentation
+configuration in this project supports generating documentation pages directly from Jupyter notebooks (.ipynb).
+The notebook should be created and executed separately (the build system is configured not to run notebooks,
+they are treated as static source files), then copied into <code class="docutils literal notranslate"><span class="pre">docs/source/guides/</span></code>. Then an entry should be added to
+<code class="docutils literal notranslate"><span class="pre">docs/index.rst</span></code> in the User Guides section, as in the following example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">..</span> <span class="n">toctree</span><span class="p">::</span>
+    <span class="p">:</span><span class="n">maxdepth</span><span class="p">:</span> <span class="mi">2</span>
+    <span class="p">:</span><span class="n">caption</span><span class="p">:</span> <span class="n">User</span> <span class="n">Guide</span>
+
+    <span class="n">guides</span><span class="o">/</span><span class="n">installation</span>
+    <span class="n">guides</span><span class="o">/</span><span class="n">technote_demo</span>
+    <span class="n">guides</span><span class="o">/</span><span class="n">my_new_user_guide</span>
+</pre></div>
+</div>
+<p>In this example, the entry <code class="docutils literal notranslate"><span class="pre">guides/my_new_user_guide</span></code> would refer to the Jupyter notebook file
+<code class="docutils literal notranslate"><span class="pre">docs/source/guides/my_new_user_guide.ipynb</span></code>. In order to retain the correct section/sub-section structure of
+the documentation, the notebook must contain independent markdown cells for heading levels 1 and 2 which will populate
+the table of contents in the left pane of the generated documentation. The notebook should start with an independent markdown cell
+containg the level 1 heading corresponding to the short title of the guide. Sub-sections of the guide should be denoted by independent
+markdown cells containing the level 2 headings corresponding to subsection titles.</p>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">Jupyter notebook markdown heading levels</span><a class="headerlink" href="#id1" title="Permalink to this code"></a></div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># heading level 1</span>
+
+<span class="c1">## heading level 2</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="submitting-a-pull-request">
+<h2>Submitting a Pull Request<a class="headerlink" href="#submitting-a-pull-request" title="Permalink to this headline"></a></h2>
+<p>To fix bugs, add new features, or update documentation you need to create a pull request.
+Any changes you make to your local copy of the code will be made easily available for review and
+eventual integration into the code base.
+To create a pull request:</p>
+<ol class="arabic simple">
+<li><p>Create a GitHub account</p></li>
+<li><p>Fork the repository</p></li>
+<li><p>Clone your fork locally</p></li>
+<li><p>Go to the created <code class="docutils literal notranslate"><span class="pre">pyliquid</span></code> folder with <code class="code docutils literal notranslate"><span class="pre">cd</span> <span class="pre">pyliquid</span></code></p></li>
+<li><p>Create a new branch (based on current <code class="docutils literal notranslate"><span class="pre">dev</span></code> branch) with: <code class="code docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">-b</span> <span class="pre">&lt;your_github_username&gt;_&lt;type&gt;_&lt;descriptive_branch_name&gt;</span> <span class="pre">dev</span></code>, where <code class="docutils literal notranslate"><span class="pre">&lt;type&gt;</span></code> is “bugfix”, “feature”, or “docs”</p></li>
+<li><p>Make your changes to the code or documentation</p></li>
+<li><p>Run <code class="code docutils literal notranslate"><span class="pre">git</span> <span class="pre">add</span> <span class="pre">--all</span></code> to add all the changed files to the commit</p></li>
+<li><p>To commit the added files, run <code class="code docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span> <span class="pre">-m</span> <span class="pre">'&lt;text&gt;'</span></code> or <code class="code docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>. The latter will open a command line editor to write a commit message. Commit messages should have a descriptive line header (&lt;50 characters, including spaces), followed by an empty line, and then a description of what you did and why.</p></li>
+<li><p>Push your changes to your <code class="docutils literal notranslate"><span class="pre">pyliquid</span></code> fork by running <code class="code docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">origin</span> <span class="pre">&lt;your_github_username&gt;_&lt;type&gt;_&lt;descriptive_branch_name&gt;</span></code></p></li>
+<li><p>If you then navigate to the webpage for your mzapy fork, you should see a “Pull request” link in the sidebar. Choose the relevant pull request from the menu and click the “Create Pull Request” button. Ensure the pull request target branch is <cite>&lt;your_github_username&gt;_&lt;type&gt;_&lt;descriptive_branch_name&gt;!</cite></p></li>
+</ol>
+<p>If you want to create more pull requests, first run <code class="code docutils literal notranslate"><span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">dev</span></code> and then start at step 5 with a new branch name.</p>
+</section>
+<section id="versioning-scheme">
+<h2>Versioning Scheme<a class="headerlink" href="#versioning-scheme" title="Permalink to this headline"></a></h2>
+<p>The version of <code class="docutils literal notranslate"><span class="pre">mzapy</span></code> is stored in the <code class="docutils literal notranslate"><span class="pre">__version__</span></code> variable in <code class="docutils literal notranslate"><span class="pre">mzapy/__init__.py</span></code>.
+The versioning scheme follows the format <em>mza_version.major_version.minor_version</em>:</p>
+<ul class="simple">
+<li><p><em>release</em> - corresponds to release milestones, generally large-scale changes/revisions</p></li>
+<li><p><em>major version</em> - increments after every time changes in the <code class="docutils literal notranslate"><span class="pre">dev</span></code> branch are merged into the <code class="docutils literal notranslate"><span class="pre">main</span></code> branch</p></li>
+<li><p><em>minor version</em> - increments after every time changes in individual bugfix/feature/docs branches are merged into the <code class="docutils literal notranslate"><span class="pre">dev</span></code> branch</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When creating a branch to implement a bugfix, new feature, or add documentaion, append “.&lt;your_github_username&gt;_0”
+to the current <code class="docutils literal notranslate"><span class="pre">__version__</span></code> variable in <code class="docutils literal notranslate"><span class="pre">pyliquid/__init__.py</span></code>, then increment the number at the end with each
+commit you make to that branch.</p>
+</div>
+</section>
+<section id="coding-style">
+<h2>Coding Style<a class="headerlink" href="#coding-style" title="Permalink to this headline"></a></h2>
+<p>Before contributing, please look through the existing codebase as a reference for general coding style and try
+to keep your code consistent. Below are some more detailed guidelines that cover naming conventions, documentation,
+and unit testing.</p>
+<section id="naming-conventions">
+<h3>Naming Conventions<a class="headerlink" href="#naming-conventions" title="Permalink to this headline"></a></h3>
+<p>Functions and classes should be named in a way that describes what they do and whether they are internal
+(not intended to be part of the public-facing API) or external (intended to be part of the public-facing API).
+Internal function/class names should be prepended with “_”. Example:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># this is an internal function, not meant to be part of the public-facing API</span>
+<span class="k">def</span> <span class="nf">_add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; adds two integers &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+
+<span class="c1"># this is an external function, meant to be part of the public-facing API</span>
+<span class="k">def</span> <span class="nf">sum_pairwise</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns the pairwise sums of integers from two lists</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : ``list(int)``</span>
+<span class="sd">    y : ``list(int)``</span>
+<span class="sd">        lists of integers, must be same length</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sums : ``list(int)``</span>
+<span class="sd">        list of pairwise sums</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># uses the internal _add function</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">_add</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)]</span>
+</pre></div>
+</div>
+</section>
+<section id="docstring-format">
+<h3>Docstring Format<a class="headerlink" href="#docstring-format" title="Permalink to this headline"></a></h3>
+<p>Detailed docstrings must be included in all functions/classes (both internal and external) in <code class="docutils literal notranslate"><span class="pre">pyliquid</span></code>. Docstring
+format loosely follows the <a class="reference external" href="https://numpydoc.readthedocs.io/en/latest/format.html">numpydoc style</a>, refer to
+existing docstrings for specific examples. Generally, all functions should include a description and parameters/returns
+sections (if applicable) as in the following example:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="mi">1234</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Give a brief description about what the function does, what inputs it takes, and what outputs it produces</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    a : ``int``</span>
+<span class="sd">        parameter a description</span>
+<span class="sd">    b : ``float``</span>
+<span class="sd">        parameter b description</span>
+<span class="sd">    c : ``str``, optional</span>
+<span class="sd">        parameter c description, indicate behaviors when c parameter is provided/not provided</span>
+<span class="sd">    d : ``int``, default=1234</span>
+<span class="sd">        parameter d description, if the default value has some significance describe that here</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    x : ``int``</span>
+<span class="sd">        description of return value, add more entries if the function returns more than one thing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Parameters and Returns sections may be omitted if a function does not take parameters and/or produce a
+return value. They may also be omitted if the function performs a trivial enough task that parameters and return
+values can easily be inferred from the description.</p>
+</div>
+</section>
+<section id="adding-entries-to-sphinx-documentation">
+<h3>Adding Entries to Sphinx Documentation<a class="headerlink" href="#adding-entries-to-sphinx-documentation" title="Permalink to this headline"></a></h3>
+<p>All public-facing functions/classes should have entries in the Sphinx documentation source files in order for their
+docstrings to be incorporated into the HTML documentation. For example, if the <code class="docutils literal notranslate"><span class="pre">sum_pairwise</span></code> function in the example
+above were implemented in the <code class="docutils literal notranslate"><span class="pre">pyliquid/isotopes.py</span></code> module, then the following entry should be added to the
+appropriate section in the <code class="docutils literal notranslate"><span class="pre">docs/source/isotopes.rst</span></code> documentation source file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Module</span> <span class="n">Reference</span>
+<span class="o">------------------------------</span>
+
+<span class="o">..</span> <span class="n">autofunction</span> <span class="p">::</span> <span class="n">mzapy</span><span class="o">.</span><span class="n">isotopes</span><span class="o">.</span><span class="n">sum_pairwise</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="citing.html" class="btn btn-neutral float-left" title="Citing" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Battelle Memorial Institute.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

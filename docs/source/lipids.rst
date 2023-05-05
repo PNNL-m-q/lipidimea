@@ -1,0 +1,22 @@
+``pyliquid.lipids``
+=======================================
+This module defines the ``Lipid`` class and subclass(es) that are used to represent individual lipid 
+species. The lipid classification system defined and used by LIPID MAPS is used in this package:
+
+* https://www.lipidmaps.org/data/classification/LM_classification_exp.php 
+* https://www.jlr.org/article/S0022-2275(20)30580-0/fulltext
+
+
+Module Reference
+---------------------------------------
+.. autofunction:: pyliquid.lipids.parse_lipid_name
+
+.. autoclass:: pyliquid.lipids.Lipid
+
+.. autofunction:: pyliquid.lipids.Lipid.__init__
+
+.. autoclass:: pyliquid.lipids.LipidWithChains
+
+.. autofunction:: pyliquid.lipids.LipidWithChains.__init__
+
+.. autofunction:: pyliquid.lipids.LipidWithChains.add_db_positions

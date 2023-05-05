@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pyliquid.lipids &mdash; pyliquid  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="pyliquid.msms" href="msms.html" />
+    <link rel="prev" title="Installation" href="guides/installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> pyliquid
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guides/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guides/installation.html#from-pypi">From PyPI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/installation.html#from-source">From Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guides/installation.html#dependencies">Dependencies</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-reference">Module Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="msms.html"><code class="docutils literal notranslate"><span class="pre">pyliquid.msms</span></code></a><ul>
+<li class="toctree-l2"><a class="reference internal" href="msms.html#module-reference">Module Reference</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Info</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="project_info/license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_info/disclaimer.html">Disclaimer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_info/citing.html">Citing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="project_info/contributing.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="project_info/contributing.html#feedback">Feedback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_info/contributing.html#fixing-bugs-or-implementing-features">Fixing Bugs or Implementing Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_info/contributing.html#writing-documentation">Writing Documentation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="project_info/contributing.html#creating-user-guides">Creating User Guides</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="project_info/contributing.html#submitting-a-pull-request">Submitting a Pull Request</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_info/contributing.html#versioning-scheme">Versioning Scheme</a></li>
+<li class="toctree-l2"><a class="reference internal" href="project_info/contributing.html#coding-style">Coding Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="project_info/contributing.html#naming-conventions">Naming Conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="project_info/contributing.html#docstring-format">Docstring Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="project_info/contributing.html#adding-entries-to-sphinx-documentation">Adding Entries to Sphinx Documentation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pyliquid</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids</span></code></li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/lipids.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="pyliquid-lipids">
+<h1><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids</span></code><a class="headerlink" href="#pyliquid-lipids" title="Permalink to this headline"></a></h1>
+<p>This module defines the <code class="docutils literal notranslate"><span class="pre">Lipid</span></code> class and subclass(es) that are used to represent individual lipid
+species. The lipid classification system defined and used by LIPID MAPS is used in this package:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.lipidmaps.org/data/classification/LM_classification_exp.php">https://www.lipidmaps.org/data/classification/LM_classification_exp.php</a></p></li>
+<li><p><a class="reference external" href="https://www.jlr.org/article/S0022-2275(20)30580-0/fulltext">https://www.jlr.org/article/S0022-2275(20)30580-0/fulltext</a></p></li>
+</ul>
+<section id="module-reference">
+<h2>Module Reference<a class="headerlink" href="#module-reference" title="Permalink to this headline"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pyliquid.lipids.parse_lipid_name">
+<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.</span></span><span class="sig-name descname"><span class="pre">parse_lipid_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.parse_lipid_name" title="Permalink to this definition"></a></dt>
+<dd><p>Parses a lipid name in standard format and returns a corresponding instance of a <code class="docutils literal notranslate"><span class="pre">Lipid</span></code> object (or subclass). 
+If the name is not able to be parsed, returns <code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>name</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>lipid name in standard format</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt><strong>lipid</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids.Lipid</span></code> or subclass</span></dt><dd><p>instance of Lipid (or subclass), or <code class="docutils literal notranslate"><span class="pre">None</span></code> if unable to parse</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyliquid.lipids.Lipid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.</span></span><span class="sig-name descname"><span class="pre">Lipid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.Lipid" title="Permalink to this definition"></a></dt>
+<dd><p>class used for representing an individual lipid species. 
+stores classification information (using Lipid MAPS classification system)</p>
+<dl class="field-list">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl>
+<dt><strong>lipid_class_abbrev</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>lipid class standard abbreviation from Lipid MAPS (e.g., PC, TG, …)</p>
+</dd>
+<dt><strong>fa_carbon</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>fatty acid carbon count (all acyl chains)</p>
+</dd>
+<dt><strong>fa_unsat</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>fatty acid unsaturation count (all acyl chains)</p>
+</dd>
+<dt><strong>fa_mod</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>fatty acid modifier, if any (indicates things like ether/plasmenyl lipids: O-, P-, d), ‘’ otherwise</p>
+</dd>
+<dt><strong>lmaps_category</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>Lipid MAPS classification, category</p>
+</dd>
+<dt><strong>lmaps_class</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>Lipid MAPS classification, class</p>
+</dd>
+<dt><strong>lmaps_subclass</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>Lipid MAPS classification, subclass</p>
+</dd>
+<dt><strong>lmaps_id_prefix</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>Lipid MAPS classification, LMID prefix</p>
+</dd>
+<dt><strong>formula</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">dict(int:str)</span></code></span></dt><dd><p>molecular formula as a dictionary mapping elements (str) to their counts (int)</p>
+</dd>
+<dt><strong>n_chains</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>acyl/alkyl chain count</p>
+</dd>
+<dt><strong>ionization</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>ionization mode(s) this lipid would be expected to be detected in (‘pos’, ‘neg’, or ‘both’)</p>
+</dd>
+<dt><strong>contains_ether</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>lipid contains ether</p>
+</dd>
+<dt><strong>contains_diether</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>lipid contains diether</p>
+</dd>
+<dt><strong>contains_plasmalogen</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>lipid is a plasmalogen (1Z-alkenyl)</p>
+</dd>
+<dt><strong>contains_lcb</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>contains LCB</p>
+</dd>
+<dt><strong>contains_lcbpoh</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>contains LCB + OH</p>
+</dd>
+<dt><strong>contains_lcbmoh</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>contains LCB - OH</p>
+</dd>
+<dt><strong>is_oxo_cho</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>is Oxo CHO</p>
+</dd>
+<dt><strong>is_oxo_cooh</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>is Oxo COOH</p>
+</dd>
+<dt><strong>num_oh</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>number of OH groups</p>
+</dd>
+<dt><strong>contains_ooh</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>contains OOH (hydroperoxyl)</p>
+</dd>
+<dt><strong>contains_f2isop</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>contains F2IsoP</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyliquid.lipids.Lipid.__init__">
+<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.Lipid.</span></span><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.Lipid.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>inits a new instance of a Lipid object using lipid class, sum composition, and fatty acid modifier (if any)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>lipid_class_abbrev</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>lipid class standard abbreviation from Lipid MAPS (e.g., PC, TG, …)</p>
+</dd>
+<dt><strong>fa_carbon</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>fatty acid carbon count (all acyl chains)</p>
+</dd>
+<dt><strong>fa_unsat</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code></span></dt><dd><p>fatty acid unsaturation count (all acyl chains)</p>
+</dd>
+<dt><strong>fa_mod</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code>, default=’’</span></dt><dd><p>fatty acid modifier, if any (indicates things like ether/plasmenyl lipids: O-, P-, d), ‘’ otherwise</p>
+</dd>
+<dt><strong>n_chains</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">int</span></code>, optional</span></dt><dd><p>if provided, specifies the number of acyl chains, used to identify lyso- lipids</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pyliquid.lipids.LipidWithChains">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.</span></span><span class="sig-name descname"><span class="pre">LipidWithChains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sn_pos_is_known</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.LipidWithChains" title="Permalink to this definition"></a></dt>
+<dd><p>Subclass of <code class="docutils literal notranslate"><span class="pre">Lipid</span></code> that contains additional information regarding the composition of individual FA chains</p>
+<dl class="field-list">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl>
+<dt><strong>fa_carbon_chains</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(int)</span></code></span></dt><dd><p>fatty acid carbon count for individual chains</p>
+</dd>
+<dt><strong>fa_unsat_chains</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(int)</span></code></span></dt><dd><p>fatty acid unsaturation count for individual chains</p>
+</dd>
+<dt><strong>fa_unsat_pos</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(list(int))</span></code></span></dt><dd><p>lists of double bond positions for each fatty acid</p>
+</dd>
+<dt><strong>fa_unsat_stereo</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(list(str))</span></code></span></dt><dd><p>lists of double bond stereochemistry for each fatty acid</p>
+</dd>
+<dt><strong>sn_pos_is_known</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code></span></dt><dd><p>indicates whether the sn position of the chains is known or ambiguous</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pyliquid.lipids.LipidWithChains.add_db_positions" title="pyliquid.lipids.LipidWithChains.add_db_positions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_db_positions</span></code></a>(fa_unsat_pos[, fa_unsat_stereo])</p></td>
+<td><p>Add double bond positions (and optionally sterechemistry, if known) to this <code class="docutils literal notranslate"><span class="pre">LipidWithChains</span></code> instance, double bond positions/stereo must match with the already specified acyl chain composition and be in the same order</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyliquid.lipids.LipidWithChains.__init__">
+<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.LipidWithChains.</span></span><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sn_pos_is_known</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.LipidWithChains.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>inits a new instance of a LipidWithChains object using lipid class, fatty acid composition (split by FA chain), 
+fatty acid modifier (if any), and double bond positions/stereochemistry (if known)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>lipid_class_abbrev</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code></span></dt><dd><p>lipid class standard abbreviation from Lipid MAPS (e.g., PC, TG, …)</p>
+</dd>
+<dt><strong>fa_carbon_chains</strong><span class="classifier">list(<code class="docutils literal notranslate"><span class="pre">int</span></code>)</span></dt><dd><p>fatty acid carbon count (all acyl chains, in order of sn- position)</p>
+</dd>
+<dt><strong>fa_unsat_chains</strong><span class="classifier">list(<code class="docutils literal notranslate"><span class="pre">int</span></code>)</span></dt><dd><p>fatty acid unsaturation count (all acyl chains, in order of sn- position)</p>
+</dd>
+<dt><strong>fa_mod</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">str</span></code>, default=’’</span></dt><dd><p>fatty acid modifier, if any (indicates things like ether/plasmenyl lipids: O-, P-, d), ‘’ otherwise</p>
+</dd>
+<dt><strong>fa_unsat_pos</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(list(int))</span></code>, optional</span></dt><dd><p>lists of double bond positions for each fatty acid, in order of sn- position, if known</p>
+</dd>
+<dt><strong>fa_unsat_stereo</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(list(str))</span></code>, optional</span></dt><dd><p>lists of double bond stereochemistry for each fatty acid, in order of sn- position, if known. 
+requires fa_unsat_pos to be set</p>
+</dd>
+<dt><strong>sn_pos_is_known</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">bool</span></code>, default=False</span></dt><dd><p>indicates whether the sn position of the chains is known or ambiguous</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pyliquid.lipids.LipidWithChains.add_db_positions">
+<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.LipidWithChains.</span></span><span class="sig-name descname"><span class="pre">add_db_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.LipidWithChains.add_db_positions" title="Permalink to this definition"></a></dt>
+<dd><p>Add double bond positions (and optionally sterechemistry, if known) to this <code class="docutils literal notranslate"><span class="pre">LipidWithChains</span></code> instance,
+double bond positions/stereo must match with the already specified acyl chain composition and be in the same
+order</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>fa_unsat_pos</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(list(int))</span></code></span></dt><dd><p>lists of double bond positions for each fatty acid</p>
+</dd>
+<dt><strong>fa_unsat_stereo</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">list(list(str))</span></code>, optional</span></dt><dd><p>lists of double bond stereochemistry for each fatty acid, if known</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="guides/installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="msms.html" class="btn btn-neutral float-right" title="pyliquid.msms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Battelle Memorial Institute.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

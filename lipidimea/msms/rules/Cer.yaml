@@ -1,0 +1,61 @@
+# fragmentation rules for PE lipid class
+lipid_class: Cer
+ionization:
+    POS:
+        -
+            label: M-2(H2O)
+            neutral_loss: true
+            rule:
+                H: 4
+                O: 2
+        -
+            label: FA({c}:{u})_long
+            static: false
+            rule:
+                C: c + 2
+                H: 2 * c - 2 * u + 2
+                O: 1
+                N: 1
+        -
+            label: FA({c}:{u})_short
+            static: false
+            rule:
+                C: c 
+                H: 2 * c - 2 * u + 2
+                O: 1
+                N: 1
+        - 
+            label: M-H2O-H2CO-CH2
+            neutral_loss: true
+            rule:
+                C: 2
+                H: 6
+                O: 2
+        - 
+            label: M-CH3OH
+            neutral_loss: true
+            rule:
+                C: 1
+                H: 4
+                O: 1
+    NEG:
+        - 
+            label: M-H2O
+            neutral_loss: true
+            rule:
+                H: 2
+                O: 1
+        - 
+            label: M-CH2O
+            neutral_loss: true
+            rule: 
+                C: 1
+                H: 2
+                O: 1
+        -
+            label: M-CH3OH
+            neutral_loss: true
+            rule:
+                C: 1
+                H: 4
+                O: 1
