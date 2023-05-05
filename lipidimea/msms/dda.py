@@ -1,5 +1,5 @@
 """
-pyliquid/msms/dda.py
+LipidIMEA/msms/dda.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -19,10 +19,9 @@ import h5py
 import hdf5plugin
 import numpy as np
 import pandas as pd
-
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from pyliquid.msms._util import _check_params, _ms2_to_str
+from LipidIMEA.msms._util import _check_params, _ms2_to_str
 
 
 class _MSMSReaderDDA():

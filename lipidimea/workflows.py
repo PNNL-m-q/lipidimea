@@ -1,5 +1,5 @@
 """
-pyliquid/workflows.py
+LipidIMEA/workflows.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 

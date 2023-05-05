@@ -1,8 +1,8 @@
-pyliquid |pyliquid_version|
+LipidIMEA |LipidIMEA_version|
 =======================================
 A Python port of the LIQUID utility for identification of lipids.
 
-Source code is available at https://github.com/PNNL-m-q/pyliquid
+Source code is available at https://github.com/PNNL-m-q/LipidIMEA
 
 
 .. toctree::

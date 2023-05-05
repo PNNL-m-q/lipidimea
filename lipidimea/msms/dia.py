@@ -1,5 +1,5 @@
 """
-pyliquid/msms/dia.py
+LipidIMEA/msms/dia.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -17,7 +17,7 @@ from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from pyliquid.msms._util import _check_params, _str_to_ms2, _ms2_to_str
+from LipidIMEA.msms._util import _check_params, _str_to_ms2, _ms2_to_str
 
 
 def _select_xic_peak(target_rt, target_rt_tol, pkrts, pkhts, pkwts):

@@ -1,5 +1,5 @@
 """
-pyliquid/msms/_util.py
+LipidIMEA/msms/_util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 

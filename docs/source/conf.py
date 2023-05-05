@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'pyliquid'
+project = 'LipidIMEA'
 copyright = '2022, Battelle Memorial Institute'
 author = 'Dylan Ross'
 
@@ -66,7 +66,7 @@ html_static_path = ['_static']
 
 # -- Get the version number for this module ----------------------------------
 
-from pyliquid import __version__ as pyliquid_version
+from LipidIMEA import __version__ as LipidIMEA_version
 rst_epilog = """
-.. |pyliquid_version| replace:: {a}
-""".format(a=pyliquid_version)
+.. |LipidIMEA_version| replace:: {a}
+""".format(a=LipidIMEA_version)

@@ -1,5 +1,5 @@
 Citing
 =======================================
-If you would like to use ``pyliquid`` in published work, please include the following:
+If you would like to use ``LipidIMEA`` in published work, please include the following:
 
-* pyliquid, version |pyliquid_version| (https://github.com/PNNL-m-q/pyliquid, accessed MM/YYYY)
+* LipidIMEA, version |LipidIMEA_version| (https://github.com/PNNL-m-q/LipidIMEA, accessed MM/YYYY)

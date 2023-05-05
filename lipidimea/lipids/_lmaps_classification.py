@@ -1,5 +1,5 @@
 """
-pyliquid/lipids/_lmaps_classification.py
+LipidIMEA/lipids/_lmaps_classification.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 

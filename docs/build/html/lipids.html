@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pyliquid.lipids &mdash; pyliquid  documentation</title>
+  <title>LipidIMEA.lipids &mdash; LipidIMEA  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -19,7 +19,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pyliquid.msms" href="msms.html" />
+    <link rel="next" title="LipidIMEA.msms" href="msms.html" />
     <link rel="prev" title="Installation" href="guides/installation.html" /> 
 </head>
 
@@ -28,7 +28,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> pyliquid
+            <a href="index.html" class="icon icon-home"> LipidIMEA
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -49,11 +49,11 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids</span></code></a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#"><code class="docutils literal notranslate"><span class="pre">LipidIMEA.lipids</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-reference">Module Reference</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="msms.html"><code class="docutils literal notranslate"><span class="pre">pyliquid.msms</span></code></a><ul>
+<li class="toctree-l1"><a class="reference internal" href="msms.html"><code class="docutils literal notranslate"><span class="pre">LipidIMEA.msms</span></code></a><ul>
 <li class="toctree-l2"><a class="reference internal" href="msms.html#module-reference">Module Reference</a></li>
 </ul>
 </li>
@@ -88,7 +88,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">pyliquid</a>
+          <a href="index.html">LipidIMEA</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -96,7 +96,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids</span></code></li>
+      <li><code class="docutils literal notranslate"><span class="pre">LipidIMEA.lipids</span></code></li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/lipids.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -130,8 +130,8 @@
     text-align: unset;
 }
 </style>
-<section id="pyliquid-lipids">
-<h1><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids</span></code><a class="headerlink" href="#pyliquid-lipids" title="Permalink to this headline"></a></h1>
+<section id="LipidIMEA-lipids">
+<h1><code class="docutils literal notranslate"><span class="pre">LipidIMEA.lipids</span></code><a class="headerlink" href="#LipidIMEA-lipids" title="Permalink to this headline"></a></h1>
 <p>This module defines the <code class="docutils literal notranslate"><span class="pre">Lipid</span></code> class and subclass(es) that are used to represent individual lipid
 species. The lipid classification system defined and used by LIPID MAPS is used in this package:</p>
 <ul class="simple">
@@ -141,8 +141,8 @@ species. The lipid classification system defined and used by LIPID MAPS is used 
 <section id="module-reference">
 <h2>Module Reference<a class="headerlink" href="#module-reference" title="Permalink to this headline"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="pyliquid.lipids.parse_lipid_name">
-<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.</span></span><span class="sig-name descname"><span class="pre">parse_lipid_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.parse_lipid_name" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="LipidIMEA.lipids.parse_lipid_name">
+<span class="sig-prename descclassname"><span class="pre">LipidIMEA.lipids.</span></span><span class="sig-name descname"><span class="pre">parse_lipid_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LipidIMEA.lipids.parse_lipid_name" title="Permalink to this definition"></a></dt>
 <dd><p>Parses a lipid name in standard format and returns a corresponding instance of a <code class="docutils literal notranslate"><span class="pre">Lipid</span></code> object (or subclass). 
 If the name is not able to be parsed, returns <code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 <dl class="field-list">
@@ -154,7 +154,7 @@ If the name is not able to be parsed, returns <code class="docutils literal notr
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl>
-<dt><strong>lipid</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">pyliquid.lipids.Lipid</span></code> or subclass</span></dt><dd><p>instance of Lipid (or subclass), or <code class="docutils literal notranslate"><span class="pre">None</span></code> if unable to parse</p>
+<dt><strong>lipid</strong><span class="classifier"><code class="docutils literal notranslate"><span class="pre">LipidIMEA.lipids.Lipid</span></code> or subclass</span></dt><dd><p>instance of Lipid (or subclass), or <code class="docutils literal notranslate"><span class="pre">None</span></code> if unable to parse</p>
 </dd>
 </dl>
 </dd>
@@ -162,8 +162,8 @@ If the name is not able to be parsed, returns <code class="docutils literal notr
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="pyliquid.lipids.Lipid">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.</span></span><span class="sig-name descname"><span class="pre">Lipid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.Lipid" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="LipidIMEA.lipids.Lipid">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">LipidIMEA.lipids.</span></span><span class="sig-name descname"><span class="pre">Lipid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LipidIMEA.lipids.Lipid" title="Permalink to this definition"></a></dt>
 <dd><p>class used for representing an individual lipid species. 
 stores classification information (using Lipid MAPS classification system)</p>
 <dl class="field-list">
@@ -219,8 +219,8 @@ stores classification information (using Lipid MAPS classification system)</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pyliquid.lipids.Lipid.__init__">
-<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.Lipid.</span></span><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.Lipid.__init__" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="LipidIMEA.lipids.Lipid.__init__">
+<span class="sig-prename descclassname"><span class="pre">LipidIMEA.lipids.Lipid.</span></span><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_chains</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LipidIMEA.lipids.Lipid.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>inits a new instance of a Lipid object using lipid class, sum composition, and fatty acid modifier (if any)</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
@@ -241,8 +241,8 @@ stores classification information (using Lipid MAPS classification system)</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="pyliquid.lipids.LipidWithChains">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.</span></span><span class="sig-name descname"><span class="pre">LipidWithChains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sn_pos_is_known</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.LipidWithChains" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="LipidIMEA.lipids.LipidWithChains">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">LipidIMEA.lipids.</span></span><span class="sig-name descname"><span class="pre">LipidWithChains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sn_pos_is_known</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LipidIMEA.lipids.LipidWithChains" title="Permalink to this definition"></a></dt>
 <dd><p>Subclass of <code class="docutils literal notranslate"><span class="pre">Lipid</span></code> that contains additional information regarding the composition of individual FA chains</p>
 <dl class="field-list">
 <dt class="field-odd">Attributes</dt>
@@ -267,7 +267,7 @@ stores classification information (using Lipid MAPS classification system)</p>
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#pyliquid.lipids.LipidWithChains.add_db_positions" title="pyliquid.lipids.LipidWithChains.add_db_positions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_db_positions</span></code></a>(fa_unsat_pos[, fa_unsat_stereo])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#LipidIMEA.lipids.LipidWithChains.add_db_positions" title="LipidIMEA.lipids.LipidWithChains.add_db_positions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_db_positions</span></code></a>(fa_unsat_pos[, fa_unsat_stereo])</p></td>
 <td><p>Add double bond positions (and optionally sterechemistry, if known) to this <code class="docutils literal notranslate"><span class="pre">LipidWithChains</span></code> instance, double bond positions/stereo must match with the already specified acyl chain composition and be in the same order</p></td>
 </tr>
 </tbody>
@@ -275,8 +275,8 @@ stores classification information (using Lipid MAPS classification system)</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pyliquid.lipids.LipidWithChains.__init__">
-<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.LipidWithChains.</span></span><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sn_pos_is_known</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.LipidWithChains.__init__" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="LipidIMEA.lipids.LipidWithChains.__init__">
+<span class="sig-prename descclassname"><span class="pre">LipidIMEA.lipids.LipidWithChains.</span></span><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lipid_class_abbrev</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_carbon_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_chains</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_mod</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sn_pos_is_known</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LipidIMEA.lipids.LipidWithChains.__init__" title="Permalink to this definition"></a></dt>
 <dd><p>inits a new instance of a LipidWithChains object using lipid class, fatty acid composition (split by FA chain), 
 fatty acid modifier (if any), and double bond positions/stereochemistry (if known)</p>
 <dl class="field-list">
@@ -303,8 +303,8 @@ requires fa_unsat_pos to be set</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pyliquid.lipids.LipidWithChains.add_db_positions">
-<span class="sig-prename descclassname"><span class="pre">pyliquid.lipids.LipidWithChains.</span></span><span class="sig-name descname"><span class="pre">add_db_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pyliquid.lipids.LipidWithChains.add_db_positions" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="LipidIMEA.lipids.LipidWithChains.add_db_positions">
+<span class="sig-prename descclassname"><span class="pre">LipidIMEA.lipids.LipidWithChains.</span></span><span class="sig-name descname"><span class="pre">add_db_positions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_pos</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fa_unsat_stereo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#LipidIMEA.lipids.LipidWithChains.add_db_positions" title="Permalink to this definition"></a></dt>
 <dd><p>Add double bond positions (and optionally sterechemistry, if known) to this <code class="docutils literal notranslate"><span class="pre">LipidWithChains</span></code> instance,
 double bond positions/stereo must match with the already specified acyl chain composition and be in the same
 order</p>
@@ -328,7 +328,7 @@ order</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="guides/installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="msms.html" class="btn btn-neutral float-right" title="pyliquid.msms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="msms.html" class="btn btn-neutral float-right" title="LipidIMEA.msms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

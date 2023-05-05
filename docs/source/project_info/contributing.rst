@@ -7,7 +7,7 @@ Any effort will be given due credit.
 
 Feedback
 ----------------------
-To report a bug or propose a new feature, please open an issue `here <https://github.com/PNNL-m-q/pyliquid/issues>`_. 
+To report a bug or propose a new feature, please open an issue `here <https://github.com/PNNL-m-q/LipidIMEA/issues>`_. 
 
 When reporting bugs, please include:
 
@@ -87,12 +87,12 @@ To create a pull request:
 #. Create a GitHub account
 #. Fork the repository
 #. Clone your fork locally
-#. Go to the created ``pyliquid`` folder with :code:`cd pyliquid`
+#. Go to the created ``LipidIMEA`` folder with :code:`cd LipidIMEA`
 #. Create a new branch (based on current ``dev`` branch) with: :code:`git checkout -b <your_github_username>_<type>_<descriptive_branch_name> dev`, where ``<type>`` is "bugfix", "feature", or "docs"
 #. Make your changes to the code or documentation
 #. Run :code:`git add --all` to add all the changed files to the commit
 #. To commit the added files, run :code:`git commit -m '<text>'` or :code:`git commit`. The latter will open a command line editor to write a commit message. Commit messages should have a descriptive line header (<50 characters, including spaces), followed by an empty line, and then a description of what you did and why.
-#. Push your changes to your ``pyliquid`` fork by running :code:`git push origin <your_github_username>_<type>_<descriptive_branch_name>`
+#. Push your changes to your ``LipidIMEA`` fork by running :code:`git push origin <your_github_username>_<type>_<descriptive_branch_name>`
 #. If you then navigate to the webpage for your mzapy fork, you should see a "Pull request" link in the sidebar. Choose the relevant pull request from the menu and click the "Create Pull Request" button. Ensure the pull request target branch is `<your_github_username>_<type>_<descriptive_branch_name>!`
 
 If you want to create more pull requests, first run :code:`git checkout dev` and then start at step 5 with a new branch name.
@@ -110,7 +110,7 @@ The versioning scheme follows the format *mza_version.major_version.minor_versio
 .. note::
 
     When creating a branch to implement a bugfix, new feature, or add documentaion, append ".<your_github_username>_0" 
-    to the current ``__version__`` variable in ``pyliquid/__init__.py``, then increment the number at the end with each 
+    to the current ``__version__`` variable in ``LipidIMEA/__init__.py``, then increment the number at the end with each 
     commit you make to that branch.
     
 
@@ -156,7 +156,7 @@ Internal function/class names should be prepended with "_". Example:
 
 Docstring Format
 ****************************
-Detailed docstrings must be included in all functions/classes (both internal and external) in ``pyliquid``. Docstring 
+Detailed docstrings must be included in all functions/classes (both internal and external) in ``LipidIMEA``. Docstring 
 format loosely follows the `numpydoc style <https://numpydoc.readthedocs.io/en/latest/format.html>`_, refer to 
 existing docstrings for specific examples. Generally, all functions should include a description and parameters/returns 
 sections (if applicable) as in the following example:
@@ -197,7 +197,7 @@ Adding Entries to Sphinx Documentation
 **********************************************
 All public-facing functions/classes should have entries in the Sphinx documentation source files in order for their 
 docstrings to be incorporated into the HTML documentation. For example, if the ``sum_pairwise`` function in the example 
-above were implemented in the ``pyliquid/isotopes.py`` module, then the following entry should be added to the 
+above were implemented in the ``LipidIMEA/isotopes.py`` module, then the following entry should be added to the 
 appropriate section in the ``docs/source/isotopes.rst`` documentation source file:
 
 .. code-block::

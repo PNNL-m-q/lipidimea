@@ -1,4 +1,4 @@
-``pyliquid.lipids``
+``LipidIMEA.lipids``
 =======================================
 This module defines the ``Lipid`` class and subclass(es) that are used to represent individual lipid 
 species. The lipid classification system defined and used by LIPID MAPS is used in this package:
@@ -9,14 +9,14 @@ species. The lipid classification system defined and used by LIPID MAPS is used 
 
 Module Reference
 ---------------------------------------
-.. autofunction:: pyliquid.lipids.parse_lipid_name
+.. autofunction:: LipidIMEA.lipids.parse_lipid_name
 
-.. autoclass:: pyliquid.lipids.Lipid
+.. autoclass:: LipidIMEA.lipids.Lipid
 
-.. autofunction:: pyliquid.lipids.Lipid.__init__
+.. autofunction:: LipidIMEA.lipids.Lipid.__init__
 
-.. autoclass:: pyliquid.lipids.LipidWithChains
+.. autoclass:: LipidIMEA.lipids.LipidWithChains
 
-.. autofunction:: pyliquid.lipids.LipidWithChains.__init__
+.. autofunction:: LipidIMEA.lipids.LipidWithChains.__init__
 
-.. autofunction:: pyliquid.lipids.LipidWithChains.add_db_positions
+.. autofunction:: LipidIMEA.lipids.LipidWithChains.add_db_positions

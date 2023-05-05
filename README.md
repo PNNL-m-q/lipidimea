@@ -1,5 +1,5 @@
-# pyliquid
-A Python port of LIQUID utility for lipid identification
+# LipidIMEA
+Lipidomics Integrated Multi-Experiment Analysis tool
 
 #### Contributors:
 - Dylan Ross (dylan.ross@pnnl.gov)
@@ -9,5 +9,5 @@ A Python port of LIQUID utility for lipid identification
 <hr>
 
 
-Documentation is available at https://pyliquid.readthedocs.io/
+Documentation is available at https://lipidimea.readthedocs.io/
 

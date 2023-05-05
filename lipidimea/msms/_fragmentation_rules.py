@@ -1,5 +1,5 @@
 """
-pyliquid/msms/_fragmentation_rules.py
+LipidIMEA/msms/_fragmentation_rules.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -126,10 +126,10 @@ class _FragRuleDynamic(_FragRule):
     
 def _load_rules(lipid_class, ionization):
     rules = []
-    with open('../../../../git/pyliquid/pyliquid/msms/rules/any.yaml', 'r')as yff:
+    with open('../../../../git/LipidIMEA/LipidIMEA/msms/rules/any.yaml', 'r')as yff:
         rules_ = yaml.safe_load(yff)['ionization'][ionization]
     if lipid_class in _FRAG_RULE_CLASSES:
-        yf = '../../../../git/pyliquid/pyliquid/msms/rules/{}.yaml'.format(lipid_class)
+        yf = '../../../../git/LipidIMEA/LipidIMEA/msms/rules/{}.yaml'.format(lipid_class)
         with open(yf, 'r') as yff:
             rules_ += yaml.safe_load(yff)['ionization'][ionization]
     for rule in rules_:

@@ -1,9 +1,9 @@
 """
-pyliquid/__init__.py
+LipidIMEA/__init__.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    pyliquid - Python port of LIQUID
+    LipidIMEA - Lipidomics Integrated Multi-Experiment Analysis tool
 """
 
 # release.major_version.minor_version

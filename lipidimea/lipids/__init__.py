@@ -1,5 +1,5 @@
 """
-pyliquid/lipids/__init__.py
+LipidIMEA/lipids/__init__.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -11,8 +11,8 @@ import re
 
 from mzapy.isotopes import monoiso_mass
 
-from pyliquid.lipids._util import _LIPID_NAME_REGEX, _AcylChain
-from pyliquid.lipids._lmaps_classification import _iterate_all_lipid_classifications
+from LipidIMEA.lipids._util import _LIPID_NAME_REGEX, _AcylChain
+from LipidIMEA.lipids._lmaps_classification import _iterate_all_lipid_classifications
 
 
 def parse_lipid_name(name):
@@ -27,7 +27,7 @@ def parse_lipid_name(name):
 
     Returns
     -------
-    lipid : ``pyliquid.lipids.Lipid`` or subclass
+    lipid : ``LipidIMEA.lipids.Lipid`` or subclass
         instance of Lipid (or subclass), or ``None`` if unable to parse
     """
     # strip out the whitespace from the lipid name regex
@@ -210,7 +210,7 @@ class Lipid():
         lipid_info : ``dict(...)``
             lipid information (formula, ionization, acyl chain count)
         """
-        # iterate through all of the classifications defined in pyliquid/_lmaps_classification.py
+        # iterate through all of the classifications defined in LipidIMEA/_lmaps_classification.py
         for class_info, lipid_info in _iterate_all_lipid_classifications():
             if self.lipid_class_abbrev == lipid_info['class_abbrev']:
                 if self.fa_mod == lipid_info['fa_mod']:
