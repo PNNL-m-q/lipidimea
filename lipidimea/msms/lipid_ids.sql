@@ -97,6 +97,7 @@ INSERT INTO _DIADeconFragments_COLUMNS VALUES
 -- table containing data for deconvoluted fragments from DIA features
 CREATE TABLE DIADeconFragments (
     decon_frag_id INTEGER PRIMARY KEY,
+    mz REAL NOT NULL,
     xic BLOB,
     xic_dist REAL NOT NULL,
     atd BLOB,
@@ -169,5 +170,5 @@ CREATE TABLE Lipids (
     ann_id INTEGER PRIMARY KEY,
     dia_feat_id INT NOT NULL,
     lipid TEXT NOT NULL,
-    adduct TEXT NOT NULL,
+    adduct TEXT NOT NULL
 );

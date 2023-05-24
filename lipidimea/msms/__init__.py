@@ -10,6 +10,8 @@ Dylan Ross (dylan.ross@pnnl.gov)
 import os
 from sqlite3 import connect
 
+import yaml
+
 
 def create_lipid_ids_db(dir, label, overwrite=False):
     """
@@ -52,3 +54,14 @@ def create_lipid_ids_db(dir, label, overwrite=False):
     con.close()
     # return the path
     return f
+
+
+def load_params(params_file):
+    """
+    load parameters from a YAML file, returns a dict with the params
+    """
+    with open(params_file, 'r') as yf:
+        params = yaml.safe_load(yf)
+    return params
+
+
