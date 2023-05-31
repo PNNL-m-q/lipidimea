@@ -150,6 +150,43 @@ CREATE VIEW DIAFeatures AS
         _DIAFeatures;
 
 
+----------- Combined Features --------------
+
+CREATE VIEW CombinedFeatures AS 
+    SELECT
+        dia.dia_feat_id AS dia_feat_id,
+        dia.dda_feat_id AS dda_feat_id,
+        dia.f AS dia_f,
+        dda.f AS dda_f,
+        dda.mz AS mz,
+        dia.rt AS dia_rt,
+        dda.rt AS dda_rt,
+        dia.dt AS dt,
+        dia.ms2_peaks AS dia_ms2_peaks,
+        dda.ms2_peaks AS dda_ms2_peaks,
+        dia.decon_frag_ids AS dia_decon_frag_ids,
+        dia.xic AS dia_xic,
+        dia.atd AS dia_atd,
+        dia.ms2 AS dia_ms2,
+        dda.rt_fwhm AS dda_rt_fwhm,
+        dda.rt_pkht AS dda_rt_pkht,
+        dda.rt_psnr AS dda_rt_psnr,
+        dia.rt_fwhm AS dia_rt_fwhm,
+        dia.rt_pkht AS dia_rt_pkht,
+        dia.rt_psnr AS dia_rt_psnr,
+        dia.dt_fwhm AS dia_dt_fwhm,
+        dia.dt_pkht AS dia_dt_pkht,
+        dia.dt_psnr AS dia_dt_psnr,
+        dda.ms2_n_scans AS dda_ms2_n_scans,
+        dda.ms2_n_peaks AS dda_ms2_n_peaks,
+        dia.ms2_n_peaks AS dia_ms2_n_peaks
+    FROM
+        DIAFeatures AS dia 
+        INNER JOIN DDAFeatures AS dda 
+            ON dia.dda_feat_id=dda.dda_feat_id;
+
+
+
 ----------- Lipid Annotations --------------
 
 -- table with descriptions for columns in Lipids table
