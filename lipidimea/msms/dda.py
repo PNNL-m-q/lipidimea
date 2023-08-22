@@ -181,6 +181,60 @@ class _MSMSReaderDDA():
         return sorted(set(self.metadata.loc[self.ms2_scans, 'PrecursorMonoisotopicMz'].tolist()))
 
 
+class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
+    """
+    _MSMSReaderDDA with all arrays_mz and arrays_i data pre-read into memory to reduce 
+    disk access, applicable primarily to extracting chromatograms (MS1) since that takes 
+    much longer than MS2 spectra
+    """
+
+    def __init__(self, mza_file):
+        """
+        initialize the reader
+    
+        Parameters
+        ----------
+        mza_file : ``str``
+            path to MZA file
+        """
+        super().__init__(mza_file)
+        self.arrays_mz_cached = {}
+        self.arrays_i_cached = {}
+        for scan in self.ms1_scans:
+            scan_mz = self.arrays_mz.loc[scan, 'Data']
+            scan_i = self.arrays_i.loc[scan, 'Data']
+            a_mz, a_i = np.zeros(shape=(2, scan_mz.size))
+            scan_mz.read_direct(a_mz)
+            scan_i.read_direct(a_i)
+            self.arrays_mz_cached[scan] = a_mz
+            self.arrays_i_cached[scan] = a_i
+
+    def get_chrom(self, mz, mz_tol):
+        """
+        Select a chromatogram (MS1 only) for a target m/z with specified tolerance
+
+        Parameters
+        ----------
+        mz : ``float``
+            target m/z
+        mz_tol : ``float``
+            m/z tolerance
+
+        Returns
+        -------
+        chrom_rts : ``np.ndarray(float)``
+        chrom_ins : ``np.ndarray(float)``
+            chromatogram retention time and intensity components 
+        """
+        rts, ins = [], []
+        mz_min, mz_max = mz - mz_tol, mz + mz_tol
+        for scan, rt in zip(self.ms1_scans, self.metadata.loc[self.ms1_scans, 'RetentionTime']):
+            smz, sin = self.arrays_mz_cached[scan], self.arrays_i_cached[scan]
+            rts.append(rt)
+            ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
+        return np.array([rts, ins])
+
+
 def _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb):
     """
     extracts and fits chromatograms for a list of precursor m/zs 
@@ -423,7 +477,7 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params, debug_flag=None, d
     _debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
     _debug_handler(debug_flag, debug_cb, 'file: {}'.format(dda_data_file), pid)
     # initialize the MSMS reader
-    rdr = _MSMSReaderDDA(dda_data_file)
+    rdr = _MSMSReaderDDA_Cached(dda_data_file)
     # get the list of precursor m/zs
     pre_mzs = rdr.get_pre_mzs()  # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
     _debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
