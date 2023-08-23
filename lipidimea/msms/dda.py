@@ -186,6 +186,8 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
     _MSMSReaderDDA with all arrays_mz and arrays_i data pre-read into memory to reduce 
     disk access, applicable primarily to extracting chromatograms (MS1) since that takes 
     much longer than MS2 spectra
+
+    This takes up too much memory when there are multiple processes...
     """
 
     def __init__(self, mza_file):
@@ -438,7 +440,8 @@ def _add_features_to_db(cur, qdata, debug_flag, debug_cb):
         cur.execute(qry, qd)
 
 
-def extract_dda_features(dda_data_file, lipid_ids_db, params, debug_flag=None, debug_cb=None):
+def extract_dda_features(dda_data_file, lipid_ids_db, params, 
+                         cache_ms1=True, debug_flag=None, debug_cb=None):
     """
     Extract features from a raw DDA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
 
@@ -467,6 +470,14 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params, debug_flag=None, d
         path to lipid ids database
     params : ``dict(...)``
         parameters for the various steps of DDA feature extraction
+    cache_ms1 : ``bool``, default=True
+        Cache MS1 scan data to reduce disk access. This significantly speeds up extracting the 
+        precursor chromatograms, but comes at the cost of very high memory usage. Should work 
+        fine with a single process on most machines with 16 GB RAM (in testing the memory 
+        footprint of this data is like 10-15 GB) but using multiple processes will quickly use 
+        up all of the RAM and start swapping which completely negates the performance gains from 
+        caching. Machines with more RAM can support more processes doing this caching at the same
+        time, and rule of thumb would be 1 process per 16 GB RAM. 
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -477,9 +488,9 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params, debug_flag=None, d
     _debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
     _debug_handler(debug_flag, debug_cb, 'file: {}'.format(dda_data_file), pid)
     # initialize the MSMS reader
-    rdr = _MSMSReaderDDA_Cached(dda_data_file)
+    rdr = _MSMSReaderDDA_Cached(dda_data_file) if cache_ms1 else _MSMSReaderDDA(dda_data_file)
     # get the list of precursor m/zs
-    pre_mzs = rdr.get_pre_mzs()  # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
+    pre_mzs = rdr.get_pre_mzs()[:20]  # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
     _debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
     # extract chromatographic features
     chrom_feats = _extract_and_fit_chroms(rdr, pre_mzs, params['CHROMATOGRAM_EXTRACTION_AND_FITTING'], debug_flag, debug_cb)
@@ -498,7 +509,8 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params, debug_flag=None, d
     rdr.close()
 
 
-def extract_dda_features_multiproc(dda_data_files, lipid_ids_db, params, n_proc, debug_flag=None, debug_cb=None):
+def extract_dda_features_multiproc(dda_data_files, lipid_ids_db, params, n_proc,
+                                   cache_ms1=False, debug_flag=None, debug_cb=None):
     """
     extracts dda features from multiple DDA files in parallel
 
@@ -515,6 +527,10 @@ def extract_dda_features_multiproc(dda_data_files, lipid_ids_db, params, n_proc,
         parameters for the various steps of DDA feature extraction
     n_proc : ``int``
         number of CPU threads to use (number of processes)
+    cache_ms1 : ``bool``, default=False
+        Cache MS1 scan data to reduce disk access. This should be turned off when using 
+        multiprocessing on most machines. See entry in ``extract_dda_features`` 
+        docstring for a more detailed explanation.
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -523,12 +539,13 @@ def extract_dda_features_multiproc(dda_data_files, lipid_ids_db, params, n_proc,
     """
     n_proc = min(n_proc, len(dda_data_files))  # no need to use more processes than the number of inputs
     args = [(dda_data_file, lipid_ids_db, params) for dda_data_file in dda_data_files]
-    args_for_starmap = zip(repeat(extract_dda_features), args, repeat({'debug_flag': debug_flag, 'debug_cb': debug_cb}))
+    args_for_starmap = zip(repeat(extract_dda_features), args, repeat({'cache_ms1': cache_ms1, 'debug_flag': debug_flag, 'debug_cb': debug_cb}))
     with multiprocessing.Pool(processes=n_proc) as p:
         p.starmap(_apply_args_and_kwargs, args_for_starmap)
 
 
-def consolidate_dda_features(lipid_ids_db, params, debug_flag=None, debug_cb=None):
+def consolidate_dda_features(lipid_ids_db, params, 
+                             debug_flag=None, debug_cb=None):
     """
     consolidates DDA features from lipid IDs database based on feature m/z and RT using the following criteria:
     * for groups of features having very similar m/z and RT, if none have MS2 scans then only the feature with 
