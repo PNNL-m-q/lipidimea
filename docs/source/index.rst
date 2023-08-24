@@ -1,6 +1,6 @@
 LipidIMEA |LipidIMEA_version|
 =======================================
-A Python port of the LIQUID utility for identification of lipids.
+desc
 
 Source code is available at https://github.com/PNNL-m-q/LipidIMEA
 
@@ -10,10 +10,11 @@ Source code is available at https://github.com/PNNL-m-q/LipidIMEA
    :caption: User Guide
 
    guides/installation
+   guides/gui
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: API Reference
 
    lipids
@@ -24,6 +25,7 @@ Contributors
 ------------
 
 * Dylan Ross (dylan.ross@pnnl.gov)
+* Jeremy Jacobson (jeremy.jacobson@pnnl.gov)
 * Aivett Bilbao (aivett.bilbao@pnnl.gov)
 * Xueyun Zheng (xueyun.zheng@pnnl.gov)
 

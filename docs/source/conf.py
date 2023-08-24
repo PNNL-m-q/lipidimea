@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'LipidIMEA'
-copyright = '2022, Battelle Memorial Institute'
+copyright = '2023, Battelle Memorial Institute'
 author = 'Dylan Ross'
 
 

@@ -1,6 +1,6 @@
 ``LipidIMEA.lipids``
 =======================================
-This module defines the ``Lipid`` class and subclass(es) that are used to represent individual lipid 
+This subpackage defines the ``Lipid`` class and subclass(es) that are used to represent individual lipid 
 species. The lipid classification system defined and used by LIPID MAPS is used in this package:
 
 * https://www.lipidmaps.org/data/classification/LM_classification_exp.php 

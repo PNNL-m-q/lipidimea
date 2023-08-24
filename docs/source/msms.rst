@@ -1,21 +1,32 @@
 ``LipidIMEA.msms``
 =======================================
-This module defines the interface to MS/MS data 
+This subpackage has utilities for analyzing MS/MS data. There are general utility functions
+than can be imported directly from ``LipidIMEA.msms`` module, and functions for analyzing
+DDA or DIA data from the ``LipidIMEA.msms.dda`` or ``LipidIMEA.msms.dda`` submodules, 
+respectively.
 
 Module Reference
 ---------------------------------------
-.. autoclass:: LipidIMEA.msms.MSMSReaderDDA
 
-.. autofunction:: LipidIMEA.msms.MSMSReaderDDA.__init__
+Utility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: LipidIMEA.msms.MSMSReaderDDA.metadata
+.. autofunction:: LipidIMEA.msms.create_lipid_ids_db
 
-.. autofunction:: LipidIMEA.msms.MSMSReaderDDA.get_tic
+.. autofunction:: LipidIMEA.msms.load_params
 
-.. autofunction:: LipidIMEA.msms.MSMSReaderDDA.get_xic
+DDA
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: LipidIMEA.msms.MSMSReaderDDA.get_ms1
+.. autofunction:: LipidIMEA.msms.dda.extract_dda_features
 
-.. autofunction:: LipidIMEA.msms.MSMSReaderDDA.get_ms2_dda
+.. autofunction:: LipidIMEA.msms.dda.extract_dda_features_multiproc
 
-.. autofunction:: LipidIMEA.msms.MSMSReaderDDA.get_dda_pre_mzs
+.. autofunction:: LipidIMEA.msms.dda.consolidate_dda_features
+
+DIA
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autofunction:: LipidIMEA.msms.dia.extract_dia_features
+
+.. autofunction:: LipidIMEA.msms.dia.extract_dia_features_multiproc

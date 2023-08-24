@@ -100,8 +100,8 @@ If you want to create more pull requests, first run :code:`git checkout dev` and
 
 Versioning Scheme
 ----------------------------
-The version of ``mzapy`` is stored in the ``__version__`` variable in ``mzapy/__init__.py``.
-The versioning scheme follows the format *mza_version.major_version.minor_version*:
+The version of ``LipidIMEA`` is stored in the ``__version__`` variable in ``LipidIMEA/__init__.py``.
+The versioning scheme follows the format *release.major_version.minor_version*:
 
 * *release* - corresponds to release milestones, generally large-scale changes/revisions
 * *major version* - increments after every time changes in the ``dev`` branch are merged into the ``main`` branch
@@ -205,5 +205,5 @@ appropriate section in the ``docs/source/isotopes.rst`` documentation source fil
     Module Reference
     ------------------------------
     
-    .. autofunction :: mzapy.isotopes.sum_pairwise
+    .. autofunction :: LipidIMEA.isotopes.sum_pairwise
 
