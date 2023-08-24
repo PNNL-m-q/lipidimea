@@ -276,7 +276,7 @@ def _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb):
     t0 = time()
     n = len(pre_mzs)
     for i, pre_mz in enumerate(pre_mzs): 
-        msg = '({}/{}) precursor m/z: {:.4} -> '.format(i + 1, n, pre_mz)
+        msg = '({}/{}) precursor m/z: {:.4f} -> '.format(i + 1, n, pre_mz)
         # extract chromatogram
         chrom = rdr.get_chrom(pre_mz, mz_tol)
         # try fitting chromatogram (up to 2 peaks)
@@ -490,7 +490,7 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params,
     # initialize the MSMS reader
     rdr = _MSMSReaderDDA_Cached(dda_data_file) if cache_ms1 else _MSMSReaderDDA(dda_data_file)
     # get the list of precursor m/zs
-    pre_mzs = rdr.get_pre_mzs()[:20]  # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
+    pre_mzs = rdr.get_pre_mzs()[-300:-280]  # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
     _debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
     # extract chromatographic features
     chrom_feats = _extract_and_fit_chroms(rdr, pre_mzs, params['CHROMATOGRAM_EXTRACTION_AND_FITTING'], debug_flag, debug_cb)

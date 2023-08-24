@@ -134,6 +134,7 @@ def _deconvolute_ms2_peaks(rdr, sel_ms2_mzs, mz_tol, pre_xic, pre_xic_rt, pre_xi
 
 def _add_single_target_results_to_db(lipid_ids_db_cursor, 
                                      dda_feat_id, f, 
+                                     ms1,
                                      rt, rt_fwhm, rt_pkht, rt_psnr, xic, 
                                      dt, dt_fwhm, dt_pkht, dt_psnr, atd, 
                                      ms2_n_peaks, ms2_peaks, ms2,
@@ -143,11 +144,13 @@ def _add_single_target_results_to_db(lipid_ids_db_cursor,
     dda_feat_id, f, rt, rt_fwhm, rt_pkht, rt_psnr, xic, dt, dt_fwhm, dt_pkht, dt_psnr, atd, ms2_n_peaks, ms2_peaks, ms2
     """
     # convert xic, atd, ms2 to blobs if store_blobs is True, else make them None
+    ms1 = np.array(ms1).tobytes() if store_blobs else None
     xic = np.array(xic).tobytes() if store_blobs else None
     atd = np.array(atd).tobytes() if store_blobs else None
     ms2 = np.array(ms2).tobytes() if store_blobs else None
-    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
-    lipid_ids_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f, 
+    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
+    lipid_ids_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f,
+                                                ms1,
                                                 rt, rt_fwhm, rt_pkht, rt_psnr, xic,
                                                 dt, dt_fwhm, dt_pkht, dt_psnr, atd,
                                                 ms2_n_peaks, ms2_peaks, ms2))
@@ -164,7 +167,6 @@ def _add_single_target_results_to_db(lipid_ids_db_cursor,
             lipid_ids_db_cursor.execute(decon_frags_qry_1, (None, fmz, fxic, fxic_dist, fatd, fatd_dist))
             lipid_ids_db_cursor.execute(decon_frags_qry_2, (dia_feat_id, lipid_ids_db_cursor.lastrowid))
         
-
 
 def _ms2_peaks_to_str(ms2_peaks):
     """ convert MS2 peaks (i.e. centroided MS2 spectrum) to string representation """
@@ -230,17 +232,22 @@ def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt
         rtmsg = msg + 'RT: {:.2f} +/- {:.2f} min ({:.2e}) -> '.format(xic_rt, xic_wt, xic_ht)
         xic_psnr = calc_gauss_psnr(*pre_xic, (xic_rt, xic_ht, xic_wt))
         # extract the ATD, fit
-        pre_atd = rdr.collect_atd_arrays_by_rt_mz(dda_mz - mzt, dda_mz + mzt, xic_rt - xic_wt, xic_rt + xic_wt)
+        rt_min, rt_max = xic_rt - xic_wt, xic_rt + xic_wt
+        pre_atd = rdr.collect_atd_arrays_by_rt_mz(dda_mz - mzt, dda_mz + mzt, rt_min, rt_max)
         pre_pkdts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_atd, *atd_fit_params, True)
         # consider each ATD peak as separate features
         for atd_dt, atd_ht, atd_wt in zip(pre_pkdts, pre_pkhts, pre_pkwts):
             dtmsg = rtmsg +  'DT: {:.2f} +/- {:.2f} ms ({:.2e}) -> '.format(atd_dt, atd_wt, atd_ht)
             atd_psnr = calc_gauss_psnr(*pre_atd, (atd_dt, atd_ht, atd_wt))
+            # extract partial MS1 spectrum from M-1.5 to M+2.5, with RT and DT selection
+            ms1 = rdr.collect_ms1_arrays_by_rt_dt(rt_min, rt_max, atd_dt - atd_wt, atd_dt + atd_wt, 
+                                                  mz_bounds=(dda_mz - 1.5, dda_mz + 2.5))
             decon_frags = None
             n_dia_peaks_pre_decon = 0
             if dda_ms2 is not None:
                 # extract MS2 spectrum (before deconvolution)
-                ms2 = rdr.collect_ms2_arrays_by_rt_dt(xic_rt - xic_wt, xic_rt + xic_wt, atd_dt - atd_wt, atd_dt + atd_wt, mz_bounds=[rdr.min_mz, dda_mz + 25])
+                ms2 = rdr.collect_ms2_arrays_by_rt_dt(xic_rt - xic_wt, xic_rt + xic_wt, atd_dt - atd_wt, atd_dt + atd_wt, 
+                                                      mz_bounds=[rdr.min_mz, dda_mz + 25])
                 dia_ms2_peaks = find_peaks_1d_localmax(*ms2, *ms2_fit_params)
                 n_dia_peaks_pre_decon = len(dia_ms2_peaks[0])
                 if n_dia_peaks_pre_decon > 0:
@@ -261,7 +268,8 @@ def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt
             _debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
             _add_single_target_results_to_db(lipid_ids_db_cursor, 
-                                             dda_fid, f, 
+                                             dda_fid, f,
+                                             ms1,
                                              xic_rt, xic_wt, xic_ht, xic_psnr, pre_xic, 
                                              atd_dt, atd_wt, atd_ht, atd_psnr, pre_atd, 
                                              n_dia_peaks_pre_decon, _ms2_peaks_to_str(dia_ms2_peaks), ms2,
@@ -299,7 +307,10 @@ def extract_dia_features(dia_data_file, lipid_ids_db, params, debug_flag=None, d
     con = connect(lipid_ids_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # get all of the DDA features, these will be the targets for the DIA data analysis
-    dda_feats = [_ for _ in cur.execute("SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures WHERE ms2_peaks IS NOT NULL AND dda_feat_id>2651").fetchall()]  # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
+    # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
+    #pre_sel_qry = 'SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures'
+    pre_sel_qry = 'SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures WHERE ms2_peaks IS NOT NULL LIMIT 10'
+    dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]  
     # extract DIA features for each DDA feature
     for dda_fid,dda_mz, dda_rt, dda_ms2 in dda_feats:
         _single_target_analysis(rdr, cur, dia_data_file, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb)

@@ -48,6 +48,8 @@ INSERT INTO _DIAFeatures_COLUMNS VALUES
     ('dia_feat_id', 'unique feature identifier'),
     ('dda_feat_id', 'reference to corresponding feature in DDAFeatures table'),
     ('f', 'raw data file this lipid was identified in'),
+    ('mz', 'precursor m/z'),
+    ('ms1', 'partial MS1 spectrum (M-1.5 to M+2.5)'),
     ('rt', 'observed retention time of chromatographic peak'),
     ('rt_fwhm', 'FWHM of chromatographic peak'),
     ('rt_pkht', 'height of chromatographic peak'),
@@ -70,6 +72,7 @@ CREATE TABLE _DIAFeatures (
     dia_feat_id INTEGER PRIMARY KEY,
     dda_feat_id INT NOT NULL,
     f TEXT NOT NULL,
+    ms1 BLOB,
     rt REAL NOT NULL,
     rt_fwhm REAL NOT NULL,
     rt_pkht REAL NOT NULL,
@@ -118,20 +121,22 @@ CREATE VIEW DIAFeatures AS
     SELECT 
         dia_feat_id,
         dda_feat_id,
-        f,
-        rt,
-        rt_fwhm,
-        rt_pkht,
-        rt_psnr,
+        dia.f,
+        mz,
+        ms1,
+        dia.rt,
+        dia.rt_fwhm,
+        dia.rt_pkht,
+        dia.rt_psnr,
         xic,
         dt,
         dt_fwhm,
         dt_pkht,
         dt_psnr,
         atd,
-        ms2_n_peaks,
-        ms2_peaks,
-        ms2,
+        dia.ms2_n_peaks,
+        dia.ms2_peaks,
+        dia.ms2,
         (
 			SELECT 
                 frgids 
@@ -147,7 +152,8 @@ CREATE VIEW DIAFeatures AS
                 diaid=dia_feat_id
 		) AS decon_frag_ids
     FROM 
-        _DIAFeatures;
+        _DIAFeatures AS dia
+        INNER JOIN DDAFeatures USING(dda_feat_id);
 
 
 ----------- Combined Features --------------
@@ -167,6 +173,7 @@ CREATE VIEW CombinedFeatures AS
         dia.decon_frag_ids AS dia_decon_frag_ids,
         dia.xic AS dia_xic,
         dia.atd AS dia_atd,
+        dia.ms1 AS dia_ms1,
         dia.ms2 AS dia_ms2,
         dda.rt_fwhm AS dda_rt_fwhm,
         dda.rt_pkht AS dda_rt_pkht,
@@ -182,9 +189,7 @@ CREATE VIEW CombinedFeatures AS
         dia.ms2_n_peaks AS dia_ms2_n_peaks
     FROM
         DIAFeatures AS dia 
-        INNER JOIN DDAFeatures AS dda 
-            ON dia.dda_feat_id=dda.dda_feat_id;
-
+        INNER JOIN DDAFeatures AS dda USING(dda_feat_id);
 
 
 ----------- Lipid Annotations --------------
