@@ -3,7 +3,7 @@ LipidIMEA/msms/__init__.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    sub-module for handling MS/MS related functionality
+    sub-module for handling MS/MS data extraction and processing
 
 """
 
@@ -13,7 +13,7 @@ from sqlite3 import connect
 import yaml
 
 
-def create_lipid_ids_db(dir, label, overwrite=False):
+def create_lipid_ids_db(f, overwrite=False):
     """
     creates a sqlite database for lipid IDs from DDA/DDA data
 
@@ -21,21 +21,12 @@ def create_lipid_ids_db(dir, label, overwrite=False):
 
     Parameters
     ----------
-    dir : ``str``
-        directory to create database in
-    label : ``str``
-        label for the database -> "{label}_dda_ids.db" 
+    f : ``str``
+        filename/path of the database
     overwrite : ``bool``, default=False
         if the database file already exists and this flag is True, then overwrite existing database 
         and do not raise the RuntimeError
-
-    Returns
-    -------
-    db_path : ``str``
-        path to the initialized database
     """
-    # database file name
-    f = os.path.join(dir, '{}_lipid_ids.db'.format(label))
     # see if the file exists
     if os.path.exists(f):
         if overwrite:
@@ -52,16 +43,62 @@ def create_lipid_ids_db(dir, label, overwrite=False):
     # save and close the database
     con.commit()
     con.close()
-    # return the path
-    return f
+
+
+def load_default_params():
+    """
+    load the default parameters (only the analysis parameters component, not the complete parameters 
+    with input/output component)
+    
+    Returns
+    -------
+    params : ``dict(...)``
+        analysis parameter dict component of parameters, with all default values
+    """
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'default_params.yaml'), 'r') as yf:
+        defaults = yaml.safe_load(yf)
+    params = {}
+    for top_lvl in ['dda', 'dia']:
+        params[top_lvl] = {section: {param: value['default'] for param, value in sec_params.items()} for section, sec_params in defaults[top_lvl].items()}
+    params['misc'] = {param: value['default'] for param, value in defaults['misc'].items()}
+    return params
 
 
 def load_params(params_file):
     """
     load parameters from a YAML file, returns a dict with the params
+    
+    Parameters
+    ----------
+    params_file : ``str``
+        filename/path of parameters file to load (as YAML)
+
+    Returns
+    -------
+    input_output : ``dict(...)``
+        input/output component of parameters
+    params : ``dict(...)``
+        analysis parameter dict component of parameters
     """
     with open(params_file, 'r') as yf:
         params = yaml.safe_load(yf)
     return params
+
+
+def save_params(input_output, params, params_file):
+    """
+    save analysis parameters along with input/output info
+
+    Parameters
+    ----------
+    input_output : ``dict(...)``
+        input/output component of parameters
+    params : ``dict(...)``
+        analysis parameter dict component of parameters
+    params_file : ``str``
+        filename/path to save parameters file (as YAML)
+    """
+    with open(params_file, 'w') as out:
+        yaml.dump({'input_output': input_output, 'params': params}, out, default_flow_style=False)
 
 

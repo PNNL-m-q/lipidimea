@@ -11,6 +11,7 @@ Source code is available at https://github.com/PNNL-m-q/LipidIMEA
 
    guides/installation
    guides/gui
+   guides/dda_dia
 
 
 .. toctree::
