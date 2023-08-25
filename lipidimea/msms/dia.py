@@ -313,7 +313,7 @@ def extract_dia_features(dia_data_file, lipid_ids_db, params,
     pre_sel_qry = 'SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures'
     dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]  
     # extract DIA features for each DDA feature
-    for dda_fid,dda_mz, dda_rt, dda_ms2 in dda_feats[:10]:  # !!! TEMPORARY: LIMIT PRECURSORS !!!
+    for dda_fid,dda_mz, dda_rt, dda_ms2 in dda_feats:
         _single_target_analysis(rdr, cur, dia_data_file, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb)
         # commit DB changes after each target? Yes.
         con.commit()

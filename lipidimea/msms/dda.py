@@ -469,7 +469,7 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params,
     # initialize the MSMS reader
     rdr = _MSMSReaderDDA_Cached(dda_data_file) if cache_ms1 else _MSMSReaderDDA(dda_data_file)
     # get the list of precursor m/zs
-    pre_mzs = rdr.get_pre_mzs()[:10]  # !!! TEMPORARY: LIMIT PRECURSORS !!!
+    pre_mzs = rdr.get_pre_mzs()
     debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
     # extract chromatographic features
     chrom_feats = _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb)
