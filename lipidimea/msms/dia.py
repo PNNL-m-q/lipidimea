@@ -10,6 +10,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
                        will make these functions much cleaner
 """
 
+
 from sqlite3 import connect
 import os
 from itertools import repeat
@@ -20,7 +21,7 @@ from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from LipidIMEA.msms._util import _check_params, _str_to_ms2, _ms2_to_str, _debug_handler, _apply_args_and_kwargs
+from LipidIMEA.msms._util import str_to_ms2, ms2_to_str, debug_handler, apply_args_and_kwargs
 
 
 def _select_xic_peak(target_rt, target_rt_tol, pkrts, pkhts, pkwts):
@@ -45,7 +46,8 @@ def _select_xic_peak(target_rt, target_rt_tol, pkrts, pkhts, pkwts):
         return peaks[imax]
 
 
-def _lerp_together(data_a, data_b, dx, normalize=True):
+def _lerp_together(data_a, data_b, dx, 
+                   normalize=True):
     """
     take two sets of data (XICs or ATDs) and use linear interpolation to 
     put them both on the same scale
@@ -134,20 +136,21 @@ def _deconvolute_ms2_peaks(rdr, sel_ms2_mzs, mz_tol, pre_xic, pre_xic_rt, pre_xi
 
 def _add_single_target_results_to_db(lipid_ids_db_cursor, 
                                      dda_feat_id, f, 
+                                     ms1,
                                      rt, rt_fwhm, rt_pkht, rt_psnr, xic, 
                                      dt, dt_fwhm, dt_pkht, dt_psnr, atd, 
                                      ms2_n_peaks, ms2_peaks, ms2,
                                      decon_frags,
                                      store_blobs):
-    """
-    dda_feat_id, f, rt, rt_fwhm, rt_pkht, rt_psnr, xic, dt, dt_fwhm, dt_pkht, dt_psnr, atd, ms2_n_peaks, ms2_peaks, ms2
-    """
+    """ add all of the DIA data to DB for single target """
     # convert xic, atd, ms2 to blobs if store_blobs is True, else make them None
+    ms1 = np.array(ms1).tobytes() if store_blobs else None
     xic = np.array(xic).tobytes() if store_blobs else None
     atd = np.array(atd).tobytes() if store_blobs else None
     ms2 = np.array(ms2).tobytes() if store_blobs else None
-    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
-    lipid_ids_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f, 
+    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
+    lipid_ids_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f,
+                                                ms1,
                                                 rt, rt_fwhm, rt_pkht, rt_psnr, xic,
                                                 dt, dt_fwhm, dt_pkht, dt_psnr, atd,
                                                 ms2_n_peaks, ms2_peaks, ms2))
@@ -165,58 +168,60 @@ def _add_single_target_results_to_db(lipid_ids_db_cursor,
             lipid_ids_db_cursor.execute(decon_frags_qry_2, (dia_feat_id, lipid_ids_db_cursor.lastrowid))
         
 
-
 def _ms2_peaks_to_str(ms2_peaks):
     """ convert MS2 peaks (i.e. centroided MS2 spectrum) to string representation """
+    if ms2_peaks is None:
+        return None
     mzs, iis, _ = ms2_peaks
-    return _ms2_to_str(mzs, iis)
+    return ms2_to_str(mzs, iis)
 
 
 def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb):
     """
+    Perform a complete analysis of a single target
     """
     pid = os.getpid()
     # unpack parameters
     # precursor XIC extraction
-    mzt = params['CHROMATOGRAM_EXTRACTION_AND_FITTING']['pre_xic_mz_tol']
-    rtt = params['CHROMATOGRAM_EXTRACTION_AND_FITTING']['pre_xic_rt_tol']
+    mzt = params['dia']['dia_chrom_ext_fit']['dia_cxf_pre_xic_mz_tol']
+    rtt = params['dia']['dia_chrom_ext_fit']['dia_cxf_pre_xic_rt_tol']
     # precursor XIC fitting
     xic_fit_params = (
-        params['CHROMATOGRAM_EXTRACTION_AND_FITTING']['min_rel_height'], 
-        params['CHROMATOGRAM_EXTRACTION_AND_FITTING']['min_abs_height'],
-        params['CHROMATOGRAM_EXTRACTION_AND_FITTING']['fwhm_min'], 
-        params['CHROMATOGRAM_EXTRACTION_AND_FITTING']['fwhm_max'], 
-        params['CHROMATOGRAM_EXTRACTION_AND_FITTING']['max_peaks'],
+        params['dia']['dia_chrom_ext_fit']['dia_cxf_min_rel_height'], 
+        params['dia']['dia_chrom_ext_fit']['dia_cxf_min_abs_height'],
+        params['dia']['dia_chrom_ext_fit']['dia_cxf_fwhm_min'], 
+        params['dia']['dia_chrom_ext_fit']['dia_cxf_fwhm_max'], 
+        params['dia']['dia_chrom_ext_fit']['dia_cxf_max_peaks'],
     )
     # XIC peak selection
-    target_rt_shift = params['SELECTING_XIC_PEAKS']['target_rt_shift']
-    target_rt_tol = params['SELECTING_XIC_PEAKS']['target_rt_tol']
+    target_rt_shift = params['dia']['dia_sel_xic_pks']['dia_sxp_target_rt_shift']
+    target_rt_tol = params['dia']['dia_sel_xic_pks']['dia_sxp_target_rt_tol']
     # precursor ATD fitting 
     atd_fit_params = (
-        params['ATD_FITTING']['atd_min_rel_height'], 
-        params['ATD_FITTING']['atd_min_abs_height'],
-        params['ATD_FITTING']['atd_fwhm_min'], 
-        params['ATD_FITTING']['atd_fwhm_max'], 
-        params['ATD_FITTING']['atd_max_peaks'],
+        params['dia']['dia_atd_ext_fit']['dia_axf_min_rel_height'], 
+        params['dia']['dia_atd_ext_fit']['dia_axf_min_abs_height'],
+        params['dia']['dia_atd_ext_fit']['dia_axf_fwhm_min'], 
+        params['dia']['dia_atd_ext_fit']['dia_axf_fwhm_max'], 
+        params['dia']['dia_atd_ext_fit']['dia_axf_max_peaks'],
     )
     # MS2 peak fitting parameters
     ms2_fit_params = (
-        params['MS2_PEAK_FITTING']['ms2_min_rel_height'],
-        params['MS2_PEAK_FITTING']['ms2_min_abs_height'], 
-        params['MS2_PEAK_FITTING']['ms2_fwhm_min'], 
-        params['MS2_PEAK_FITTING']['ms2_fwhm_max'], 
-        params['MS2_PEAK_FITTING']['ms2_min_dist'],
+        params['dia']['dia_ms2_ext_fit']['dia_mxf_min_rel_height'],
+        params['dia']['dia_ms2_ext_fit']['dia_mxf_min_abs_height'], 
+        params['dia']['dia_ms2_ext_fit']['dia_mxf_fwhm_min'], 
+        params['dia']['dia_ms2_ext_fit']['dia_mxf_fwhm_max'], 
+        params['dia']['dia_ms2_ext_fit']['dia_mxf_min_dist'],
     )
     # MS2 peak matching tolerance
-    ms2_mzt = params['MS2_PEAK_MATCHING']['ms2_pk_mz_tol']
+    ms2_mzt = params['dia']['dia_ms2_pk_mat']['dia_mpm_mz_tol']
     # Deconvolution XIC and ATD distance thresholds and metrics
     decon_params = (
-        params['MS2_DECONVOLUTION']['decon_xic_dist_threshold'], 
-        params['MS2_DECONVOLUTION']['decon_atd_dist_threshold'],
-        params['MS2_DECONVOLUTION']['decon_xic_dist_metric'],
-        params['MS2_DECONVOLUTION']['decon_atd_dist_metric'],
+        params['dia']['dia_ms2_decon']['dia_md_xic_dist_threshold'], 
+        params['dia']['dia_ms2_decon']['dia_md_atd_dist_threshold'],
+        params['dia']['dia_ms2_decon']['dia_md_xic_dist_metric'],
+        params['dia']['dia_ms2_decon']['dia_md_atd_dist_metric'],
     )
-    store_blobs = params['MISC']['store_blobs']
+    store_blobs = params['misc']['dia_store_blobs']
     msg = 'DDA feature ID: {}, m/z: {:.4f}, RT: {:.2f} min -> '.format(dda_fid, dda_mz, dda_rt)
     # extract the XIC, fit 
     rt_bounds = (dda_rt - rtt, dda_rt + rtt)
@@ -230,24 +235,31 @@ def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt
         rtmsg = msg + 'RT: {:.2f} +/- {:.2f} min ({:.2e}) -> '.format(xic_rt, xic_wt, xic_ht)
         xic_psnr = calc_gauss_psnr(*pre_xic, (xic_rt, xic_ht, xic_wt))
         # extract the ATD, fit
-        pre_atd = rdr.collect_atd_arrays_by_rt_mz(dda_mz - mzt, dda_mz + mzt, xic_rt - xic_wt, xic_rt + xic_wt)
+        rt_min, rt_max = xic_rt - xic_wt, xic_rt + xic_wt
+        pre_atd = rdr.collect_atd_arrays_by_rt_mz(dda_mz - mzt, dda_mz + mzt, rt_min, rt_max)
         pre_pkdts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_atd, *atd_fit_params, True)
         # consider each ATD peak as separate features
         for atd_dt, atd_ht, atd_wt in zip(pre_pkdts, pre_pkhts, pre_pkwts):
             dtmsg = rtmsg +  'DT: {:.2f} +/- {:.2f} ms ({:.2e}) -> '.format(atd_dt, atd_wt, atd_ht)
             atd_psnr = calc_gauss_psnr(*pre_atd, (atd_dt, atd_ht, atd_wt))
+            # extract partial MS1 spectrum from M-1.5 to M+2.5, with RT and DT selection
+            ms1 = rdr.collect_ms1_arrays_by_rt_dt(rt_min, rt_max, atd_dt - atd_wt, atd_dt + atd_wt, 
+                                                  mz_bounds=(dda_mz - 1.5, dda_mz + 2.5))
+            ms2 = None
+            dia_ms2_peaks = None
             decon_frags = None
-            n_dia_peaks_pre_decon = 0
+            n_dia_peaks_pre_decon = None
             if dda_ms2 is not None:
                 # extract MS2 spectrum (before deconvolution)
-                ms2 = rdr.collect_ms2_arrays_by_rt_dt(xic_rt - xic_wt, xic_rt + xic_wt, atd_dt - atd_wt, atd_dt + atd_wt, mz_bounds=[rdr.min_mz, dda_mz + 25])
+                ms2 = rdr.collect_ms2_arrays_by_rt_dt(xic_rt - xic_wt, xic_rt + xic_wt, atd_dt - atd_wt, atd_dt + atd_wt, 
+                                                      mz_bounds=[rdr.min_mz, dda_mz + 25])
                 dia_ms2_peaks = find_peaks_1d_localmax(*ms2, *ms2_fit_params)
                 n_dia_peaks_pre_decon = len(dia_ms2_peaks[0])
                 if n_dia_peaks_pre_decon > 0:
                     dtmsg += '# DIA MS2 peaks: {} -> '.format(n_dia_peaks_pre_decon)
                     # try to match peaks from DDA spectrum
                     sel_ms2_mzs = []
-                    dda_ms2_arr = _str_to_ms2(dda_ms2)
+                    dda_ms2_arr = str_to_ms2(dda_ms2)
                     for ddam, ddai in zip(*dda_ms2_arr):
                         if ddam < dda_mz + 25:  # only consider MS2 peaks that are less than precursor + 25
                             for diam, diah, diaw in zip(*dia_ms2_peaks):
@@ -258,10 +270,11 @@ def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt
                     if len(sel_ms2_mzs) > 0:
                         decon_frags = _deconvolute_ms2_peaks(rdr, sel_ms2_mzs, mzt, pre_xic, xic_rt, xic_wt, pre_atd, *decon_params)
                         dtmsg += ' -> deconvoluted: {}'.format(len(decon_frags))
-            _debug_handler(debug_flag, debug_cb, dtmsg, pid)
+            debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
             _add_single_target_results_to_db(lipid_ids_db_cursor, 
-                                             dda_fid, f, 
+                                             dda_fid, f,
+                                             ms1,
                                              xic_rt, xic_wt, xic_ht, xic_psnr, pre_xic, 
                                              atd_dt, atd_wt, atd_ht, atd_psnr, pre_atd, 
                                              n_dia_peaks_pre_decon, _ms2_peaks_to_str(dia_ms2_peaks), ms2,
@@ -269,12 +282,10 @@ def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt
                                              store_blobs)
 
 
-def extract_dia_features(dia_data_file, lipid_ids_db, params, debug_flag=None, debug_cb=None):
+def extract_dia_features(dia_data_file, lipid_ids_db, params, 
+                         debug_flag=None, debug_cb=None):
     """
     Extract features from a raw DIA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
-
-    ``params`` dict must contain:
-    * ```` - 
 
     Parameters
     ----------
@@ -291,15 +302,16 @@ def extract_dia_features(dia_data_file, lipid_ids_db, params, debug_flag=None, d
         debug_flag is not set to 'textcb' or 'textcb_pid'
     """
     pid = os.getpid()
-    _debug_handler(debug_flag, debug_cb, 'Extracting DIA FEATURES', pid)
-    _debug_handler(debug_flag, debug_cb, 'file: {}'.format(dia_data_file), pid)
+    debug_handler(debug_flag, debug_cb, 'Extracting DIA FEATURES', pid)
+    debug_handler(debug_flag, debug_cb, 'file: {}'.format(dia_data_file), pid)
     # initialize the data file reader
-    rdr = MZA(dia_data_file, io_threads=1)
+    rdr = MZA(dia_data_file, io_threads=1, cache_scan_data=True)
     # initialize connection to the database
     con = connect(lipid_ids_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # get all of the DDA features, these will be the targets for the DIA data analysis
-    dda_feats = [_ for _ in cur.execute("SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures WHERE ms2_peaks IS NOT NULL AND dda_feat_id>2651").fetchall()]  # !!! TEMPORARY: LIMIT NUMBER OF PRECURSORS !!!
+    pre_sel_qry = 'SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures'
+    dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]  
     # extract DIA features for each DDA feature
     for dda_fid,dda_mz, dda_rt, dda_ms2 in dda_feats:
         _single_target_analysis(rdr, cur, dia_data_file, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb)
@@ -319,7 +331,8 @@ def extract_dia_features(dia_data_file, lipid_ids_db, params, debug_flag=None, d
 #                       to dig into this some more and figure out why the hanging keeps happening. In any case, having
 #                       this multiprocessing option for DIA analysis is a must for real applications as there will be
 #                       multiple DIA files to analyze.
-def extract_dia_features_multiproc(dia_data_files, lipid_ids_db, params, n_proc, debug_flag=None, debug_cb=None):
+def extract_dia_features_multiproc(dia_data_files, lipid_ids_db, params, n_proc, 
+                                   debug_flag=None, debug_cb=None):
     """
     extracts dda features from multiple DDA files in parallel
 
@@ -346,4 +359,4 @@ def extract_dia_features_multiproc(dia_data_files, lipid_ids_db, params, n_proc,
     args = [(dia_data_file, lipid_ids_db, params) for dia_data_file in dia_data_files]
     args_for_starmap = zip(repeat(extract_dia_features), args, repeat({'debug_flag': debug_flag, 'debug_cb': debug_cb}))
     with multiprocessing.Pool(processes=n_proc) as p:
-        p.starmap(_apply_args_and_kwargs, args_for_starmap)
+        p.starmap(apply_args_and_kwargs, args_for_starmap)

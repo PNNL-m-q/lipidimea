@@ -13,7 +13,14 @@ Utility
 
 .. autofunction:: LipidIMEA.msms.create_lipid_ids_db
 
+.. autofunction:: LipidIMEA.msms.load_default_params
+
 .. autofunction:: LipidIMEA.msms.load_params
+
+.. autofunction:: LipidIMEA.msms.save_params
+
+.. autofunction:: LipidIMEA.msms._util.debug_handler
+
 
 DDA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,6 +30,7 @@ DDA
 .. autofunction:: LipidIMEA.msms.dda.extract_dda_features_multiproc
 
 .. autofunction:: LipidIMEA.msms.dda.consolidate_dda_features
+
 
 DIA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -1,0 +1,243 @@
+dda:
+    dda_chrom_ext_fit:
+        dda_cxf_mz_tol: 
+            default: 0.01
+            display_name: m/z tolerance
+            type: float
+            description: m/z tolerance for extracting precursor XICs
+        dda_cxf_min_rel_height: 
+            default: 0.2
+            display_name: min. relative peak height
+            type: float
+            description: minimum relative peak height for XIC peak fitting (for fitting multiple peaks, relative to maximum peak height)
+        dda_cxf_min_abs_height: 
+            default: 1000
+            display_name: min. absolute peak height
+            type: float
+            description: minimum absolute peak height for XIC peak fitting
+        dda_cxf_fwhm_min: 
+            default: 0.05
+            display_name: min. FWHM
+            type: float
+            description: minimum peak width (full width at half max) for XIC peak fitting 
+        dda_cxf_fwhm_max: 
+            default: 0.5
+            display_name: max. FWHM
+            type: float
+            description: maximum peak width (full width at half max) for XIC peak fitting 
+        dda_cxf_max_peaks: 
+            default: 3
+            display_name: max. peaks
+            type: int
+            description: maximum number of peaks to fit from XICs
+        dda_cxf_min_psnr: 
+            default: 10
+            display_name: min. SNR
+            type: float
+            description: minimum signal to noise ratio for fitted XIC peaks
+    dda_chrom_feat_cons:
+        dda_cfc_mz_tol: 
+            default: 0.05
+            display_name: m/z tolerance
+            type: float
+            description: m/z tolerance for consolidating chromatographic features
+        dda_cfc_rt_tol: 
+            default: 0.05
+            display_name: RT tolerance
+            type: float
+            description: retention time tolerance for consolidating chromatographic features
+    dda_ms2_ext_fit:
+        dda_mxf_pre_mz_tol: 
+            default: 0.05
+            display_name: precursor m/z tolerance
+            type: float
+            description: m/z tolerance for selecting MS2 scans for a precursor m/z
+        dda_mxf_mz_bin_min: 
+            default: 50
+            display_name: min. bin m/z 
+            type: float
+            description: minimum m/z for binning MS2 spectra
+        dda_mxf_mz_bin_size: 
+            default: 0.05
+            display_name: m/z bin size
+            type: float
+            description: size of bins for binning MS2 spectra
+        dda_mxf_min_rel_height: 
+            default: 0.001
+            display_name: min. relative peak height
+            type: float
+            description: minimum relative peak height for MS2 peak fitting (for fitting multiple peaks, relative to maximum peak height)
+        dda_mxf_min_abs_height: 
+            default: 1000
+            display_name: min. absolute peak height
+            type: float
+            description: minimum absolute peak height for MS2 peak fitting
+        dda_mxf_fwhm_min: 
+            default: 0.05
+            display_name: min. FWHM
+            type: float
+            description: minimum peak width (full width at half max) for MS2 peak fitting 
+        dda_mxf_fwhm_max: 
+            default: 0.25
+            display_name: max. FWHM
+            type: float
+            description: maximum peak width (full width at half max) for MS2 peak fitting 
+        dda_mxf_min_dist: 
+            default: 0.1
+            display_name: min. peak distance
+            type: float
+            description: minimum distance between peaks for MS2 peak fitting
+    dda_feat_cons:
+        dda_fc_mz_tol: 
+            default: 0.05
+            display_name: m/z tolerance
+            type: float
+            description: m/z tolerance for consolidating features from different DDA data files
+        dda_fc_rt_tol: 
+            default: 0.05
+            display_name: RT tolerance
+            type: float
+            description: retention time tolerance for consolidating features from different DDA data files
+dia:
+    dia_chrom_ext_fit:
+        dia_cxf_pre_xic_mz_tol: 
+            default: 0.01
+            display_name: m/z tolerance
+            type: float
+            description: m/z tolerance for extracting precursor XICs
+        dia_cxf_pre_xic_rt_tol: 
+            default: 0.75
+            display_name: RT tolerance
+            type: float
+            description: retention time range (relative to DDA feature retention time) to extract XIC from DIA data
+        dia_cxf_min_rel_height: 
+            default: 0.2
+            display_name: min. relative peak height 
+            type: float
+            description: minimum relative peak height for XIC peak fitting (for fitting multiple peaks, relative to maximum peak height)
+        dia_cxf_min_abs_height: 
+            default: 1000
+            display_name: min. absolute peak height
+            type: float
+            description: minimum absolute peak height for XIC peak fitting
+        dia_cxf_fwhm_min: 
+            default: 0.05
+            display_name: min. FWHM
+            type: float
+            description: minimum peak width (full width at half max) for XIC peak fitting 
+        dia_cxf_fwhm_max: 
+            default: 0.5
+            display_name: max. FWHM
+            type: float
+            description: maximum peak width (full width at half max) for XIC peak fitting 
+        dia_cxf_max_peaks: 
+            default: 3
+            display_name: max. peaks
+            type: int
+            description: maximum number of peaks to fit from XICs
+    dia_sel_xic_pks:
+        dia_sxp_target_rt_shift: 
+            default: 0.0
+            display_name: target RT shift
+            type: float
+            description: shift the target retention time from DDA feature before trying to match DIA XIC peak
+        dia_sxp_target_rt_tol: 
+            default: 0.05
+            display_name: target RT tolerance
+            type: float
+            description: retention time tolerance for matching DIA XIC peaks to target DDA feature
+    dia_atd_ext_fit:
+        dia_axf_min_rel_height: 
+            default: 0.2
+            display_name: min. relative peak height 
+            type: float
+            description: minimum relative peak height for ATD peak fitting (for fitting multiple peaks, relative to maximum peak height)
+        dia_axf_min_abs_height: 
+            default: 1000
+            display_name: min. absolute peak height
+            type: float
+            description: minimum absolute peak height for ATD peak fitting
+        dia_axf_fwhm_min: 
+            default: 0.3
+            display_name: min. FWHM
+            type: float
+            description: minimum peak width (full width at half max) for ATD peak fitting 
+        dia_axf_fwhm_max: 
+            default: 3
+            display_name: max. FWHM
+            type: float
+            description: minimum peak width (full width at half max) for ATD peak fitting 
+        dia_axf_max_peaks: 
+            default: 3
+            display_name: max. peaks
+            type: int
+            description: maximum number of peaks to fit from ATDs
+    dia_ms2_ext_fit:
+        dia_mxf_min_rel_height: 
+            default: 0.001
+            display_name: min. relative peak height 
+            type: float
+            description: minimum relative peak height for MS2 peak fitting (for fitting multiple peaks, relative to maximum peak height)
+        dia_mxf_min_abs_height: 
+            default: 1000
+            display_name: min. absolute peak height
+            type: float
+            description: minimum absolute peak height for ATD peak fitting
+        dia_mxf_fwhm_min: 
+            default: 0.05
+            display_name: min. FWHM
+            type: float
+            description: minimum peak width (full width at half max) for MS2 peak fitting 
+        dia_mxf_fwhm_max: 
+            default: 0.25
+            display_name: min. FWHM
+            type: float
+            description: maximum peak width (full width at half max) for MS2 peak fitting 
+        dia_mxf_min_dist: 
+            default: 0.1
+            display_name: min. peak distance
+            type: float
+            description: minimum distance between peaks for MS2 peak fitting
+    dia_ms2_pk_mat:
+        dia_mpm_mz_tol: 
+            default: 0.05
+            display_name: m/z tolerance
+            type: float
+            description: m/z tolerance for matching MS2 peaks between DDA and DIA spectra
+    dia_ms2_decon:
+        dia_md_xic_dist_threshold: 
+            default: 0.75
+            display_name: XIC distance threshold
+            type: float
+            description: distance threshold for accepting XIC deconvolution for DIA fragments
+        dia_md_atd_dist_threshold: 
+            default: 0.75
+            display_name: ATD distance threshold
+            type: float
+            description: distance threshold for accepting ATD deconvolution for DIA fragments
+        dia_md_xic_dist_metric: 
+            default: "cosine"
+            display_name: XIC distance metric
+            type: str
+            description: distance metric to use for deconvoluting DIA fragment XICs
+        dia_md_atd_dist_metric: 
+            default: "cosine"
+            display_name: ATD distance metric
+            type: str
+            description: distance metric to use for deconvoluting DIA fragment ATDs
+misc:
+    do_dda_processing:
+        default: true
+        display_name: do DDA data processing
+        type: bool
+        description: whether to process DDA data
+    do_dia_processing:
+        default: true
+        display_name: do DDA data processing
+        type: bool
+        description: whether to process DDA data
+    dia_store_blobs: 
+        default: true
+        display_name: store raw DIA profiles
+        type: bool
+        description: whether to store raw XIC/ATD/MS1/MS2 profiles for DIA features
