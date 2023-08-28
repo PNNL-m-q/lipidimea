@@ -82,7 +82,7 @@ def load_params(params_file):
     """
     with open(params_file, 'r') as yf:
         params = yaml.safe_load(yf)
-    return params
+    return params['input_output'], params['params']
 
 
 def save_params(input_output, params, params_file):
