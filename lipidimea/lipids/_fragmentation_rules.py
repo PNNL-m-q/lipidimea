@@ -7,6 +7,8 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
+import os
+
 import yaml
 from mzapy.isotopes import monoiso_mass
 
@@ -124,14 +126,30 @@ class _FragRuleDynamic(_FragRule):
         return self._label(self.lbl.format(c=c, u=u))
     
     
-def _load_rules(lipid_class, ionization):
+def load_rules(lipid_class, ionization):
+    """
+    Load all fragmentation rules relevant to a particular lipid class and ionization
+
+    Parameters
+    ----------
+    lipid_class : ``str``
+        lipid class (standard abbreviation)
+    ionization : ``str``
+        "POS" or "NEG"
+    
+    Returns
+    -------
+    rules : ``list(_FragRule)``
+        list of applicable fragmentation rules
+    """
     rules = []
-    with open('../../../../git/LipidIMEA/LipidIMEA/msms/rules/any.yml', 'r')as yff:
+    any_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rules/any.yml')
+    with open(any_path, 'r')as yff:
         rules_ = yaml.safe_load(yff)['ionization'][ionization]
     if lipid_class in _FRAG_RULE_CLASSES:
-        yf = '../../../../git/LipidIMEA/LipidIMEA/msms/rules/{}.yml'.format(lipid_class)
-        with open(yf, 'r') as yff:
-            rules_ += yaml.safe_load(yff)['ionization'][ionization]
+        yf_pth = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rules/{}.yml'.format(lipid_class))
+        with open(yf_pth, 'r') as yf:
+            rules_ += yaml.safe_load(yf)['ionization'][ionization]
     for rule in rules_:
         nl = 'neutral_loss' in rule and rule['neutral_loss']
         diag = 'diagnostic' in rule and rule['diagnostic']
