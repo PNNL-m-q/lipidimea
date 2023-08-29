@@ -1,5 +1,5 @@
 """
-LipidIMEA/msms/_fragmentation_rules.py
+LipidIMEA/lipids/_fragmentation_rules.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 

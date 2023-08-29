@@ -13,7 +13,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-_LMAPS_CLASSIFICATION = {
+LMAPS_CLASSIFICATION = {
     'Fatty Acyls': {
         'Fatty Acids and Conjugates': {
             'Straight chain fatty acids': {
@@ -924,7 +924,7 @@ _LMAPS_CLASSIFICATION = {
 }
 
 
-def _iterate_all_lipid_classifications():
+def iterate_all_lipid_classifications():
     """
     generator function that iterates through all of the entries in _LMAPS_CLASSIFICATION and yields individual lipid
     info as well as the corresponding classification info
@@ -936,10 +936,10 @@ def _iterate_all_lipid_classifications():
     lipid_info : dict(...)
         lipid information (formula, ionization, acyl chain count)
     """
-    for lcategory in _LMAPS_CLASSIFICATION:
-        for lclass in _LMAPS_CLASSIFICATION[lcategory]:
-            for lsubclass in _LMAPS_CLASSIFICATION[lcategory][lclass]:
-                data = _LMAPS_CLASSIFICATION[lcategory][lclass][lsubclass]
+    for lcategory in LMAPS_CLASSIFICATION:
+        for lclass in LMAPS_CLASSIFICATION[lcategory]:
+            for lsubclass in LMAPS_CLASSIFICATION[lcategory][lclass]:
+                data = LMAPS_CLASSIFICATION[lcategory][lclass][lsubclass]
                 if type(data) is dict:
                     data2 = [data]
                 elif type(data) is list:

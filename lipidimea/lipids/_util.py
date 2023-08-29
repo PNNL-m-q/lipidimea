@@ -11,7 +11,7 @@ from itertools import product
 
 
 # regex for parsing lipid information from a lipid name in standard abbreviated format
-_LIPID_NAME_REGEX = """
+LIPID_NAME_REGEX = """
     ^
     (?P<lcl>
         [A-Za-z123]+
@@ -133,7 +133,7 @@ _ACYL_CHAIN_TYPES = [
 ]
 
 
-class _AcylChain():
+class AcylChain():
     """
     internal class for representing acyl chain information
 
