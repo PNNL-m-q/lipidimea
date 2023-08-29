@@ -126,10 +126,10 @@ class _FragRuleDynamic(_FragRule):
     
 def _load_rules(lipid_class, ionization):
     rules = []
-    with open('../../../../git/LipidIMEA/LipidIMEA/msms/rules/any.yaml', 'r')as yff:
+    with open('../../../../git/LipidIMEA/LipidIMEA/msms/rules/any.yml', 'r')as yff:
         rules_ = yaml.safe_load(yff)['ionization'][ionization]
     if lipid_class in _FRAG_RULE_CLASSES:
-        yf = '../../../../git/LipidIMEA/LipidIMEA/msms/rules/{}.yaml'.format(lipid_class)
+        yf = '../../../../git/LipidIMEA/LipidIMEA/msms/rules/{}.yml'.format(lipid_class)
         with open(yf, 'r') as yff:
             rules_ += yaml.safe_load(yff)['ionization'][ionization]
     for rule in rules_:
