@@ -1,0 +1,517 @@
+ul{
+    list-style-type: disc;
+    /* padding: 0;
+    margin: 0; */
+  }
+/* Default styles for .menu-item */
+.menu-item {
+  display: inline-block;
+  background-color: black;
+  width: 15%;
+  text-align: center;
+  vertical-align: middle;
+  padding: 5px;
+}
+
+/* Media query for smaller screen sizes */
+@media (max-width: 768px) {
+  .menu-item {
+    width: 25%; /* Adjust the width for smaller screens */
+    /* Add any other styles you want to change for smaller screens */
+  }
+}
+
+/* Media query for even smaller screen sizes */
+@media (max-width: 480px) {
+  .menu-item {
+    width: 50%; /* Adjust the width for even smaller screens */
+    /* Add any other styles you want to change for even smaller screens */
+  }
+}
+
+  .menu{
+    display: flex;
+    height: 50px;
+    width:100%; 
+    border: 1px solid grey;
+    background-color: black;
+    justify-content: left;
+    position: fixed;
+    margin-left: -10px;
+    top: 0px;
+  }
+  .menu-item:hover{
+    background-color: #408EC5;
+  }
+ 
+
+  a:link { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
+  a:visited { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
+  a:hover { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px;};
+  a:active { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
+
+
+  .btn{
+
+    background-color: rgb(92, 92, 92);
+    
+    }
+
+  .btn:active{
+
+    background-color: rgb(123, 180, 17);
+    
+    }
+
+
+      .tablinks::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: grey;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
+      .tablinks:hover::before {
+        opacity: 0.5;
+      }
+      
+      .tab {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        grid-column-gap: 0px;
+        background-color: lightgray;
+        border-style: solid;
+        border-color: black;
+        border-style: solid solid none solid;
+        overflow: hidden;
+        border-top-color: black;
+      }
+        
+  .tablinks {
+    position: relative;
+    z-index: 1;
+    font-size: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 50px;
+    line-height: 50px;
+    float: right;
+    text-align: center;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 25px 25px;
+    margin-left: -25px;
+    overflow: hidden;
+    border-top-color: black;
+    padding: 5px 20px;
+  }
+
+  /* Media query for smaller screen sizes */
+  @media (max-width: 768px) {
+    .tablinks {
+      font-size: 18px;
+      margin-left: -10px;
+    }
+  }
+
+  /* Media query for even smaller screen sizes */
+  @media (max-width: 480px) {
+    .tablinks {
+      font-size: 16px;
+      margin-left: -5; 
+    }
+  }
+
+      
+
+
+body {
+        font-family: "Lato", sans-serif;
+        margin-top: 0;
+    }
+        .out {
+        background-color: lightgray;
+        grid-template-columns: 2fr 2fr 2fr;
+        padding: 1%;
+        /* border-style: solid;
+        border-color: black;
+        border-radius: 10px; */
+    }
+    .outer {
+        display: grid;
+        grid-template-columns: 2fr 2fr;
+        justify-content: space-between;
+    }
+
+    .outer2 {
+        display: grid;
+        grid-template-columns: 4fr 1fr;
+        justify-content: space-around;
+    }
+
+    .inner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        text-align: center;
+        justify-content: space-between;
+        /* border: 1px solid #940707; */
+    }
+
+    .headLine1 {
+        text-align: center;
+    }
+
+    .outermost {
+        background-color: lightgray;
+        padding: 1%;
+        border-style: solid;
+        border-color: black;
+        border-radius: 10px;
+        border-style: none solid solid solid;
+        border-top-left-radius: 0px;
+        border-top-right-radius: 0px;
+        overflow: scroll;
+    }
+    
+    .file-section {
+        background-color: white;
+        /* grid-template-columns: 2fr; */
+        border-style: solid;
+        border-color: black;
+        min-height: 50px;
+        text-align: left;
+    }
+
+
+    .results-outer-box {
+        background-color: whitesmoke;
+        grid-template-columns: 2fr 2fr 2fr;
+        padding: 1%;
+        border-style: solid;
+        border-color: black;
+    }
+
+    .output-box {
+        background-color: whitesmoke;
+        /* padding: 1%; */
+        /* margin: 5%; */
+        border-style: solid;
+        border-color: black;
+        overflow:scroll;
+        /* overflow-y:auto; */
+        height: 148px;
+        text-align: left;
+    }
+
+
+.empty-params {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+      /* border: 1px solid #940707; */
+}
+
+.remove-button {
+    border-style: solid;
+    border-color: transparent;
+}
+
+.file-text {
+    font-size: large;
+
+}
+
+.results-body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 100px;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  border: double;
+  border-color: black;
+  font-size: 8px;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px;
+  font-size: 8px;
+}
+
+th {
+  background-color: white;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  /* z-index: 1; */
+  overflow: visible; 
+  /* position: relative; */
+  font-size: 8px;
+}
+
+thead {
+  /* display: table; */
+  position: sticky;
+  top: 0;
+  background-color: lightgrey;
+  font-size: 8px;
+}
+
+tr.hover {
+  background-color: lightblue;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+tbody tr:nth-child(even) {
+  background-color: lightgrey;
+  font-size: 8px;
+}
+
+tbody tr.selected {
+  background-color: lightslategrey;
+  font-size: 8px;
+}
+
+tbody tr.selected-row {
+  background-color: lightslategrey;
+}
+
+tbody tr:hover {
+  background-color: lightblue;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+
+
+
+
+/* ... (previous styles) ... */
+
+/* Page content styles */
+.instruction-page-background {
+  background-color: #f1f1f1;
+  padding: 20px;
+}
+
+.instruction-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.instruction-section {
+  padding: 40px;
+  background-color: #fff; /* White background */
+  border: 1px solid #ddd; /* Light gray border */
+  border-radius: 10px; /* Rounded corners */
+  margin-bottom: 20px; /* Add some space between sections */
+}
+
+hr {
+  border: none;
+  height: 2px;
+  background-color: #ddd; /* Light gray line */
+  margin: 20px 0; /* Add space above and below the line */
+}
+
+h1 {
+  font-size: 36px;
+  margin-bottom: 20px; /* Add space below headings */
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: bold; /* Make the tab names bold */
+  margin-bottom: 10px; /* Add space below subheadings */
+}
+
+p {
+  font-size: 18px;
+  line-height: 1.2; /* Improve line spacing for better readability */
+}
+
+/* Footer styles */
+
+.empty-element { 
+
+  width: 100%;
+  height: 200px; /* Adjust the height as needed */
+}
+.footer {
+  background-color: #333;
+  padding: 20px;
+  color: white;
+  text-align: center;
+  flex: 1;
+  bottom: 0;
+  margin-top: 20px;
+}
+
+
+.footer a {
+  color: white;
+  text-decoration: none;
+  margin: 5px 15px;
+  padding: 5px 10px;
+  border: 1px solid white;
+  border-radius: 5px;
+}
+
+.footer a:hover {
+  background-color: white;
+  color: #333;
+}
+
+.top-table {
+  overflow: auto;
+  max-height: 200px;
+  /* border: 1px solid;
+  border-color: black; */
+}
+
+
+
+
+.plot-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px; /* This adds some space between rows. Adjust as needed. */
+}
+
+.plot-row-labels {
+  display: flex;
+  justify-content: space-between;
+}
+
+.label-quarter {
+  width: 25%;
+  justify-content: center;
+  box-sizing: border-box; /* This ensures padding & border are included in the width. */
+}
+
+.label-half {
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 50%; /* A bit less than 50% for the same reasons as above. */
+}
+
+
+
+.plot-quarter, .plot-half {
+  border: 1px solid #ddd; 
+  height: 325px; 
+  box-sizing: border-box; /* This ensures padding & border are included in the width. */
+}
+
+.plot-quarter {
+  width: 24%; /* A bit less than 25% to account for any default browser styling & ensure the elements fit in the same row. */
+  margin-right: 1%; /* Spacing between plots. */
+}
+#second-row-second-box-plot, #first-row-second-box-plot, #first-row-first-box-plot {
+height: 250px;
+}
+
+
+.plot-half {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 49%; /* A bit less than 50% for the same reasons as above. */
+}
+
+
+.left-section {
+  display: flex;
+  flex-direction: column;  /* Arrange children vertically */
+  flex: 1;  /* Take up 1 portion of available space */
+  padding-right: 10px;  /* Add some space between the two sections for breathing room */
+}
+
+.right-section {
+  flex: 3;  /* Take up 2 portions of available space */
+}
+
+
+#plots-container {
+  width: 100%; 
+  height: 100%; 
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+#second-row-third-box-xic-plot, #second-row-third-box-atd-plot {
+  width: 100%; 
+  height: 48%;
+}
+
+.plot-half .plot-div {
+  width: 100%;
+  height: 48%; /* This will stack them vertically with a small gap */
+  margin-bottom: 5px; /* Add some space between the plots, adjust if needed */
+}
+
+
+.label {
+  font-weight: bold;
+  font-size: 14px
+}
+
+.info {
+  font-size: 14px
+}
+
+#below-table-content {
+  display: none;
+}
+
+#second-row-third-box-table {
+  margin-bottom: 30px; /* Adjust this value to your preference */
+  max-height: 200px;  /* Set max height to half the space */
+  overflow-y: auto; /* Add vertical scrollbar when content exceeds the height */
+}
+
+#second-row-third-box-table table td {
+  border: 1px solid black;
+}
+
+#first-row-third-box-plot { 
+  /* margin-bottom: 32px; Adjust this value to your preference */
+  height: 100%;
+  max-height: 100%;  /* Set max height to half the space */
+  max-width: 100%;
+  width: 100%;
+  overflow-y: auto; /* Add vertical scrollbar when content exceeds the height */
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+  h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  h2 {
+    font-size: 20px;
+    margin-bottom: 5px;
+  }
+
+  p {
+    font-size: 16px;
+  }
+}
+
+
+

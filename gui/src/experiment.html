@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>DIA-DDA Lipid Identification</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <div>
+        <nav class="menu" style="z-index:10;">
+            <a href="./index.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">Instructions</a>
+            <a href="#./experiment.html" class="menu-item">Experiment</a>
+            <a href="./results.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">Results</a>
+        </nav>
+    </div>
+
+    <!-- Page content -->
+    <div>
+
+        <!-- The DIA Section -->
+        <h1>Experimental Setup</h1>
+        <title id="active-page" class="both">DDA-DIA Section</title>
+
+        <div class="both-section">
+            <head>
+                <meta charset="UTF-8">
+                <!-- <script src="renderer.js"></script> -->
+                </head>
+            <div class="tab">
+                <button class="tablinks active" style="z-index:4; background-color: #C0B283;" onclick="openTab(event, 'file-upload'), UpdateFileOptions()">File Upload</button>
+                <button class="tablinks" style="z-index:3; background-color: #D46A6A;" onclick="openTab(event, 'parameter-general')">General Parameters</button>
+                <button class="tablinks" style="z-index:2; background-color: #008080;"onclick="openTab(event, 'parameter-advanced')">Advanced Parameters</button>
+                <button class="tablinks" style="z-index:1; background-color: #126e07;" onclick="openTab(event, 'run-experiment')">Run Experiment</button>
+            </div>
+            <!-- File Upload Tab -->
+            <div id="file-upload" class="tabcontent outermost">
+                <label for="experiment-type">Experiment Type:</label>
+                <input type="checkbox" id="experiment-type-dda-advanced" name="experiment-type" value="DDA" checked>
+                <label for="experiment-type-dda-advanced">DDA</label>
+                <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
+                <label for="experiment-type-dia-advanced">DIA</label>
+                <!-- <h1>Upload your Files</h1> -->
+                </head>
+                <div id="dda-file-region">
+                  <div class="outer2">
+                    <h2>DDA Data Selection</h2>
+                    <button id="select-button-dda">Select File(s)</button>
+                  </div>
+                    <div class="file-section">
+                        <input type="file" id="dda-file-input" style="display: none;" multiple>
+                        <!-- <ul>&nbsp</ul> -->
+                        <ul id="file-list-dda" style="list-style-type: none;"></ul>
+                        <!-- <ul>&nbsp</ul>                     -->
+                    </div>
+                </div>
+  
+                <div id="dia-file-region">
+                  <div class="outer2">
+                    <h2>DIA Data Selection</h2>
+                    <button id="select-button-dia">Select File(s)</button>
+                  </div>
+                      <div class="file-section">
+                        <input type="file" id="dia-file-input" style="display: none;" multiple>
+                        <!-- <ul>&nbsp</ul> -->
+                        <ul id="file-list-dia" style="list-style-type: none;"></ul>
+                        <!-- <ul>&nbsp</ul> -->
+                    </div>
+                </div>
+  
+                <div class="outer2">
+                  <h2>Lipid ID Database Selection</h2>
+                      <button id="select-button-database">Select File</button>
+                  </div>
+                  <div class="file-section">
+                      <input type="file" id="database-file-input" style="display: none;" >
+                      <!-- <ul>&nbsp</ul> -->
+                      <ul id="file-list-database" style="list-style-type: none;"></ul>
+                      <!-- <ul>&nbsp</ul> -->
+                  </div>
+                <!-- Add your file upload content here -->
+            </div>
+
+
+            <!-- Parameter Selection Tab -->
+            <div id="parameter-general" class="tabcontent outermost" style="display: block;">
+              <!-- #Have parameters Defined in a for loop -->
+              <!-- <h1>Select your Parameters</h1> -->
+              <label for="experiment-type">Experiment Type:</label>
+                  <input type="checkbox" id="experiment-type-dda-general" name="experiment-type" value="DDA" checked>
+                  <label for="experiment-type-dda-general">DDA</label>
+                  <input type="checkbox" id="experiment-type-dia-general" name="experiment-type" value="DIA" checked>
+                  <label for="experiment-type-dia-general">DIA</label>
+              <div class="out">
+                  <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-general')">Write Parameters To Yaml</button>
+                  <button id="load-personal-button-general">Load Parameters from YAML</button>
+
+                  <!-- <button id="calculateBtn" onclick="runExperiment()">Run DDA-DIA</button> -->
+              </div>
+              <div>
+                  <!-- <div id="parameters-column-both-general" class="inner"></div> -->
+                  <div id="duo-inputs-column-both-general" class="inner" ></div>
+                  <div id="param-empty-gen" class="empty-params" style="display: none">No Parameters to Display. Select DIA and/or DDA to proceed.</div>
+              </div>
+          </div>
+            <!-- Parameter Selection Tab -->
+            <div id="parameter-advanced" class="tabcontent outermost" style="display: block;">
+                <!-- #Have parameters Defined in a for loop -->
+                <!-- <h1>Select your Parameters</h1> -->
+                <label for="experiment-type">Experiment Type:</label>
+                    <input type="checkbox" id="experiment-type-dda-advanced" name="experiment-type" value="DDA" checked>
+                    <label for="experiment-type-dda-advanced">DDA</label>
+                    <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
+                    <label for="experiment-type-dia-advanced">DIA</label>
+                <div class="out">
+                    <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-advanced')">Write Parameters To Yaml</button>
+                    <button id="load-personal-button-advanced">Load Parameters from YAML</button>
+                    <!-- <button id="calculateBtn" onclick="runExperiment()">Run DDA-DIA</button> -->
+                </div>
+                <div>
+                    <!-- <div id="parameters-column-both-advanced" ></div>
+                    <div id="inputs-column-both-advanced" ></div> -->
+                    <div id="duo-inputs-column-both-advanced" class="inner"></div>
+                    <div id="param-empty-adv" class="empty-params"  style="display: none">No Parameters to Display. Select DIA and/or DDA to proceed.</div>
+                </div>
+            </div>
+
+
+            <!-- Run Experiment Tab -->
+            <div id="run-experiment" class="tabcontent outermost">
+                <label for="experiment-type">Experiment Type:</label>
+                    <input type="checkbox" id="experiment-type-dda-advanced" name="experiment-type" value="DDA" checked>
+                    <label for="experiment-type-dda-advanced">DDA</label>
+                    <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
+                    <label for="experiment-type-dia-advanced">DIA</label>
+                <br><br>
+                <label for="experiment-type">Save Parameters as Template?</label>
+                    <input type="checkbox" id="save-params" name="save-params" checked>
+                <!-- Add your run experiment content here -->
+            <div>
+                <h2></h2>
+                <label for="experiment-name">Experiment Name:</label>
+                <input type="text" id="experiment-name">
+                <br><br>
+                <button class="btn" onclick="RunExperiment()">Run Experiment</button>
+            </div>
+
+            <div>
+                <br><br>
+                <label for="output-box" >Real-time Results:</label>
+                <div class="output-box" id="output-box"></div>
+
+            </div>
+
+
+        </div>
+        </div>
+    </div>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+        }
+    </style>
+
+    <script src="renderer.js"></script>
+
+</body>
+
+</html>
+
+
+    <!-- Footer -->
+    <footer class="footer">
+        <a href="#documentation">Documentation</a>
+        <a href="#contact">Contact</a>
+      </footer>
+    
+    </body>
+    
+    </html>
