@@ -383,7 +383,6 @@ window.api.receive('database-table-data', (data, isMapping, error, filepath) => 
   const atdDistVal = document.getElementById('atd-dist-value');
   const plotsElement = document.getElementById('plots-container');
   const tableMainContainer = document.getElementById('table-container');
-  // If there's an error, handle it
   if (error) {
       // Hide the table in case of an error
       tableMainContainer.style.border = "none";
