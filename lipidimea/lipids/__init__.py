@@ -126,6 +126,8 @@ class Lipid():
         molecular formula as a dictionary mapping elements (str) to their counts (int)
     n_chains : ``int``
         acyl/alkyl chain count
+    n_chains_full : ``int``
+        count of total available acyl/alkyl chain positions available, useful to discern lyso- lipids
     ionization : ``str``
         ionization mode(s) this lipid would be expected to be detected in ('pos', 'neg', or 'both')
     contains_ether : ``bool``
@@ -190,7 +192,7 @@ class Lipid():
         # construct the molecular formula using FA composition and rules lipid_info
         self.formula = self._construct_formula_from_rules(lipid_info)
         # get number of acyl chains and ionization
-        self.n_chains, self.ionization = lipid_info['n_chains'], lipid_info['ionization']
+        self.n_chains, self.n_chains_full, self.ionization = lipid_info['n_chains'], lipid_info['n_chains_full'], lipid_info['ionization']
         # get "other_props"
         self._unpack_other_props(lipid_info['other_props'])
 
@@ -270,12 +272,15 @@ class Lipid():
         self.contains_f2isop = bool(other_props[10])
 
     def __repr__(self):
-        s = '{}(lipid_class_abbrev="{}", fa_carbon={}, fa_unsat={}, fa_mod="{}")'
-        return s.format(self.__class__.__name__, self.lipid_class_abbrev, self.fa_carbon, self.fa_unsat, self.fa_mod)
+        s = '{}(lipid_class_abbrev="{}", fa_carbon={}, fa_unsat={}, fa_mod="{}", lmid_prefix="{}")'
+        return s.format(self.__class__.__name__, self.lipid_class_abbrev, self.fa_carbon, self.fa_unsat, self.fa_mod, self.lmaps_id_prefix)
 
     def __str__(self):
-        s = '{}({}{}:{})'
-        return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat)
+        s = '{}({}{}:{}{})'
+        # this extra chains thing helps to identify lyso- lipids, only works if there is one chain though
+        # otherwise it introduces ambiguity
+        extra_chains = '_0:0' * (self.n_chains_full - self.n_chains) if self.n_chains == 1 else ''
+        return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat, extra_chains)
 
 
 class LipidWithChains(Lipid):

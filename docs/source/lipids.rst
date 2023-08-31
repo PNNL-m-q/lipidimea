@@ -6,9 +6,14 @@ species. The lipid classification system defined and used by LIPID MAPS is used 
 * https://www.lipidmaps.org/data/classification/LM_classification_exp.php 
 * https://www.jlr.org/article/S0022-2275(20)30580-0/fulltext
 
+The subpackage also houses utilities for annotating features from the DDA-DIA data analysis.
 
 Module Reference
 ---------------------------------------
+
+Utility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: LipidIMEA.lipids.parse_lipid_name
 
 .. autoclass:: LipidIMEA.lipids.Lipid

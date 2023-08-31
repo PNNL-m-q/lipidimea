@@ -218,7 +218,7 @@ class AcylChain():
         return s.format(self.acyl_chain_type, self.carbons, self.unsats)
 
 
-def _get_c_u_combos(lipid, min_c, max_c, odd_c):
+def get_c_u_combos(lipid, min_c, max_c, odd_c):
     """
     figure out all possible combinations of FA composition that can produce 
     a lipid's sum composition
