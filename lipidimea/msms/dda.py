@@ -578,23 +578,32 @@ def consolidate_dda_features(results_db, params,
                     if feat[4] < 1:
                         # drop any features in the group that do not have MSMS
                         drop_fids.append(feat[0])
+                        # There is a potential here for redundant features that have MSMS spectra because all such
+                        # features in a group are kept. I do not really want to change this though, since I do want
+                        # to keep the connection between a feature and its mass spectrum, extracted from a particular
+                        # data file. Just a note.
             else:
                 # none of the features have MSMS
                 # only keep the feature with the highest intensity of the group
+                # or exclude entirely if params['dda']['dda_feat_cons']['dda_fc_drop_if_no_ms2'] is set
                 max_fint = 0
                 keep_ffid = None
                 for feat in group:
                     ffid, fint = feat[0], feat[3]
-                    if keep_ffid is None:
-                        max_fint = fint
-                        keep_ffid = ffid
-                    elif fint > max_fint:
-                        # replace the current max intensity feature of the group
-                        drop_fids.append(keep_ffid)
-                        max_fint = fint
-                        keep_ffid = ffid
+                    if not params['dda']['dda_feat_cons']['dda_fc_drop_if_no_ms2']:
+                        if keep_ffid is None:
+                            max_fint = fint
+                            keep_ffid = ffid
+                        elif fint > max_fint:
+                            # replace the current max intensity feature of the group
+                            drop_fids.append(keep_ffid)
+                            max_fint = fint
+                            keep_ffid = ffid
+                        else:
+                            # drop this feature if it wasn't kept
+                            drop_fids.append(ffid)
                     else:
-                        # drop this feature if it wasn't kept
+                        # drop all of these features if we are not keeping features that lack MS2 scans
                         drop_fids.append(ffid)
     debug_handler(debug_flag, debug_cb, 'CONSOLIDATING DDA FEATURES: {} features -> {} features'.format(n_dda_features, n_dda_features - len(drop_fids)))
     # step 3, drop features from database

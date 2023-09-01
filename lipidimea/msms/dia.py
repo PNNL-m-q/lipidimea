@@ -176,7 +176,7 @@ def _ms2_peaks_to_str(ms2_peaks):
     return ms2_to_str(mzs, iis)
 
 
-def _single_target_analysis(rdr, results_db_cursor, f, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb):
+def _single_target_analysis(n, i, rdr, results_db_cursor, f, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb):
     """
     Perform a complete analysis of a single target
     """
@@ -222,7 +222,7 @@ def _single_target_analysis(rdr, results_db_cursor, f, dda_fid, dda_mz, dda_rt, 
         params['dia']['dia_ms2_decon']['dia_md_atd_dist_metric'],
     )
     store_blobs = params['misc']['dia_store_blobs']
-    msg = 'DDA feature ID: {}, m/z: {:.4f}, RT: {:.2f} min -> '.format(dda_fid, dda_mz, dda_rt)
+    msg = '({}/{}) DDA feature ID: {}, m/z: {:.4f}, RT: {:.2f} min -> '.format(i + 1, n, dda_fid, dda_mz, dda_rt)
     # extract the XIC, fit 
     rt_bounds = (dda_rt - rtt, dda_rt + rtt)
     pre_xic = rdr.collect_xic_arrays_by_mz(dda_mz - mzt, dda_mz + mzt, rt_bounds=rt_bounds)
@@ -280,6 +280,8 @@ def _single_target_analysis(rdr, results_db_cursor, f, dda_fid, dda_mz, dda_rt, 
                                              n_dia_peaks_pre_decon, _ms2_peaks_to_str(dia_ms2_peaks), ms2,
                                              decon_frags,
                                              store_blobs)
+    else:
+        debug_handler(debug_flag, debug_cb, msg + 'no XIC peak found', pid)
 
 
 def extract_dia_features(dia_data_file, results_db, params, 
@@ -313,8 +315,9 @@ def extract_dia_features(dia_data_file, results_db, params,
     pre_sel_qry = 'SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures'
     dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]  
     # extract DIA features for each DDA feature
-    for dda_fid,dda_mz, dda_rt, dda_ms2 in dda_feats:
-        _single_target_analysis(rdr, cur, dia_data_file, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb)
+    n = len(dda_feats)
+    for i, (dda_fid, dda_mz, dda_rt, dda_ms2) in enumerate(dda_feats):
+        _single_target_analysis(n, i, rdr, cur, dia_data_file, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb)
         # commit DB changes after each target? Yes.
         con.commit()
     # commit DB changes at the end of the analysis? No.
