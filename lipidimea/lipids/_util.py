@@ -11,7 +11,7 @@ from itertools import product
 
 
 # regex for parsing lipid information from a lipid name in standard abbreviated format
-_LIPID_NAME_REGEX = """
+LIPID_NAME_REGEX = """
     ^
     (?P<lcl>
         [A-Za-z123]+
@@ -133,7 +133,7 @@ _ACYL_CHAIN_TYPES = [
 ]
 
 
-class _AcylChain():
+class AcylChain():
     """
     internal class for representing acyl chain information
 
@@ -218,7 +218,7 @@ class _AcylChain():
         return s.format(self.acyl_chain_type, self.carbons, self.unsats)
 
 
-def _get_c_u_combos(lipid, min_c, max_c, odd_c):
+def get_c_u_combos(lipid, min_c, max_c, odd_c):
     """
     figure out all possible combinations of FA composition that can produce 
     a lipid's sum composition

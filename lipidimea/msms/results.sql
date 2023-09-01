@@ -1,4 +1,4 @@
--- DATABASE SCHEMA FOR LIPID IDS 
+-- DATABASE SCHEMA FOR DDA-DIA ANALYSIS RESULTS
 --
 -- -- All non "public-facing" tables are named with prepended _ 
 
@@ -212,5 +212,7 @@ CREATE TABLE Lipids (
     ann_id INTEGER PRIMARY KEY,
     dia_feat_id INT NOT NULL,
     lipid TEXT NOT NULL,
-    adduct TEXT NOT NULL
+    adduct TEXT NOT NULL,
+    ppm REAL NOT NULL,
+    fragments TEXT
 );

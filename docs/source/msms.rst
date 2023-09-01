@@ -11,13 +11,28 @@ Module Reference
 Utility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autofunction:: LipidIMEA.msms.create_lipid_ids_db
+``create_results_db``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: LipidIMEA.msms.create_results_db
+
+``load_default_params``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: LipidIMEA.msms.load_default_params
 
+``load_params``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autofunction:: LipidIMEA.msms.load_params
 
+``save_params``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autofunction:: LipidIMEA.msms.save_params
+
+``debug_handler``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: LipidIMEA.msms._util.debug_handler
 
@@ -25,9 +40,18 @@ Utility
 DDA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+``extract_dda_features``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autofunction:: LipidIMEA.msms.dda.extract_dda_features
 
+``extract_dda_features_multiproc``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autofunction:: LipidIMEA.msms.dda.extract_dda_features_multiproc
+
+``consolidate_dda_features``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: LipidIMEA.msms.dda.consolidate_dda_features
 
@@ -35,6 +59,12 @@ DDA
 DIA
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+``extract_dia_features``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autofunction:: LipidIMEA.msms.dia.extract_dia_features
+
+``extract_dia_features_multiproc``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: LipidIMEA.msms.dia.extract_dia_features_multiproc

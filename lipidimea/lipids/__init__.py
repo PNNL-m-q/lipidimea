@@ -11,8 +11,8 @@ import re
 
 from mzapy.isotopes import monoiso_mass
 
-from LipidIMEA.lipids._util import _LIPID_NAME_REGEX, _AcylChain
-from LipidIMEA.lipids._lmaps_classification import _iterate_all_lipid_classifications
+from LipidIMEA.lipids._util import LIPID_NAME_REGEX, AcylChain
+from LipidIMEA.lipids._lmaps_classification import iterate_all_lipid_classifications
 
 
 def parse_lipid_name(name):
@@ -31,7 +31,7 @@ def parse_lipid_name(name):
         instance of Lipid (or subclass), or ``None`` if unable to parse
     """
     # strip out the whitespace from the lipid name regex
-    mat = re.search(re.sub(r'\s+', '', _LIPID_NAME_REGEX), name)
+    mat = re.search(re.sub(r'\s+', '', LIPID_NAME_REGEX), name)
     if mat is None:
         # name does not match the pattern
         return None
@@ -126,6 +126,8 @@ class Lipid():
         molecular formula as a dictionary mapping elements (str) to their counts (int)
     n_chains : ``int``
         acyl/alkyl chain count
+    n_chains_full : ``int``
+        count of total available acyl/alkyl chain positions available, useful to discern lyso- lipids
     ionization : ``str``
         ionization mode(s) this lipid would be expected to be detected in ('pos', 'neg', or 'both')
     contains_ether : ``bool``
@@ -190,7 +192,7 @@ class Lipid():
         # construct the molecular formula using FA composition and rules lipid_info
         self.formula = self._construct_formula_from_rules(lipid_info)
         # get number of acyl chains and ionization
-        self.n_chains, self.ionization = lipid_info['n_chains'], lipid_info['ionization']
+        self.n_chains, self.n_chains_full, self.ionization = lipid_info['n_chains'], lipid_info['n_chains_full'], lipid_info['ionization']
         # get "other_props"
         self._unpack_other_props(lipid_info['other_props'])
 
@@ -211,7 +213,7 @@ class Lipid():
             lipid information (formula, ionization, acyl chain count)
         """
         # iterate through all of the classifications defined in LipidIMEA/_lmaps_classification.py
-        for class_info, lipid_info in _iterate_all_lipid_classifications():
+        for class_info, lipid_info in iterate_all_lipid_classifications():
             if self.lipid_class_abbrev == lipid_info['class_abbrev']:
                 if self.fa_mod == lipid_info['fa_mod']:
                     if n_chains is None:
@@ -270,12 +272,15 @@ class Lipid():
         self.contains_f2isop = bool(other_props[10])
 
     def __repr__(self):
-        s = '{}(lipid_class_abbrev="{}", fa_carbon={}, fa_unsat={}, fa_mod="{}")'
-        return s.format(self.__class__.__name__, self.lipid_class_abbrev, self.fa_carbon, self.fa_unsat, self.fa_mod)
+        s = '{}(lipid_class_abbrev="{}", fa_carbon={}, fa_unsat={}, fa_mod="{}", lmid_prefix="{}")'
+        return s.format(self.__class__.__name__, self.lipid_class_abbrev, self.fa_carbon, self.fa_unsat, self.fa_mod, self.lmaps_id_prefix)
 
     def __str__(self):
-        s = '{}({}{}:{})'
-        return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat)
+        s = '{}({}{}:{}{})'
+        # this extra chains thing helps to identify lyso- lipids, only works if there is one chain though
+        # otherwise it introduces ambiguity
+        extra_chains = '_0:0' * (self.n_chains_full - self.n_chains) if self.n_chains == 1 else ''
+        return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat, extra_chains)
 
 
 class LipidWithChains(Lipid):
@@ -413,15 +418,15 @@ class LipidWithChains(Lipid):
                     acyl_type = 'Ether' if self.fa_mod == 'O-' else 'Plasmalogen' 
                     if self.sn_pos_is_known:
                         if i == 0:
-                            self._acyl_chains.append(_AcylChain(fac, fau, acyl_type))
+                            self._acyl_chains.append(AcylChain(fac, fau, acyl_type))
                         else:
-                            self._acyl_chains.append(_AcylChain(fac, fau, 'Standard'))
+                            self._acyl_chains.append(AcylChain(fac, fau, 'Standard'))
                     else:
-                        self._acyl_chains.append(_AcylChain(fac, fau, acyl_type))
+                        self._acyl_chains.append(AcylChain(fac, fau, acyl_type))
 
                 else:
                     # in all other cases, treat the acyl chain type as 'Standard'
-                    self._acyl_chains.append(_AcylChain(fac, fau, 'Standard'))
+                    self._acyl_chains.append(AcylChain(fac, fau, 'Standard'))
 
     def __str__(self):
         s = '{}({}'.format(self.lipid_class_abbrev, self.fa_mod)
