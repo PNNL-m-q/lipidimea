@@ -113,8 +113,6 @@ class SumCompLipidDB():
         # yield the unique sum compositions
         for comp in sum_comp:
             yield comp
-    
-    
 
     def __init__(self):
         """
