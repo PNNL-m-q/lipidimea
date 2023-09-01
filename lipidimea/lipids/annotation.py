@@ -16,7 +16,7 @@ import yaml
 from LipidIMEA.lipids import Lipid
 
 
-class _SumCompLipidDB():
+class SumCompLipidDB():
     """
     creates an in-memory database with lipids at the level of sum composition for initial
     lipid identifications, using a configuration file to specify what lipids to include
@@ -41,16 +41,44 @@ class _SumCompLipidDB():
         self._cur = self._con.cursor()
         self._cur.execute(create_qry)
 
-    def _gen_sum_compositions(self, n_chains, min_c, max_c, odd_c, min_u):
+    @staticmethod
+    def max_u(c):
+        """
+        Maximum number of unsaturations as a function of carbon count for a single carbon chain. By default up 
+        to 16 C = 2 max U, 17-18 C = 3 max U, 19-21 C = 5 max U, 22+ C = 6 max U
+
+        override this static method to change how this is calculated (input: ``int`` number of carbons in chain, 
+        output: ``int`` max number of unsaturations)
+
+        Parameters
+        ----------
+        c : ``int``
+            number of carbons in chain
+
+        Returns
+        -------
+        u : ``int``
+            max number of unsaturations in chain
+        """
+        if c <= 16:
+            return 2
+        elif c <= 18:
+            return 3
+        elif c <= 20:
+            return 5
+        else:
+            return 6
+
+    def gen_sum_compositions(self, n_chains, min_c, max_c, odd_c, min_u):
         """ 
-        yield all unique sum compositions from combinations of fatty acids that are iterated over
+        yields all unique sum compositions from combinations of fatty acids that are iterated over
         using some rules:
 
         * specify minimum number of carbons in a FA chain
         * specify maximum number of carbons in a FA chain
         * specify whether to include odd # of carbons for FA chains
-        * max number of unsaturations is determined by FA chain length (up to 16 C = 2 max U, 17-18 C = 3 max U,
-        19-21 C = 5 max U, 22+ C = 6 max U)
+        * max number of unsaturations is determined by FA chain length (by default: up to 16 C = 2 max U, 17-18 C = 3 max U,
+          19-21 C = 5 max U, 22+ C = 6 max U... override ``SumCompLipidDB.max_u()`` static method to change)
 
         Parameters
         ----------
@@ -68,19 +96,10 @@ class _SumCompLipidDB():
         sum_comp : ``tuple(int, int)``
             unique sum compoisions as (# carbons, # unsaturations)
         """
-        def max_u(c):
-            if c <= 16:
-                return 2
-            elif c <= 18:
-                return 3
-            elif c <= 20:
-                return 5
-            else:
-                return 6
         fas = []
         for n_c in range(min_c, max_c + 1):
             if odd_c or n_c % 2 == 0:
-                for n_u in range(0, max_u(n_c) + 1):
+                for n_u in range(0, self.max_u(n_c) + 1):
                     fas.append((n_c, n_u))
         # permute over acyl chains
         sum_comp = set() 
@@ -95,31 +114,18 @@ class _SumCompLipidDB():
         for comp in sum_comp:
             yield comp
     
-    def _fill_db_from_config(self, config):
-        """ fill the DB with lipids using parameters from a YAML config file """
-        # load params from config file
-        with open(config, 'r') as yf:
-            cnf = yaml.safe_load(yf)
-        # iterate over the lipid classes specified in the config and generate m/zs
-        # then add to db
-        insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?,?);'
-        for lclass, lcinfo in cnf.items():
-            for fa_mod in lcinfo['fa_mod']:
-                for n_chains in lcinfo['n_chains']:
-                    # adjust min unsaturation level for sphingolipids
-                    min_u = 1 if lclass in ['SM', 'Cer'] else 0
-                    for sumc, sumu in self._gen_sum_compositions(n_chains, self.min_c, self.max_c, self.odd_c, min_u):
-                        lpd = Lipid(lclass, sumc, sumu, 
-                                    fa_mod=fa_mod if fa_mod is not None else '', 
-                                    n_chains=n_chains)
-                        for adduct in lcinfo['adducts']:
-                            mz = ms_adduct_mz(lpd.formula, adduct)
-                            qdata = (lclass, fa_mod, n_chains, sumc, sumu, str(lpd), adduct, mz)
-                            self._cur.execute(insert_qry, qdata)
+    
 
-    def __init__(self, config, min_c, max_c, odd_c):
+    def __init__(self):
         """
-        Initialize and fill the database. uses parameters from a config file to determine what lipids to include.
+        Initialize the database. Fill the database with lipids using ``SumCompLipidDB.fill_db_from_config()``
+        """
+        self._init_db()
+
+    def fill_db_from_config(self, config, min_c, max_c, odd_c):
+        """ 
+        fill the DB with lipids using parameters from a YAML config file
+        
         Config file should have a structure as in the following example:
 
         .. code-block:: yaml
@@ -148,13 +154,27 @@ class _SumCompLipidDB():
         min_c, max_c : ``int``
             min/max number of carbons in an acyl chain
         odd_c : ``bool``
-            whether to include odd # C for FAs
+            whether to include odd # C for FAs 
         """
-        self.min_c = min_c
-        self.max_c = max_c
-        self.odd_c = odd_c
-        self._init_db()
-        self._fill_db_from_config(config)
+        # load params from config file
+        with open(config, 'r') as yf:
+            cnf = yaml.safe_load(yf)
+        # iterate over the lipid classes specified in the config and generate m/zs
+        # then add to db
+        insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?,?);'
+        for lclass, lcinfo in cnf.items():
+            for fa_mod in lcinfo['fa_mod']:
+                for n_chains in lcinfo['n_chains']:
+                    # adjust min unsaturation level for sphingolipids
+                    min_u = 1 if lclass in ['SM', 'Cer'] else 0
+                    for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, min_u):
+                        lpd = Lipid(lclass, sumc, sumu, 
+                                    fa_mod=fa_mod if fa_mod is not None else '', 
+                                    n_chains=n_chains)
+                        for adduct in lcinfo['adducts']:
+                            mz = ms_adduct_mz(lpd.formula, adduct)
+                            qdata = (lclass, fa_mod, n_chains, sumc, sumu, str(lpd), adduct, mz)
+                            self._cur.execute(insert_qry, qdata)
 
     def get_sum_comp_lipid_ids(self, include_lipid_classes, mz, mz_tol):
         """

@@ -30,10 +30,16 @@ Utility
 Annotation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: LipidIMEA.lipids.annotation._SumCompLipidDB
+.. autoclass:: LipidIMEA.lipids.annotation.SumCompLipidDB
 
-.. autofunction:: LipidIMEA.lipids.annotation._SumCompLipidDB.__init__
+.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.__init__
 
-.. autofunction:: LipidIMEA.lipids.annotation._SumCompLipidDB.get_sum_comp_lipid_ids
+.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.fill_db_from_config
 
-.. autofunction:: LipidIMEA.lipids.annotation._SumCompLipidDB.close
+.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.get_sum_comp_lipid_ids
+
+.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.gen_sum_compositions
+
+.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.max_u
+
+.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.close
