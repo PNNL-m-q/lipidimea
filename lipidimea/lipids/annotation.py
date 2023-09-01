@@ -11,6 +11,7 @@ from sqlite3 import connect
 from itertools import product
 
 from mzapy.isotopes import ms_adduct_mz
+from mzapy._util import _ppm_error
 import yaml
 
 from LipidIMEA.lipids import Lipid
@@ -210,15 +211,79 @@ class SumCompLipidDB():
         self._con.close()
 
 
-def annotate_lipids_sum_composition(results_db, sum_comp_db):
+def _get_lipid_classes_for_rt(rt):
     """
-    annotate features from a DDA-DIA data analysis 
+    This is kind of a placeholder for now, need to think of a better solution for considering RT in the future...
+
+    return a list of potential lipid classes (and number of chains) for a given RT
+    """
+    # key is (lipid class, n chains)
+    # value is [min RT, max RT]
+    rt_ranges = {
+        ('CAR', 1): [0, 5],
+        ('TG', 3): [23, 35],
+        ('SM', 2): [15, 28],
+        ('DG', 2): [20, 26],
+        ('Cer', 2): [23, 28],
+        ('PC', 2): [17, 24],
+        ('PE', 2): [19, 26],
+        ('PC', 1): [0, 15],
+        ('PE', 1): [0, 15],
+        ('CE', 1): [30, 35],
+    }
+    candidates = []
+    for candidate, (rt_min, rt_max) in rt_ranges.items():
+        if rt >= rt_min and rt <= rt_max:
+            candidates.append(candidate)
+    return candidates
+
+
+def remove_lipid_annotations(results_db):
+    """
+    remove all annotations from the results database
+
+    Parameters
+    ----------
+    results_db : ``str``
+        path to DDA-DIA analysis results database
+    """
+    # connect to  results database
+    con = connect(results_db) 
+    cur = con.cursor()
+    # drop any existing annotations
+    cur.execute('DELETE FROM Lipids;')
+    # clean up
+    con.commit()
+    con.close()
+
+
+def annotate_lipids_sum_composition(results_db, sum_comp_db, mz_tol):
+    """
+    annotate features from a DDA-DIA data analysis using a generated database of lipids
+    at the level of sum composition
 
     Parameters
     ----------
     results_db : ``str``
         path to DDA-DIA analysis results database
     sum_comp_db : ``SumCompLipidDB``
-        sum composition lipids database
+        interface for generated sum composition lipids database
+    mz_tol : ``float``
+        tolerance for matching m/z
     """
-    
+    # connect to  results database
+    con = connect(results_db) 
+    cur = con.cursor()
+    # iterate through DIA features and get putative annotations
+    qry_sel = 'SELECT dia_feat_id, mz, dia_rt FROM CombinedFeatures'
+    qry_ins = 'INSERT INTO Lipids VALUES (?,?,?,?,?,?)'
+    for dia_feat_id, mz, rt in cur.execute(qry_sel).fetchall():
+        for cname, cadduct, cmz in sum_comp_db.get_sum_comp_lipid_ids(_get_lipid_classes_for_rt(rt), mz, mz_tol):
+            qdata = (None, dia_feat_id, cname, cadduct, _ppm_error(cmz, mz), None)
+            cur.execute(qry_ins, qdata)
+    # clean up
+    con.commit()
+    con.close()
+
+
+

@@ -15,7 +15,7 @@ Source code is available at https://github.com/PNNL-m-q/LipidIMEA
 
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: API Reference
 
    lipids

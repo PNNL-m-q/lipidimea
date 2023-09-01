@@ -14,7 +14,13 @@ Module Reference
 Utility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+``parse_lipid_name``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autofunction:: LipidIMEA.lipids.parse_lipid_name
+
+``Lipid`` and ``LipidWithChains``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: LipidIMEA.lipids.Lipid
 
@@ -30,6 +36,9 @@ Utility
 Annotation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+``SumCompLipidDB``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. autoclass:: LipidIMEA.lipids.annotation.SumCompLipidDB
 
 .. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.__init__
@@ -43,3 +52,13 @@ Annotation
 .. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.max_u
 
 .. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.close
+
+``remove_lipid_annotations``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: LipidIMEA.lipids.annotation.remove_lipid_annotations
+
+``annotate_lipid_sum_composition``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: LipidIMEA.lipids.annotation.annotate_lipids_sum_composition
