@@ -13,6 +13,8 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
+# TODO (Dylan Ross) rework this to use YAML files in a similar way to how the fragmentation rules work
+
 LMAPS_CLASSIFICATION = {
     'Fatty Acyls': {
         'Fatty Acids and Conjugates': {

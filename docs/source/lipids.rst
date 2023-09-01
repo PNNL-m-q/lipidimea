@@ -25,3 +25,15 @@ Utility
 .. autofunction:: LipidIMEA.lipids.LipidWithChains.__init__
 
 .. autofunction:: LipidIMEA.lipids.LipidWithChains.add_db_positions
+
+
+Annotation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: LipidIMEA.lipids.annotation._SumCompLipidDB
+
+.. autofunction:: LipidIMEA.lipids.annotation._SumCompLipidDB.__init__
+
+.. autofunction:: LipidIMEA.lipids.annotation._SumCompLipidDB.get_sum_comp_lipid_ids
+
+.. autofunction:: LipidIMEA.lipids.annotation._SumCompLipidDB.close
