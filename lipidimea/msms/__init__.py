@@ -13,9 +13,9 @@ from sqlite3 import connect
 import yaml
 
 
-def create_lipid_ids_db(f, overwrite=False):
+def create_results_db(f, overwrite=False):
     """
-    creates a sqlite database for lipid IDs from DDA/DDA data
+    creates a sqlite database for results from DDA/DDA data analysis
 
     raises a RuntimeError if the database already exists
 
@@ -32,13 +32,13 @@ def create_lipid_ids_db(f, overwrite=False):
         if overwrite:
             os.remove(f)
         else:
-            msg = '_create_dda_ids_db: DDA lipid IDs database file ({}) already exists'
+            msg = '_create_dda_ids_db: results database file ({}) already exists'
             raise RuntimeError(msg.format(f))
     # initial connection creates the DB
     con = connect(f)  
     cur = con.cursor()
     # execute SQL script to set up the database
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'lipid_ids.sql'), 'r') as sql_f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results.sql'), 'r') as sql_f:
         cur.executescript(sql_f.read())
     # save and close the database
     con.commit()

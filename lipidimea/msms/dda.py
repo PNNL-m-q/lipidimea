@@ -436,7 +436,7 @@ def _add_features_to_db(cur, qdata, debug_flag, debug_cb):
         cur.execute(qry, qd)
 
 
-def extract_dda_features(dda_data_file, lipid_ids_db, params, 
+def extract_dda_features(dda_data_file, results_db, params, 
                          cache_ms1=True, debug_flag=None, debug_cb=None):
     """
     Extract features from a raw DDA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
@@ -445,8 +445,8 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params,
     ----------
     dda_data_file : ``str``
         path to raw DDA data file (MZA format)
-    lipid_ids_db : ``str``
-        path to lipid ids database
+    results_db : ``str``
+        path to DDA-DIA analysis results database
     params : ``dict(...)``
         analysis parameters dict
     cache_ms1 : ``bool``, default=True
@@ -478,7 +478,7 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params,
     # extract MS2 spectra
     qdata = _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_flag, debug_cb)
     # initialize connection to DDA ids database
-    con = connect(lipid_ids_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
+    con = connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # add features to database
     _add_features_to_db(cur, qdata, debug_flag, debug_cb)
@@ -488,7 +488,7 @@ def extract_dda_features(dda_data_file, lipid_ids_db, params,
     rdr.close()
 
 
-def extract_dda_features_multiproc(dda_data_files, lipid_ids_db, params, n_proc,
+def extract_dda_features_multiproc(dda_data_files, results_db, params, n_proc,
                                    cache_ms1=False, debug_flag=None, debug_cb=None):
     """
     extracts dda features from multiple DDA files in parallel
@@ -497,8 +497,8 @@ def extract_dda_features_multiproc(dda_data_files, lipid_ids_db, params, n_proc,
     ----------
     dda_data_files : ``list(str)``
         paths to raw DDA data file (MZA format)
-    lipid_ids_db : ``str``
-        path to lipid ids database
+    results_db : ``str``
+        path to DDA-DIA analysis results database
     params : ``dict(...)``
         parameters for the various steps of DDA feature extraction
     n_proc : ``int``
@@ -514,13 +514,13 @@ def extract_dda_features_multiproc(dda_data_files, lipid_ids_db, params, n_proc,
         debug_flag is not set to 'textcb' or 'textcb_pid'
     """
     n_proc = min(n_proc, len(dda_data_files))  # no need to use more processes than the number of inputs
-    args = [(dda_data_file, lipid_ids_db, params) for dda_data_file in dda_data_files]
+    args = [(dda_data_file, results_db, params) for dda_data_file in dda_data_files]
     args_for_starmap = zip(repeat(extract_dda_features), args, repeat({'cache_ms1': cache_ms1, 'debug_flag': debug_flag, 'debug_cb': debug_cb}))
     with multiprocessing.Pool(processes=n_proc) as p:
         p.starmap(apply_args_and_kwargs, args_for_starmap)
 
 
-def consolidate_dda_features(lipid_ids_db, params, 
+def consolidate_dda_features(results_db, params, 
                              debug_flag=None, debug_cb=None):
     """
     consolidates DDA features from lipid IDs database based on feature m/z and RT using the following criteria:
@@ -532,8 +532,8 @@ def consolidate_dda_features(lipid_ids_db, params,
 
     Parameters
     ----------
-    lipid_ids_db : ``str``
-        path to lipid ids database
+    results_db : ``str``
+        path to DDA-DIA analysis results database
     params : ``dict(...)``
         analysis parameters dict
     debug_flag : ``str``, optional
@@ -547,7 +547,7 @@ def consolidate_dda_features(lipid_ids_db, params,
     mzt = params['dda']['dda_feat_cons']['dda_fc_mz_tol']
     rtt = params['dda']['dda_feat_cons']['dda_fc_rt_tol']
     # connect to the database
-    con = connect(lipid_ids_db)
+    con = connect(results_db)
     cur = con.cursor()
     # step 1, create groups of features based on similar m/z and RT
     qry_sel = "SELECT dda_feat_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAFeatures"

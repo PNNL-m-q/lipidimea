@@ -134,7 +134,7 @@ def _deconvolute_ms2_peaks(rdr, sel_ms2_mzs, mz_tol, pre_xic, pre_xic_rt, pre_xi
     return deconvoluted
     
 
-def _add_single_target_results_to_db(lipid_ids_db_cursor, 
+def _add_single_target_results_to_db(results_db_cursor, 
                                      dda_feat_id, f, 
                                      ms1,
                                      rt, rt_fwhm, rt_pkht, rt_psnr, xic, 
@@ -149,13 +149,13 @@ def _add_single_target_results_to_db(lipid_ids_db_cursor,
     atd = np.array(atd).tobytes() if store_blobs else None
     ms2 = np.array(ms2).tobytes() if store_blobs else None
     dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
-    lipid_ids_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f,
+    results_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f,
                                                 ms1,
                                                 rt, rt_fwhm, rt_pkht, rt_psnr, xic,
                                                 dt, dt_fwhm, dt_pkht, dt_psnr, atd,
                                                 ms2_n_peaks, ms2_peaks, ms2))
     # fetch the DIA feature ID that we just added
-    dia_feat_id = lipid_ids_db_cursor.lastrowid
+    dia_feat_id = results_db_cursor.lastrowid
     # add deconvoluted fragments (if any) to database and associate with this DIA feature
     if decon_frags is not None:
         decon_frags_qry_1 = 'INSERT INTO DIADeconFragments VALUES (?,?,?,?,?,?);'
@@ -164,8 +164,8 @@ def _add_single_target_results_to_db(lipid_ids_db_cursor,
             # convert xic, atd to blobs if store_blobs is True, else make them None
             fxic = np.array(fxic).tobytes() if store_blobs else None
             fatd = np.array(fatd).tobytes() if store_blobs else None
-            lipid_ids_db_cursor.execute(decon_frags_qry_1, (None, fmz, fxic, fxic_dist, fatd, fatd_dist))
-            lipid_ids_db_cursor.execute(decon_frags_qry_2, (dia_feat_id, lipid_ids_db_cursor.lastrowid))
+            results_db_cursor.execute(decon_frags_qry_1, (None, fmz, fxic, fxic_dist, fatd, fatd_dist))
+            results_db_cursor.execute(decon_frags_qry_2, (dia_feat_id, results_db_cursor.lastrowid))
         
 
 def _ms2_peaks_to_str(ms2_peaks):
@@ -176,7 +176,7 @@ def _ms2_peaks_to_str(ms2_peaks):
     return ms2_to_str(mzs, iis)
 
 
-def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb):
+def _single_target_analysis(rdr, results_db_cursor, f, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb):
     """
     Perform a complete analysis of a single target
     """
@@ -272,7 +272,7 @@ def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt
                         dtmsg += ' -> deconvoluted: {}'.format(len(decon_frags))
             debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
-            _add_single_target_results_to_db(lipid_ids_db_cursor, 
+            _add_single_target_results_to_db(results_db_cursor, 
                                              dda_fid, f,
                                              ms1,
                                              xic_rt, xic_wt, xic_ht, xic_psnr, pre_xic, 
@@ -282,7 +282,7 @@ def _single_target_analysis(rdr, lipid_ids_db_cursor, f, dda_fid, dda_mz, dda_rt
                                              store_blobs)
 
 
-def extract_dia_features(dia_data_file, lipid_ids_db, params, 
+def extract_dia_features(dia_data_file, results_db, params, 
                          debug_flag=None, debug_cb=None):
     """
     Extract features from a raw DIA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
@@ -291,8 +291,8 @@ def extract_dia_features(dia_data_file, lipid_ids_db, params,
     ----------
     dia_data_file : ``str``
         path to raw DIA data file (MZA format)
-    lipid_ids_db : ``str``
-        path to lipid ids database
+    results_db : ``str``
+        path to DDA-DIA analysis results database
     params : ``dict(...)``
         parameters for the various steps of DIA feature extraction
     debug_flag : ``str``, optional
@@ -307,7 +307,7 @@ def extract_dia_features(dia_data_file, lipid_ids_db, params,
     # initialize the data file reader
     rdr = MZA(dia_data_file, io_threads=1, cache_scan_data=True)
     # initialize connection to the database
-    con = connect(lipid_ids_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
+    con = connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # get all of the DDA features, these will be the targets for the DIA data analysis
     pre_sel_qry = 'SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures'
@@ -331,7 +331,7 @@ def extract_dia_features(dia_data_file, lipid_ids_db, params,
 #                       to dig into this some more and figure out why the hanging keeps happening. In any case, having
 #                       this multiprocessing option for DIA analysis is a must for real applications as there will be
 #                       multiple DIA files to analyze.
-def extract_dia_features_multiproc(dia_data_files, lipid_ids_db, params, n_proc, 
+def extract_dia_features_multiproc(dia_data_files, results_db, params, n_proc, 
                                    debug_flag=None, debug_cb=None):
     """
     extracts dda features from multiple DDA files in parallel
@@ -343,8 +343,8 @@ def extract_dia_features_multiproc(dia_data_files, lipid_ids_db, params, n_proc,
     ----------
     dda_data_files : ``list(str)``
         paths to raw DDA data file (MZA format)
-    lipid_ids_db : ``str``
-        path to lipid ids database
+    results_db : ``str``
+        path to DDA-DIA analysis results database
     params : ``dict(...)``
         parameters for the various steps of DDA feature extraction
     n_proc : ``int``
@@ -356,7 +356,7 @@ def extract_dia_features_multiproc(dia_data_files, lipid_ids_db, params, n_proc,
         debug_flag is not set to 'textcb' or 'textcb_pid'
     """
     n_proc = min(n_proc, len(dia_data_files))  # no need to use more processes than the number of inputs
-    args = [(dia_data_file, lipid_ids_db, params) for dia_data_file in dia_data_files]
+    args = [(dia_data_file, results_db, params) for dia_data_file in dia_data_files]
     args_for_starmap = zip(repeat(extract_dia_features), args, repeat({'debug_flag': debug_flag, 'debug_cb': debug_cb}))
     with multiprocessing.Pool(processes=n_proc) as p:
         p.starmap(apply_args_and_kwargs, args_for_starmap)

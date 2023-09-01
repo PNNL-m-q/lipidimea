@@ -208,3 +208,17 @@ class SumCompLipidDB():
         close the database
         """
         self._con.close()
+
+
+def annotate_lipids_sum_composition(results_db, sum_comp_db):
+    """
+    annotate features from a DDA-DIA data analysis 
+
+    Parameters
+    ----------
+    results_db : ``str``
+        path to DDA-DIA analysis results database
+    sum_comp_db : ``SumCompLipidDB``
+        sum composition lipids database
+    """
+    

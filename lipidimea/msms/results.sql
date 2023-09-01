@@ -1,4 +1,4 @@
--- DATABASE SCHEMA FOR LIPID IDS 
+-- DATABASE SCHEMA FOR DDA-DIA ANALYSIS RESULTS
 --
 -- -- All non "public-facing" tables are named with prepended _ 
 

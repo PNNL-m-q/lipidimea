@@ -57,7 +57,6 @@ they are treated as static source files), then copied into ``docs/source/guides/
         :caption: User Guide
 
         guides/installation
-        guides/technote_demo
         guides/my_new_user_guide
 
 
