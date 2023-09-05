@@ -72,7 +72,7 @@
                 </div>
   
                 <div class="outer2">
-                  <h2>Lipid ID Database Selection</h2>
+                  <h2>Lipid ID Database Selection (Optional)</h2>
                       <button id="select-button-database">Select File</button>
                   </div>
                   <div class="file-section">
@@ -131,22 +131,83 @@
 
             <!-- Run Experiment Tab -->
             <div id="run-experiment" class="tabcontent outermost">
-                <label for="experiment-type">Experiment Type:</label>
-                    <input type="checkbox" id="experiment-type-dda-advanced" name="experiment-type" value="DDA" checked>
-                    <label for="experiment-type-dda-advanced">DDA</label>
-                    <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
-                    <label for="experiment-type-dia-advanced">DIA</label>
-                <br><br>
-                <label for="experiment-type">Save Parameters as Template?</label>
+
+                <!-- Experiment Type Section -->
+                <div class="section-container">
+                    <label class="section-label">Experiment Type:</label>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="experiment-type-dda-advanced" name="experiment-type" value="DDA" checked>
+                        <label for="experiment-type-dda-advanced">DDA</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
+                        <label for="experiment-type-dia-advanced">DIA</label>
+                    </div>
+                </div>
+            
+                <!-- Database Options Section -->
+                <div class="section-container">
+                    <label class="section-label">Database Options:</label>
+                    <div class="radio-option">
+                        <input type="radio" id="append-option" name="db_option" value="append" checked>
+                        <label for="append-option">Append</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="overwrite-option" name="db_option" value="overwrite">
+                        <label for="overwrite-option">Overwrite</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="create-new-option" name="db_option" value="create_new">
+                        <label for="create-new-option">Create New</label>
+                    </div>
+                </div>
+
+                <!-- New Database Name (will be hidden by default) -->
+                <!-- <div class="section-container" id="new-db-name-container" style="display: none;">
+                    <label class="section-label">New Database Name:</label>
+                    <input type="text" id="new-db-name" placeholder="Enter new database name">
+                </div> -->
+            
+                <!-- Save Parameters Section -->
+                <div class="section-container">
+                    <label class="section-label">Save Parameters:</label>
                     <input type="checkbox" id="save-params" name="save-params" checked>
+                </div>
+
+                <!-- Experiment Details Section -->
+                <div class="section-container">
+                    <label class="section-label">Experiment Name:</label>
+                    <input type="text" id="experiment-name" placeholder="Enter experiment name">
+                </div>
+
+                <!-- Save Directory Section -->
+                <div class="section-container">
+                    <label class="section-label">Results Save Location:</label>
+                    <input type="text" id="selected-directory" readonly placeholder="No directory selected">
+                    <button class="dir-btn" onclick="selectSaveDirectory()">Select Directory</button>
+
+                </div>
+
+                <!-- Run Experiment Button -->
+                <div class="button-container">
+                    <button class="btn run-btn" onclick="RunExperiment()">Run Experiment</button>
+                </div>
+
+
+                            
+            
+                
+                    
+                <!-- <label for="experiment-type">Save Parameters as Template?</label>
+                    <input type="checkbox" id="save-params" name="save-params" checked> -->
                 <!-- Add your run experiment content here -->
-            <div>
+            <!-- <div>
                 <h2></h2>
                 <label for="experiment-name">Experiment Name:</label>
                 <input type="text" id="experiment-name">
                 <br><br>
                 <button class="btn" onclick="RunExperiment()">Run Experiment</button>
-            </div>
+            </div> -->
 
             <div>
                 <br><br>

@@ -98,6 +98,27 @@ if (fileInputDatabase) {
 }
 
 
+// document.getElementById('create-new-option').addEventListener('change', function() {
+//   if (this.checked) {
+//       document.getElementById('new-db-name-container').style.display = 'block';
+//   }
+// });
+
+// Hide the input if any other DB option is selected
+// document.getElementById('append-option').addEventListener('change', function() {
+//   if (this.checked) {
+//       document.getElementById('new-db-name-container').style.display = 'none';
+//   }
+// });
+// document.getElementById('overwrite-option').addEventListener('change', function() {
+//   if (this.checked) {
+//       document.getElementById('new-db-name-container').style.display = 'none';
+//   }
+// });
+
+
+
+
 // Call the synchronizeCheckboxes function when the page is loaded
 document.addEventListener('DOMContentLoaded', synchronizeCheckboxes);
 
@@ -315,7 +336,7 @@ window.api.receive('yamlDataBoth', (data) => {
     
       sectionsBoth.forEach((sectionBoth) => {
         const sectionDataBoth = parametersBoth[sectionBoth];
-        const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.only_advanced);
+        const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.advanced);
         const advancedValues = Object.entries(sectionDataBoth);
 
         
@@ -372,8 +393,8 @@ window.api.receive('yamlDataBoth', (data) => {
         duoinputsColumnBothGeneral.appendChild(emptyTextGeneral);
         };
         
-        // Only include values with "only_advanced" set to false in the "general" section
-        // const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.only_advanced);
+        // Only include values with "advanced" set to false in the "general" section
+        // const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.advanced);
 
         generalValues.forEach(([key, value]) => {
           const parameterTextBothGeneral = document.createElement('p');
@@ -483,7 +504,7 @@ window.api.receive('yamlDataBoth', (data) => {
 //   for (const parameterKey in sectionData) {
 //       const parameterValue = sectionData[parameterKey];
 
-//       if (type === 'general' && parameterValue.only_advanced) continue; // Skip parameters that are advanced only
+//       if (type === 'general' && parameterValue.advanced) continue; // Skip parameters that are advanced only
 
 //       const parameterElement = document.createElement('p');
 //       parameterElement.textContent = parameterKey;
@@ -1152,7 +1173,15 @@ function scrollToBottom(element) {
 
 
 
-
+function getSelectedDatabaseOption() {
+  let radios = document.querySelectorAll('.section-container input[name="db_option"]');
+  
+  for (let radio of radios) {
+      if (radio.checked) {
+          return radio.value;
+      }
+  }
+}
 
 
 
@@ -1190,6 +1219,21 @@ function RunExperiment() {
     dia_data_files: [],
     lipid_ids_db: []
   };
+
+  const selectedDatabaseOption = getSelectedDatabaseOption()
+  const selectedDatabaseName = document.getElementById("experiment-name").value
+  const selectedSaveLocation = document.getElementById("selected-directory").value
+
+  console.log("1:",selectedDatabaseOption)
+  console.log("2:", selectedDatabaseName)
+  console.log("3:", selectedSaveLocation)
+
+
+  const gui_params = {
+    db_pick: selectedDatabaseOption,
+    db_name: selectedDatabaseName,
+    save_loc: selectedSaveLocation
+  }
 
   const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
   const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
@@ -1248,12 +1292,13 @@ function RunExperiment() {
 
 
   console.log("LOOK HERE:")
-  console.log(parameters)
+  console.log(gui_params)
   const options = {
     pythonPath: 'python3',
     args: {
       input_output: inputOutput,
-      params: parameters
+      params: parameters,
+      options: gui_params
     }
   };
 
@@ -1359,4 +1404,16 @@ window.api.receive('database-table-data', (data) => {
   table.appendChild(thead);
   table.appendChild(tbody);
   tableContainer.appendChild(table);
+});
+
+
+
+
+function selectSaveDirectory() {
+  window.api.send('open-directory-dialog');
+}
+
+window.api.receive('directory-selected', (path) => {
+  console.log("Selected directory:", path);
+  document.getElementById('selected-directory').value = path;
 });

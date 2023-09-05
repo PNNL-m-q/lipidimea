@@ -515,3 +515,46 @@ height: 250px;
 
 
 
+
+.section-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-label {
+  font-weight: bold;
+  margin-right: 15px;
+  width: 160px; /* Fixed width for alignment */
+}
+
+.checkbox-option,
+.radio-option {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-option label,
+.radio-option label {
+  margin-left: 5px;
+}
+
+
+.button-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+
+#selected-directory {
+  background-color: #f2f2f2; 
+  height: 100%;
+  width: 60%;           
+  /* padding: 10px 0px;     */
+  box-sizing: border-box;   
+  white-space: nowrap;     
+  text-overflow: scroll;   
+  /* cursor: not-allowed;   */
+}
+

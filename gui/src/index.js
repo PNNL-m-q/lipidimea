@@ -384,8 +384,15 @@ function unpackData(floatArray) {
 
 
 
-
-
-
-
-
+ipcMain.on('open-directory-dialog', (event) => {
+  dialog.showOpenDialog({
+      properties: ['openDirectory']
+  }).then(result => {
+      if (!result.canceled) {
+          const selectedDirectory = result.filePaths[0];
+          event.sender.send('directory-selected', selectedDirectory);
+      }
+  }).catch(err => {
+      console.error("Directory selection error:", err);
+  });
+});

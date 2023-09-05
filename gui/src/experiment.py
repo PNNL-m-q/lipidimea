@@ -3,6 +3,7 @@ import sys
 import json
 import subprocess
 import os
+import shutil
 
 
 def install(package):
@@ -61,6 +62,13 @@ def convert_nest(d):
 
 # print(inputValues)
 
+def generate_new_db_name(directory, db_name):
+    base_name = db_name
+    version = 1
+    while os.path.exists(os.path.join(directory, db_name + '.db')):
+        db_name = f"{base_name}_v{version}"
+        version += 1
+    return db_name + '.db'
 
 
 
@@ -69,109 +77,60 @@ def main():
     Read in Inputs from GUI.
     Make calls to LipidIMEA.
     """
-    #setup
-    # params = load_params('old_defaults.yml')
-    # params= dict(json.loads(sys.argv[1]))
-
-    # print("SRC EXP")
-    # print("Inputs:")
-    # print(params)
-
-    
-    #TO DO - Allow user to create DB name and location.
-    # And replace test_Df with it.
-        
-    
-    # # create lipid IDs database, returns the filename
-    # lipid_ids_db = create_lipid_ids_db(db_file,
-    #                                 'test_db',
-    #                                 overwrite=True,
-    #                                 )
-    # # directory for lipid IDs database, empty string for current directory
-    # # base name for the lipid IDs database
-    # # create a new database file if one alreadv exists
-    
-    # #DDA analvsis
-    # extract_dda_features_multiproc(dda_files, # list of DDA data files
-    # lipid_ids_db, # path to lipid IDs database
-    # dda_inputs, # parameters for DDA portion of analysis
-    # 1, # number of processes to run analysis with
-    # debug_flag='text_pid') # produce text debugging messages with subprocess PIDs
-    
-    # print("Consolodate Here:")
-    # consolidate_dda_features(lipid_ids_db,
-    # dda_consol_inputs,
-    # debug_flag='text')
-    
-    
-    # # path to lipid IDs database
-    # # parameters for DA feature consolidation
-    # # produce text debugging messages (single process, no PIDs)
-    # # DIA analysis
-    
-    
-    # # print("First")
-    # # print(params['PARAMETERS']['INPUT_OUTPUT']['dia_data_files'])
-    # # print("Second")
-    # # print(lipid_ids_db)
-    # # print("Third")
-    # # print( params['PARAMETERS']['DIA'])
-    
-    
-    # extract_dia_features_multiproc(dia_files, # list of DIA data files
-    # lipid_ids_db, # path to lipid IDs database
-    # dia_inputs, # parameters for DIA portion of analvsis
-    # 1, #number of processes to run analvsis with
-    # debug_flag='text_pid') # produce text debugging messages with subprocess PIDs
-
-
-
-    # lipid_ids_db = create_lipid_ids_db('',              # directory for lipid IDs database, empty string for current directory
-    #                                    'insert_db_name_here',     # base name for the lipid IDs database
-    #                                    overwrite=True,  # create a new database file if one already exists
-    #                                    )
-
-    # # DDA analysis
-    # extract_dda_features_multiproc(params['INPUT_OUTPUT']['dda_data_files'],  # list of DDA data files
-    #                                lipid_ids_db,                              # path to lipid IDs database
-    #                                params['PARAMETERS']['DDA'],               # parameters for DDA portion of analysis
-    #                                8,                                         # number of processes to run analysis with
-    #                                debug_flag='text_pid',                     # produce text debugging messages with subprocess PIDs
-    #                                )
-    # consolidate_dda_features(lipid_ids_db,                                              # path to lipid IDs database
-    #                          params['PARAMETERS']['DDA']['DDA_FEATURE_CONSOLIDATION'],  # parameters for DDA feature consolidation
-    #                          debug_flag='text'                                          # produce text debugging messages (single process, no PIDs)
-    #                          )
-
-    # # DIA analysis
-    # extract_dia_features_multiproc(params['INPUT_OUTPUT']['dia_data_files'],  # list of DIA data files
-    #                                lipid_ids_db,                              # path to lipid IDs database
-    #                                params['PARAMETERS']['DIA'],               # parameters for DIA portion of analysis
-    #                                8,                                         # number of processes to run analysis with
-    #                                debug_flag='text_pid',                     # produce text debugging messages with subprocess PIDs
-    #                                )
-    
-
-    # setup
-    # params = load_params('nist_test.yaml')
-
-    # create lipid IDs database, returns the filename
-    # input_output, params = load_params('nist_test.yaml')
-    
-    
-    # input_output, params = dict(json.loads(sys.argv[1]))
+ 
     inputs_and_params = dict(json.loads(sys.argv[1]))
     input_output = inputs_and_params['input_output']
     params = inputs_and_params['params']
+    options = inputs_and_params['options']
     
     print("input_output :", input_output)
     print("params :", params)
+    print("options :", options)
+    
+    # db_pick: getSelectedDatabaseOption(),
+    # db_name: document.getElementById("experiment-name"),
+    # save_loc: document.getElementById("selected-directory")
     
     
     params = convert_nest(params)
-
+    
+    
+    print("check here before:",input_output)
+    #assign False if 'lipid_ids_db' not present.
+    if input_output.get('lipid_ids_db') is None:
+        input_output['lipid_ids_db'] = None
+        
+    print("check here after:",input_output)
     # create lipid IDs database, returns the filename
-    create_lipid_ids_db(input_output['lipid_ids_db'], overwrite=True)
+    
+    
+    #why copy...?
+    
+    # if not input_output['lipid_ids_db']:
+    #     shutil.copy(options["db_name"], options['save_loc'])
+    # elif input_output['lipid_ids_db']:
+    #     shutil.copy(input_output['lipid_ids_db'], options['save_loc'])
+    # else:
+    #     print("conditions incorrect 1. exiting")
+    #     sys.exit()
+        
+        
+    #If database is present, append.
+    if options["db_pick"] == "append" and input_output['lipid_ids_db']:
+        pass
+    elif options["db_pick"] == "overwrite" and input_output['lipid_ids_db']:
+        create_lipid_ids_db(input_output['lipid_ids_db'], overwrite=True)
+    elif options["db_pick"] == "create_new" and not input_output['lipid_ids_db']:
+        generate_new_db_name(options['save_loc'], options['db_name'])
+        exp_name = os.path.join(options["save_loc"], options["db_name"] + ".db")
+        create_lipid_ids_db(exp_name, overwrite=True)
+        input_output['lipid_ids_db'] = exp_name
+    else:
+        print("conditions incorrect. exiting")
+        sys.exit()
+
+
+
 
     # DDA analysis
     if params['misc']['do_dda_processing']:
@@ -194,10 +153,7 @@ def main():
     
 
 
-
-
-
-
+    print("\n\nExtraction Complete\n\n")
 
 if __name__ == '__main__':
     main()
