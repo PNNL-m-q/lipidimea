@@ -18,6 +18,7 @@ Source code is available at https://github.com/PNNL-m-q/LipidIMEA
    :maxdepth: 4
    :caption: API Reference
 
+   util
    lipids
    msms
 

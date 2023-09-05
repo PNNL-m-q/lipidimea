@@ -1,11 +1,12 @@
 """
-LipidIMEA/msms/__init__.py
+LipidIMEA/util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    sub-pakage for handling MS/MS data extraction and processing
-
+    module with general utilities
 """
+
+
 
 import os
 from sqlite3 import connect
@@ -100,5 +101,4 @@ def save_params(input_output, params, params_file):
     """
     with open(params_file, 'w') as out:
         yaml.dump({'input_output': input_output, 'params': params}, out, default_flow_style=False)
-
 

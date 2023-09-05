@@ -7,7 +7,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-import os
+from os import path as op
 
 import yaml
 from mzapy.isotopes import monoiso_mass
@@ -142,12 +142,13 @@ def load_rules(lipid_class, ionization):
     rules : ``list(_FragRule)``
         list of applicable fragmentation rules
     """
+    rule_dir = op.abspath(op.join(__file__, op.pardir, op.pardir, '_include/rules'))
     rules = []
-    any_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rules/any.yml')
+    any_path = op.join(rule_dir, 'any.yml')
     with open(any_path, 'r')as yff:
         rules_ = yaml.safe_load(yff)['ionization'][ionization]
     if lipid_class in _FRAG_RULE_CLASSES:
-        yf_pth = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'rules/{}.yml'.format(lipid_class))
+        yf_pth = op.join(rule_dir, '{}.yml'.format(lipid_class))
         with open(yf_pth, 'r') as yf:
             rules_ += yaml.safe_load(yf)['ionization'][ionization]
     for rule in rules_:
