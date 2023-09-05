@@ -7,7 +7,6 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-
 import os
 from sqlite3 import connect
 
@@ -39,7 +38,7 @@ def create_results_db(f, overwrite=False):
     con = connect(f)  
     cur = con.cursor()
     # execute SQL script to set up the database
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'results.sql'), 'r') as sql_f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sql'), 'r') as sql_f:
         cur.executescript(sql_f.read())
     # save and close the database
     con.commit()
@@ -56,7 +55,7 @@ def load_default_params():
     params : ``dict(...)``
         analysis parameter dict component of parameters, with all default values
     """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'default_params.yaml'), 'r') as yf:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yaml'), 'r') as yf:
         defaults = yaml.safe_load(yf)
     params = {}
     for top_lvl in ['dda', 'dia']:
