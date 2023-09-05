@@ -33,7 +33,7 @@ dda:
             description: maximum peak width (full width at half max) for XIC peak fitting 
             advanced: true
         dda_cxf_max_peaks: 
-            default: 3
+            default: 2
             display_name: max. peaks
             type: int
             description: maximum number of peaks to fit from XICs
@@ -101,7 +101,7 @@ dda:
             type: float
             description: maximum peak width (full width at half max) for MS2 peak fitting 
         dda_mxf_min_dist: 
-            default: 0.1
+            default: 0.2
             display_name: min. peak distance
             type: float
             description: minimum distance between peaks for MS2 peak fitting
@@ -123,7 +123,7 @@ dda:
         dda_fc_drop_if_no_ms2: 
             default: true
             display_name: Drop features with no MS2 scans
-            type: float
+            type: bool
             description: drop any DDA features that do not have any MS2 scans
             advanced: false
 dia:
@@ -167,7 +167,7 @@ dia:
             description: maximum peak width (full width at half max) for XIC peak fitting 
             advanced: true
         dia_cxf_max_peaks: 
-            default: 3
+            default: 1
             display_name: max. peaks
             type: int
             description: maximum number of peaks to fit from XICs
@@ -213,7 +213,7 @@ dia:
             description: minimum peak width (full width at half max) for ATD peak fitting 
             advanced: true
         dia_axf_max_peaks: 
-            default: 3
+            default: 2
             display_name: max. peaks
             type: int
             description: maximum number of peaks to fit from ATDs
@@ -245,7 +245,7 @@ dia:
             description: maximum peak width (full width at half max) for MS2 peak fitting 
             advanced: true
         dia_mxf_min_dist: 
-            default: 0.1
+            default: 0.2
             display_name: min. peak distance
             type: float
             description: minimum distance between peaks for MS2 peak fitting
@@ -288,6 +288,7 @@ annotation:
     display_name: lipid annotation
     ann_sum_comp:
         display_name: gonna put some stuff in here
+        some_param: some value
 misc:
     display_name: miscellaneous
     do_dda_processing:

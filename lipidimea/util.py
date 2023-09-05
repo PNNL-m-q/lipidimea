@@ -58,9 +58,9 @@ def load_default_params():
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yaml'), 'r') as yf:
         defaults = yaml.safe_load(yf)
     params = {}
-    for top_lvl in ['dda', 'dia']:
-        params[top_lvl] = {section: {param: value['default'] for param, value in sec_params.items()} for section, sec_params in defaults[top_lvl].items()}
-    params['misc'] = {param: value['default'] for param, value in defaults['misc'].items()}
+    for top_lvl in ['dda', 'dia', 'annotation']:
+        params[top_lvl] = {section: {param: value['default'] for param, value in sec_params.items() if param != 'display_name'} for section, sec_params in defaults[top_lvl].items() if section != 'display_name'}
+    params['misc'] = {param: value['default'] for param, value in defaults['misc'].items() if param != 'display_name'}
     return params
 
 
