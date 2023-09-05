@@ -1,5 +1,7 @@
 dda:
+    display_name: DDA data analysis
     dda_chrom_ext_fit:
+        display_name: chromatogram extraction and fitting
         dda_cxf_mz_tol: 
             default: 0.01
             display_name: m/z tolerance
@@ -43,6 +45,7 @@ dda:
             description: minimum signal to noise ratio for fitted XIC peaks
             advanced: false
     dda_chrom_feat_cons:
+        display_name: chromatographic feature consolidation
         dda_cfc_mz_tol: 
             default: 0.05
             display_name: m/z tolerance
@@ -56,6 +59,7 @@ dda:
             description: retention time tolerance for consolidating chromatographic features
             advanced: false
     dda_ms2_ext_fit:
+        display_name: MS2 spectrum extraction and fitting
         dda_mxf_pre_mz_tol: 
             default: 0.05
             display_name: precursor m/z tolerance
@@ -103,6 +107,7 @@ dda:
             description: minimum distance between peaks for MS2 peak fitting
             advanced: true
     dda_feat_cons:
+        display_name: DDA feature consolidation
         dda_fc_mz_tol: 
             default: 0.05
             display_name: m/z tolerance
@@ -122,7 +127,9 @@ dda:
             description: drop any DDA features that do not have any MS2 scans
             advanced: false
 dia:
+    display_name: DIA data analysis
     dia_chrom_ext_fit:
+        display_name: chromatogram extraction and fitting
         dia_cxf_pre_xic_mz_tol: 
             default: 0.01
             display_name: m/z tolerance
@@ -166,6 +173,7 @@ dia:
             description: maximum number of peaks to fit from XICs
             advanced: false
     dia_sel_xic_pks:
+        display_name: XIC peak selection
         dia_sxp_target_rt_tol: 
             default: 0.05
             display_name: target RT tolerance
@@ -179,6 +187,7 @@ dia:
             description: shift the target retention time from DDA feature before trying to match DIA XIC peak
             advanced: true
     dia_atd_ext_fit:
+        display_name: ATD extraction and fitting
         dia_axf_min_rel_height: 
             default: 0.2
             display_name: min. relative peak height 
@@ -210,6 +219,7 @@ dia:
             description: maximum number of peaks to fit from ATDs
             advanced: false
     dia_ms2_ext_fit:
+        display_name: MS2 spectrum extractiona and fitting
         dia_mxf_min_rel_height: 
             default: 0.001
             display_name: min. relative peak height 
@@ -241,6 +251,7 @@ dia:
             description: minimum distance between peaks for MS2 peak fitting
             advanced: true
     dia_ms2_pk_mat:
+        display_name: MS2 peak matching
         dia_mpm_mz_tol: 
             default: 0.05
             display_name: m/z tolerance
@@ -248,6 +259,7 @@ dia:
             description: m/z tolerance for matching MS2 peaks between DDA and DIA spectra
             advanced: false
     dia_ms2_decon:
+        display_name: MS2 fragment deconvolution
         dia_md_xic_dist_threshold: 
             default: 0.75
             display_name: XIC distance threshold
@@ -272,7 +284,12 @@ dia:
             type: str
             description: distance metric to use for deconvoluting DIA fragment ATDs
             advanced: true
+annotation:
+    display_name: lipid annotation
+    ann_sum_comp:
+        display_name: gonna put some stuff in here
 misc:
+    display_name: miscellaneous
     do_dda_processing:
         default: true
         display_name: do DDA data processing
