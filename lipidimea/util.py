@@ -55,7 +55,7 @@ def load_default_params():
     params : ``dict(...)``
         analysis parameter dict component of parameters, with all default values
     """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yaml'), 'r') as yf:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yml'), 'r') as yf:
         defaults = yaml.safe_load(yf)
     params = {}
     for top_lvl in ['dda', 'dia', 'annotation']:

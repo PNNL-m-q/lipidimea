@@ -257,7 +257,7 @@ def remove_lipid_annotations(results_db):
     con.close()
 
 
-def annotate_lipids_sum_composition(results_db, sum_comp_db, mz_tol):
+def annotate_lipids_sum_composition(results_db, params):
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -266,11 +266,17 @@ def annotate_lipids_sum_composition(results_db, sum_comp_db, mz_tol):
     ----------
     results_db : ``str``
         path to DDA-DIA analysis results database
-    sum_comp_db : ``SumCompLipidDB``
-        interface for generated sum composition lipids database
-    mz_tol : ``float``
-        tolerance for matching m/z
+    params : ``dict(...)``
+        parameters for lipid annotation
     """
+    # unpack params
+    params = params['annotation']['ann_sum_comp']
+    lipid_class_params = params['ann_sc_lipid_class_params']
+    min_c, max_c, odd_c = params['ann_sc_min_c'], params['ann_sc_max_c'], params['ann_sc_odd_c']
+    mz_tol = params['ann_sc_mz_tol']
+    # create the sum composition lipid database
+    scdb = SumCompLipidDB()
+    scdb.fill_db_from_config(lipid_class_params, min_c, max_c, odd_c)
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
@@ -278,7 +284,7 @@ def annotate_lipids_sum_composition(results_db, sum_comp_db, mz_tol):
     qry_sel = 'SELECT dia_feat_id, mz, dia_rt FROM CombinedFeatures'
     qry_ins = 'INSERT INTO Lipids VALUES (?,?,?,?,?,?)'
     for dia_feat_id, mz, rt in cur.execute(qry_sel).fetchall():
-        for cname, cadduct, cmz in sum_comp_db.get_sum_comp_lipid_ids(_get_lipid_classes_for_rt(rt), mz, mz_tol):
+        for cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(_get_lipid_classes_for_rt(rt), mz, mz_tol):
             qdata = (None, dia_feat_id, cname, cadduct, _ppm_error(cmz, mz), None)
             cur.execute(qry_ins, qdata)
     # clean up
