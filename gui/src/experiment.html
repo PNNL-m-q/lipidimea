@@ -43,6 +43,8 @@
                 <label for="experiment-type-dda-advanced">DDA</label>
                 <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
                 <label for="experiment-type-dia-advanced">DIA</label>
+                <input type="checkbox" id="experiment-type-annotate-advanced" name="experiment-type" value="Annotate" checked>
+                <label for="experiment-type-annotate-advanced">Annotate</label>
                 <!-- <h1>Upload your Files</h1> -->
                 </head>
                 <div id="dda-file-region">
@@ -93,7 +95,9 @@
                   <input type="checkbox" id="experiment-type-dda-general" name="experiment-type" value="DDA" checked>
                   <label for="experiment-type-dda-general">DDA</label>
                   <input type="checkbox" id="experiment-type-dia-general" name="experiment-type" value="DIA" checked>
-                  <label for="experiment-type-dia-general">DIA</label>
+                  <label for="experiment-type-dia-general">DIA</label>                  
+                  <input type="checkbox" id="experiment-type-annotate-general" name="experiment-type" value="Annotate" checked>
+                  <label for="experiment-type-annotate-general">Annotate</label>
               <div class="out">
                   <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-general')">Write Parameters To Yaml</button>
                   <button id="load-personal-button-general">Load Parameters from YAML</button>
@@ -115,6 +119,8 @@
                     <label for="experiment-type-dda-advanced">DDA</label>
                     <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
                     <label for="experiment-type-dia-advanced">DIA</label>
+                    <input type="checkbox" id="experiment-type-annotate-advanced" name="experiment-type" value="Annotate" checked>
+                    <label for="experiment-type-annotate-advanced">Annotate</label>
                 <div class="out">
                     <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-advanced')">Write Parameters To Yaml</button>
                     <button id="load-personal-button-advanced">Load Parameters from YAML</button>
@@ -143,10 +149,14 @@
                         <input type="checkbox" id="experiment-type-dia-advanced" name="experiment-type" value="DIA" checked>
                         <label for="experiment-type-dia-advanced">DIA</label>
                     </div>
+                    <div class="checkbox-option">
+                    <input type="checkbox" id="experiment-type-annotate-general" name="experiment-type" value="Annotate" checked>
+                    <label for="experiment-type-annotate-general">Annotate</label>
+                    </div>
                 </div>
             
                 <!-- Database Options Section -->
-                <div class="section-container">
+                <div class="section-container" id="db-options">
                     <label class="section-label">Database Options:</label>
                     <div class="radio-option">
                         <input type="radio" id="append-option" name="db_option" value="append" checked>
@@ -162,12 +172,30 @@
                     </div>
                 </div>
 
+
+                <div class="section-container" id="annotate-options" style="display: none;">
+                    <label class="section-label">Annotation Options:</label>
+                    <div class="radio-option">
+                        <input type="radio" id="annotate-1" name="db_option" value="a" checked>
+                        <label for="append-option">Option 1</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="annotate-3" name="db_option" value="b">
+                        <label for="overwrite-option">Option 2</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="annotate-3" name="db_option" value="c">
+                        <label for="create-new-option">Option 2</label>
+                    </div>
+                </div>
+
+
                 <!-- New Database Name (will be hidden by default) -->
                 <!-- <div class="section-container" id="new-db-name-container" style="display: none;">
                     <label class="section-label">New Database Name:</label>
                     <input type="text" id="new-db-name" placeholder="Enter new database name">
-                </div> -->
-            
+                </div>
+             -->
                 <!-- Save Parameters Section -->
                 <div class="section-container">
                     <label class="section-label">Save Parameters:</label>
@@ -175,13 +203,13 @@
                 </div>
 
                 <!-- Experiment Details Section -->
-                <div class="section-container">
+                <div class="section-container" id="new-db-name-container" style="display: none;">
                     <label class="section-label">Experiment Name:</label>
-                    <input type="text" id="experiment-name" placeholder="Enter experiment name">
+                    <input type="text" id="experiment-name" placeholder="Enter new database name">
                 </div>
 
                 <!-- Save Directory Section -->
-                <div class="section-container">
+                <div class="section-container" id="selected-directory-container">
                     <label class="section-label">Results Save Location:</label>
                     <input type="text" id="selected-directory" readonly placeholder="No directory selected">
                     <button class="dir-btn" onclick="selectSaveDirectory()">Select Directory</button>
