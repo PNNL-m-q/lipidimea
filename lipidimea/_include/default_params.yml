@@ -287,8 +287,37 @@ dia:
 annotation:
     display_name: lipid annotation
     ann_sum_comp:
-        display_name: gonna put some stuff in here
-        some_param: some value
+        display_name: annotation at the level of sum composition using generated DB
+        ann_sc_lipid_class_params:
+            default: null
+            display_name: lipid class parameters file
+            type: str
+            description: parameter file with lipid class specific information for generating sum composition DB
+            advanced: false
+        ann_sc_min_c:
+            default: 12
+            display_name: minimum FA chain length
+            type: int
+            description: minimum number of carbons in an individual FA chain
+            advanced: false
+        ann_sc_max_c: 22
+            default:
+            display_name: maximum FA chain length
+            type: int
+            description: maximum number of carbons in an individual FA chain
+            advanced: false
+        ann_sc_odd_c:
+            default: true
+            display_name: include odd carbon FAs
+            type: bool
+            description: include FAs with odd number of carbons in the generated DB
+            advanced: false
+        ann_sc_mz_tol:
+            default: 0.05
+            display_name: m/z tolerance for annotation
+            type: float
+            description: m/z tolerance for matching lipids from the sum composition DB
+            advanced: false
 misc:
     display_name: miscellaneous
     do_dda_processing:
@@ -302,6 +331,12 @@ misc:
         display_name: do DIA data processing
         type: bool
         description: whether to process DIA data
+        advanced: false
+    do_annotation:
+        default: true
+        display_name: do lipid annotation
+        type: bool
+        description: annotate DIA features with lipid identifications
         advanced: false
     dia_store_blobs: 
         default: true
