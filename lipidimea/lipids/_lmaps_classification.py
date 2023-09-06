@@ -13,7 +13,9 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-_LMAPS_CLASSIFICATION = {
+# TODO (Dylan Ross) rework this to use YAML files in a similar way to how the fragmentation rules work
+
+LMAPS_CLASSIFICATION = {
     'Fatty Acyls': {
         'Fatty Acids and Conjugates': {
             'Straight chain fatty acids': {
@@ -29,7 +31,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 1,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Unsaturated fatty acids': {
@@ -45,7 +47,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 1,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -63,7 +65,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'pos',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 1,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -83,7 +85,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'pos',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 3,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -101,7 +103,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'pos',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 3,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -119,7 +121,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'pos',
-                'n_chains': 3,
+                'n_chains': 3, 'n_chains_full': 3,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -138,7 +140,7 @@ _LMAPS_CLASSIFICATION = {
                         'P': 0,
                     },
                     'ionization' : 'pos',
-                    'n_chains': 2,
+                    'n_chains': 2, 'n_chains_full': 2,
                     'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 },
                 {
@@ -154,7 +156,7 @@ _LMAPS_CLASSIFICATION = {
                         'P': 0,
                     },
                     'ionization' : 'pos',
-                    'n_chains': 2,
+                    'n_chains': 2, 'n_chains_full': 2,
                     'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 },
                 {
@@ -170,7 +172,7 @@ _LMAPS_CLASSIFICATION = {
                         'P': 0,
                     },
                     'ionization' : 'pos',
-                    'n_chains': 2,
+                    'n_chains': 2, 'n_chains_full': 2,
                     'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                 },
             ],
@@ -192,7 +194,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'pos',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-alkyl,2-acylglycerophosphocholines': {
@@ -208,7 +210,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'pos',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-(1Z-alkenyl),2-acylglycerophosphocholines': {
@@ -224,7 +226,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'pos',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoacylglycerophosphocholines': {
@@ -240,7 +242,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'pos',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoalkylglycerophosphocholines': {
@@ -256,7 +258,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'pos',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1Z-alkenylglycerophosphocholines': {
@@ -272,7 +274,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'pos',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -291,7 +293,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-alkyl,2-acylglycerophosphoethanolamines': {
@@ -307,7 +309,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-(1Z-alkenyl),2-acylglycerophosphoethanolamines': {
@@ -323,7 +325,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoacylglycerophosphoethanolamines': {
@@ -339,7 +341,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoalkylglycerophosphoethanolamines': {
@@ -355,7 +357,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1Z-alkenylglycerophosphoethanolamines': {
@@ -371,7 +373,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -390,7 +392,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-alkyl,2-acylglycerophosphoserines': {
@@ -406,7 +408,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-(1Z-alkenyl),2-acylglycerophosphoserines': {
@@ -422,7 +424,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoacylglycerophosphoserines': {
@@ -438,7 +440,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoalkylglycerophosphoserines': {
@@ -454,7 +456,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1Z-alkenylglycerophosphoserines': {
@@ -470,7 +472,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'both',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -489,7 +491,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-alkyl,2-acylglycerophosphoglycerols': {
@@ -505,7 +507,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-(1Z-alkenyl),2-acylglycerophosphoglycerols': {
@@ -521,7 +523,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoacylglycerophosphoglycerols': {
@@ -537,7 +539,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoalkylglycerophosphoglycerols': {
@@ -553,7 +555,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1Z-alkenylglycerophosphoglycerols': {
@@ -569,7 +571,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -588,7 +590,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-alkyl,2-acylglycerophosphoinositols': {
@@ -604,7 +606,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-(1Z-alkenyl),2-acylglycerophosphoinositols': {
@@ -620,7 +622,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoacylglycerophosphoinositols': {
@@ -636,7 +638,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoalkylglycerophosphoinositols': {
@@ -652,7 +654,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1Z-alkenylglycerophosphoinositols': {
@@ -668,7 +670,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -687,7 +689,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 2,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoacylglycerophosphoinositol monophosphates': {
@@ -703,7 +705,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 2,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -722,7 +724,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 3,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -741,7 +743,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 4,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -760,7 +762,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-alkyl,2-acylglycerophosphates': {
@@ -776,7 +778,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1-(1Z-alkenyl),2-acylglycerophosphates': {
@@ -792,7 +794,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoacylglycerophosphates': {
@@ -808,7 +810,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             'Monoalkylglycerophosphates': {
@@ -824,7 +826,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
             '1Z-alkenylglycerophosphates': {
@@ -840,7 +842,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'neg',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 2,
                 'other_props': [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -858,7 +860,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 2,
                 },
                 'ionization' : 'neg',
-                'n_chains': 4,
+                'n_chains': 4, 'n_chains_full': 4,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -878,7 +880,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'both',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
             },
         },
@@ -896,7 +898,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 1,
                 },
                 'ionization' : 'pos',
-                'n_chains': 2,
+                'n_chains': 2, 'n_chains_full': 2,
                 'other_props': [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
             },
         },
@@ -916,7 +918,7 @@ _LMAPS_CLASSIFICATION = {
                     'P': 0,
                 },
                 'ionization' : 'pos',
-                'n_chains': 1,
+                'n_chains': 1, 'n_chains_full': 1,
                 'other_props': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             },
         },
@@ -924,7 +926,7 @@ _LMAPS_CLASSIFICATION = {
 }
 
 
-def _iterate_all_lipid_classifications():
+def iterate_all_lipid_classifications():
     """
     generator function that iterates through all of the entries in _LMAPS_CLASSIFICATION and yields individual lipid
     info as well as the corresponding classification info
@@ -936,10 +938,10 @@ def _iterate_all_lipid_classifications():
     lipid_info : dict(...)
         lipid information (formula, ionization, acyl chain count)
     """
-    for lcategory in _LMAPS_CLASSIFICATION:
-        for lclass in _LMAPS_CLASSIFICATION[lcategory]:
-            for lsubclass in _LMAPS_CLASSIFICATION[lcategory][lclass]:
-                data = _LMAPS_CLASSIFICATION[lcategory][lclass][lsubclass]
+    for lcategory in LMAPS_CLASSIFICATION:
+        for lclass in LMAPS_CLASSIFICATION[lcategory]:
+            for lsubclass in LMAPS_CLASSIFICATION[lcategory][lclass]:
+                data = LMAPS_CLASSIFICATION[lcategory][lclass][lsubclass]
                 if type(data) is dict:
                     data2 = [data]
                 elif type(data) is list:
