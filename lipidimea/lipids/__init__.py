@@ -3,7 +3,7 @@ LipidIMEA/lipids/__init__.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    sub-module for handling lipid identifications
+    sub-package for handling lipid annotation
 """
 
 
