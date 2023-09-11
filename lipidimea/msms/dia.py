@@ -148,11 +148,11 @@ def _add_single_target_results_to_db(results_db_cursor,
     xic = np.array(xic).tobytes() if store_blobs else None
     atd = np.array(atd).tobytes() if store_blobs else None
     ms2 = np.array(ms2).tobytes() if store_blobs else None
-    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
+    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
     results_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f,
                                                 ms1,
                                                 rt, rt_fwhm, rt_pkht, rt_psnr, xic,
-                                                dt, dt_fwhm, dt_pkht, dt_psnr, atd,
+                                                dt, dt_fwhm, dt_pkht, dt_psnr, atd, None,
                                                 ms2_n_peaks, ms2_peaks, ms2))
     # fetch the DIA feature ID that we just added
     dia_feat_id = results_db_cursor.lastrowid
