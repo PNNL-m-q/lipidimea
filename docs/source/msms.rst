@@ -38,3 +38,9 @@ DIA
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: LipidIMEA.msms.dia.extract_dia_features_multiproc
+
+
+``add_calibrated_ccs_to_dia_features``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: LipidIMEA.msms.dia.add_calibrated_ccs_to_dia_features
