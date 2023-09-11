@@ -292,7 +292,7 @@ annotation:
             default: null
             display_name: lipid class parameters file
             type: str
-            description: parameter file with lipid class specific information for generating sum composition DB
+            description: parameter file with lipid class specific information for generating sum composition DB, leave blank to use default for ionization mode
             advanced: false
         ann_sc_min_c:
             default: 12

@@ -7,6 +7,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
+from os import path as op
 from sqlite3 import connect
 from itertools import product
 
@@ -175,16 +176,14 @@ class SumCompLipidDB():
                             qdata = (lclass, fa_mod, n_chains, sumc, sumu, str(lpd), adduct, mz)
                             self._cur.execute(insert_qry, qdata)
 
-    def get_sum_comp_lipid_ids(self, include_lipid_classes, mz, mz_tol):
+    def get_sum_comp_lipid_ids(self, mz, mz_tol):
         """
-        searches the sum composition lipid ids database using a feature m/z with search restricted
-        to specified lipid class (and # chains). Returns all potential lipid annotations within search
-        tolerance
+        searches the sum composition lipid ids database using a feature m/z 
+        
+        Returns all potential lipid annotations within search tolerance
 
         Parameters
         ----------
-        include_lipid_classes : ``list(tuple(str, int))``
-            tuples with (lipid_class, n_chains) to include in search
         mz : ``float``
             feature m/z
         mz_tol : ``float``
@@ -196,19 +195,81 @@ class SumCompLipidDB():
             list of lipid annotation candidates, each is a tuple consisting of 
             name, adduct, and m/z
         """
-        candidates = []
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
-        qry = """SELECT name, adduct, mz FROM SumCompLipids WHERE lclass=? AND n_chains=? AND mz>=? AND mz<=?"""
-        for lclass, n_chains in include_lipid_classes:
-            for candidate in self._cur.execute(qry, (lclass, n_chains, mz_min, mz_max)).fetchall():
-                candidates.append(candidate)
-        return candidates
+        qry = "SELECT name, adduct, mz FROM SumCompLipids WHERE mz>=? AND mz<=?"
+        return [_ for _ in self._cur.execute(qry, (mz_min, mz_max)).fetchall()]
 
     def close(self):
         """
         close the database
         """
         self._con.close()
+
+
+def remove_lipid_annotations(results_db):
+    """
+    remove all annotations from the results database
+
+    Parameters
+    ----------
+    results_db : ``str``
+        path to DDA-DIA analysis results database
+    """
+    # connect to  results database
+    con = connect(results_db) 
+    cur = con.cursor()
+    # drop any existing annotations
+    cur.execute('DELETE FROM Lipids;')
+    # clean up
+    con.commit()
+    con.close()
+
+
+def annotate_lipids_sum_composition(results_db, params, overwrite, ionization):
+    """
+    annotate features from a DDA-DIA data analysis using a generated database of lipids
+    at the level of sum composition
+
+    Parameters
+    ----------
+    results_db : ``str``
+        path to DDA-DIA analysis results database
+    params : ``dict(...)``
+        parameters for lipid annotation
+    overwrite : ``bool``
+        clear any existing annotations from the database before doing annotation
+    ionization : ``str``
+        specify whether the ionization mode is positive ("POS") or negative ("NEG")
+    """
+    # unpack params
+    params = params['annotation']['ann_sum_comp']
+    lipid_class_params = params['ann_sc_lipid_class_params']
+    # load default lipid class params if they werent specified
+    dlcp_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/default_params.yml')
+    lipid_class_params = op.join(dlcp_path, 'default_{}.yml'.format(ionization)) if lipid_class_params is None else lipid_class_params
+    # params for FA length
+    min_c, max_c, odd_c = params['ann_sc_min_c'], params['ann_sc_max_c'], params['ann_sc_odd_c']
+    mz_tol = params['ann_sc_mz_tol']
+    # create the sum composition lipid database
+    scdb = SumCompLipidDB()
+    scdb.fill_db_from_config(lipid_class_params, min_c, max_c, odd_c)
+    # remove existing annotations if requested
+    if overwrite:
+        remove_lipid_annotations(results_db)
+    # connect to  results database
+    con = connect(results_db) 
+    cur = con.cursor()
+    # iterate through DIA features and get putative annotations
+    qry_sel = 'SELECT dia_feat_id, mz, dia_rt FROM CombinedFeatures'
+    qry_ins = 'INSERT INTO Lipids VALUES (?,?,?,?,?,?,?)'
+    for dia_feat_id, mz, rt in cur.execute(qry_sel).fetchall():
+        for cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, mz_tol):
+            qdata = (None, dia_feat_id, cname, cadduct, _ppm_error(cmz, mz), None, None)
+            cur.execute(qry_ins, qdata)
+    # clean up
+    scdb.close()
+    con.commit()
+    con.close()
 
 
 def _get_lipid_classes_for_rt(rt):
@@ -236,65 +297,4 @@ def _get_lipid_classes_for_rt(rt):
         if rt >= rt_min and rt <= rt_max:
             candidates.append(candidate)
     return candidates
-
-
-def remove_lipid_annotations(results_db):
-    """
-    remove all annotations from the results database
-
-    Parameters
-    ----------
-    results_db : ``str``
-        path to DDA-DIA analysis results database
-    """
-    # connect to  results database
-    con = connect(results_db) 
-    cur = con.cursor()
-    # drop any existing annotations
-    cur.execute('DELETE FROM Lipids;')
-    # clean up
-    con.commit()
-    con.close()
-
-
-def annotate_lipids_sum_composition(results_db, params, overwrite):
-    """
-    annotate features from a DDA-DIA data analysis using a generated database of lipids
-    at the level of sum composition
-
-    Parameters
-    ----------
-    results_db : ``str``
-        path to DDA-DIA analysis results database
-    params : ``dict(...)``
-        parameters for lipid annotation
-    overwrite : ``bool``
-        clear any existing annotations from the database before doing annotation
-    """
-    # unpack params
-    params = params['annotation']['ann_sum_comp']
-    lipid_class_params = params['ann_sc_lipid_class_params']
-    min_c, max_c, odd_c = params['ann_sc_min_c'], params['ann_sc_max_c'], params['ann_sc_odd_c']
-    mz_tol = params['ann_sc_mz_tol']
-    # create the sum composition lipid database
-    scdb = SumCompLipidDB()
-    scdb.fill_db_from_config(lipid_class_params, min_c, max_c, odd_c)
-    # remove existing annotations if requested
-    if overwrite:
-        remove_lipid_annotations(results_db)
-    # connect to  results database
-    con = connect(results_db) 
-    cur = con.cursor()
-    # iterate through DIA features and get putative annotations
-    qry_sel = 'SELECT dia_feat_id, mz, dia_rt FROM CombinedFeatures'
-    qry_ins = 'INSERT INTO Lipids VALUES (?,?,?,?,?,?)'
-    for dia_feat_id, mz, rt in cur.execute(qry_sel).fetchall():
-        for cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(_get_lipid_classes_for_rt(rt), mz, mz_tol):
-            qdata = (None, dia_feat_id, cname, cadduct, _ppm_error(cmz, mz), None)
-            cur.execute(qry_ins, qdata)
-    # clean up
-    con.commit()
-    con.close()
-
-
 
