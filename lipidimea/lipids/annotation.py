@@ -257,7 +257,7 @@ def remove_lipid_annotations(results_db):
     con.close()
 
 
-def annotate_lipids_sum_composition(results_db, params):
+def annotate_lipids_sum_composition(results_db, params, overwrite):
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -268,6 +268,8 @@ def annotate_lipids_sum_composition(results_db, params):
         path to DDA-DIA analysis results database
     params : ``dict(...)``
         parameters for lipid annotation
+    overwrite : ``bool``
+        clear any existing annotations from the database before doing annotation
     """
     # unpack params
     params = params['annotation']['ann_sum_comp']
@@ -277,6 +279,9 @@ def annotate_lipids_sum_composition(results_db, params):
     # create the sum composition lipid database
     scdb = SumCompLipidDB()
     scdb.fill_db_from_config(lipid_class_params, min_c, max_c, odd_c)
+    # remove existing annotations if requested
+    if overwrite:
+        remove_lipid_annotations(results_db)
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()

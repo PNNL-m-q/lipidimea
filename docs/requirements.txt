@@ -1,3 +1,4 @@
 LipidIMEA
 numpydoc
 nbsphinx
+sphinx-js

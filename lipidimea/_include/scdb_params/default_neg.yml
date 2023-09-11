@@ -1,0 +1,33 @@
+# These defaults come from lipids identified from NIST SRM1950 plasma
+FA:
+  fa_mod: [null]
+  n_chains: [1]
+  adducts: ["[M-H]-"]
+PC:
+  fa_mod: [null, P-, O-]
+  n_chains: [1, 2]
+  adducts: ["[M+CH3COO]-", "[M+HCOO]-"]
+PE:
+  fa_mod: [null, P-, O-]
+  n_chains: [1, 2]
+  adducts: ["[M-H]-"]
+PI:
+  fa_mod: [null]
+  n_chains: [2]
+  adducts: ["[M-H]-"]
+Cer:
+  fa_mod: [d]
+  n_chains: [2]
+  adducts: ["[M+CH3COO]-", "[M+HCOO]-"]
+SM:
+  fa_mod: [d]
+  n_chains: [2]
+  adducts: ["[M+CH3COO]-", "[M+HCOO]-"]
+GlcCer:
+  fa_mod: [d]
+  n_chains: [2]
+  adducts: ["[M+CH3COO]-", "[M+HCOO]-"]
+LacCer:
+  fa_mod: [d]
+  n_chains: [2]
+  adducts: ["[M+CH3COO]-", "[M+HCOO]-"]
