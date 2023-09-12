@@ -148,11 +148,11 @@ def _add_single_target_results_to_db(results_db_cursor,
     xic = np.array(xic).tobytes() if store_blobs else None
     atd = np.array(atd).tobytes() if store_blobs else None
     ms2 = np.array(ms2).tobytes() if store_blobs else None
-    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
+    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
     results_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f,
                                                 ms1,
                                                 rt, rt_fwhm, rt_pkht, rt_psnr, xic,
-                                                dt, dt_fwhm, dt_pkht, dt_psnr, atd,
+                                                dt, dt_fwhm, dt_pkht, dt_psnr, atd, None,
                                                 ms2_n_peaks, ms2_peaks, ms2))
     # fetch the DIA feature ID that we just added
     dia_feat_id = results_db_cursor.lastrowid
@@ -287,7 +287,7 @@ def _single_target_analysis(n, i, rdr, results_db_cursor, f, dda_fid, dda_mz, dd
 def extract_dia_features(dia_data_file, results_db, params, 
                          debug_flag=None, debug_cb=None):
     """
-    Extract features from a raw DIA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
+    Extract features from a raw DIA data file, store them in a database (initialized using ``LipidIMEA.util.create_results_db`` function)
 
     Parameters
     ----------
@@ -327,20 +327,10 @@ def extract_dia_features(dia_data_file, results_db, params,
     rdr.close()
 
 
-# TODO (Dylan Ross): Is there something wrong with using multiprocessing with the MZA object that uses multithreaded IO
-#                       that keeps causing this to hang after some number of targets? Need to maybe implement an option
-#                       for MZA not to use multithreaded IO for cases such as this... But then again, I was able to run
-#                       LipidOz with multiprocessing without issue and LipidOz uses MZA for file access as well... need
-#                       to dig into this some more and figure out why the hanging keeps happening. In any case, having
-#                       this multiprocessing option for DIA analysis is a must for real applications as there will be
-#                       multiple DIA files to analyze.
 def extract_dia_features_multiproc(dia_data_files, results_db, params, n_proc, 
                                    debug_flag=None, debug_cb=None):
     """
     extracts dda features from multiple DDA files in parallel
-
-    ``params`` dict must contain:
-    * ``?``
 
     Parameters
     ----------
@@ -363,3 +353,45 @@ def extract_dia_features_multiproc(dia_data_files, results_db, params, n_proc,
     args_for_starmap = zip(repeat(extract_dia_features), args, repeat({'debug_flag': debug_flag, 'debug_cb': debug_cb}))
     with multiprocessing.Pool(processes=n_proc) as p:
         p.starmap(apply_args_and_kwargs, args_for_starmap)
+
+
+def add_calibrated_ccs_to_dia_features(results_db, t_fix, beta):
+    """
+    Uses calibration parameters to calculate calibrated CCS values from m/z and arrival times of DIA features
+
+    Calibration is for single-field DTIMS measurements and the function is of the form:
+
+    ``CCS = z (arrival_time + t_fix) / (beta * mu(m))``
+
+    Where  ``mu(m)`` is the reduced mass of the analyte with nitrogen
+
+    .. note::
+
+        This method assumes charge=1 and the drift gas is nitrogen
+
+    Parameters
+    ----------
+    results_db : ``str``
+        path to DDA-DIA analysis results database
+    t_fix : ``float``
+    beta : ``float``
+        single-field DTIMS calibration parameters
+    """
+    def ccs(mz, dt, t_fix, beta):
+        """ calibrated CCS from m/z, arrival time, and calibration parameters """
+        # z = 1, so z can be dropped from the function above
+        # and also means that m == mz 
+        # buffer gas is N2 -> 28.00615 in reduced mass calculation
+        return (dt + t_fix) / (beta * np.sqrt(mz / (mz + 28.00615)))
+    # connect to the database
+    con = connect(results_db) 
+    cur1, cur2 = con.cursor(), con.cursor()  # one cursor to select data, another to update the db with ccs
+    # select out the IDs, m/zs and arrival times of the features
+    sel_qry = "SELECT dia_feat_id, mz, dt FROM _DIAFeatures JOIN DDAFeatures USING(dda_feat_id);"
+    upd_qry = "UPDATE _DIAFeatures SET ccs=? WHERE dia_feat_id=?;"
+    for dia_feat_id, mz, dt in cur1.execute(sel_qry).fetchall():
+        cur2.execute(upd_qry, (ccs(mz, dt, t_fix, beta), dia_feat_id))
+    # clean up
+    con.commit()
+    con.close()
+    

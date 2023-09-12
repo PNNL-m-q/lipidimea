@@ -115,7 +115,7 @@ dda:
             description: m/z tolerance for consolidating features from different DDA data files
             advanced: false
         dda_fc_rt_tol: 
-            default: 0.05
+            default: 0.1
             display_name: RT tolerance
             type: float
             description: retention time tolerance for consolidating features from different DDA data files
@@ -292,7 +292,7 @@ annotation:
             default: null
             display_name: lipid class parameters file
             type: str
-            description: parameter file with lipid class specific information for generating sum composition DB
+            description: parameter file with lipid class specific information for generating sum composition DB, leave blank to use default for ionization mode
             advanced: false
         ann_sc_min_c:
             default: 12
