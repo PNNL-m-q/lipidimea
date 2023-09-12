@@ -28,6 +28,7 @@ class SumCompLipidDB():
         """ initialize DB in memory and set up SumCompLipids table """
         create_qry = """
         CREATE TABLE SumCompLipids (
+            lmid_prefix TEXT, 
             lclass TEXT,
             fa_mod TEXT,
             n_chains INT,
@@ -161,7 +162,7 @@ class SumCompLipidDB():
             cnf = yaml.safe_load(yf)
         # iterate over the lipid classes specified in the config and generate m/zs
         # then add to db
-        insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?,?);'
+        insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?,?,?);'
         for lclass, lcinfo in cnf.items():
             for fa_mod in lcinfo['fa_mod']:
                 for n_chains in lcinfo['n_chains']:
@@ -173,7 +174,7 @@ class SumCompLipidDB():
                                     n_chains=n_chains)
                         for adduct in lcinfo['adducts']:
                             mz = ms_adduct_mz(lpd.formula, adduct)
-                            qdata = (lclass, fa_mod, n_chains, sumc, sumu, str(lpd), adduct, mz)
+                            qdata = (lpd.lmaps_id_prefix, lclass, fa_mod, n_chains, sumc, sumu, str(lpd), adduct, mz)
                             self._cur.execute(insert_qry, qdata)
 
     def get_sum_comp_lipid_ids(self, mz, mz_tol):
@@ -193,10 +194,10 @@ class SumCompLipidDB():
         -------
         candidates : ``list(tuple(...))``
             list of lipid annotation candidates, each is a tuple consisting of 
-            name, adduct, and m/z
+            lmaps_id_prefix, name, adduct, and m/z
         """
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
-        qry = "SELECT name, adduct, mz FROM SumCompLipids WHERE mz>=? AND mz<=?"
+        qry = "SELECT lmid_prefix, name, adduct, mz FROM SumCompLipids WHERE mz>=? AND mz<=?"
         return [_ for _ in self._cur.execute(qry, (mz_min, mz_max)).fetchall()]
 
     def close(self):
@@ -225,7 +226,7 @@ def remove_lipid_annotations(results_db):
     con.close()
 
 
-def annotate_lipids_sum_composition(results_db, params, overwrite, ionization):
+def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params):
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -234,25 +235,24 @@ def annotate_lipids_sum_composition(results_db, params, overwrite, ionization):
     ----------
     results_db : ``str``
         path to DDA-DIA analysis results database
+    lipid_class_scdb_config : ``str``
+        path to lipid class config file for generating lipid database, None to use built-in default
     params : ``dict(...)``
         parameters for lipid annotation
-    overwrite : ``bool``
-        clear any existing annotations from the database before doing annotation
-    ionization : ``str``
-        specify whether the ionization mode is positive ("POS") or negative ("NEG")
     """
     # unpack params
+    ionization = params['misc']['ionization']
+    overwrite = params['misc']['overwrite_annotations']
     params = params['annotation']['ann_sum_comp']
-    lipid_class_params = params['ann_sc_lipid_class_params']
     # load default lipid class params if they werent specified
     dlcp_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/scdb_params')
-    lipid_class_params = op.join(dlcp_path, 'default_{}.yml'.format(ionization)) if lipid_class_params is None else lipid_class_params
+    lipid_class_scdb_config = op.join(dlcp_path, 'default_{}.yml'.format(ionization)) if lipid_class_scdb_config is None else lipid_class_scdb_config
     # params for FA length
     min_c, max_c, odd_c = params['ann_sc_min_c'], params['ann_sc_max_c'], params['ann_sc_odd_c']
     mz_tol = params['ann_sc_mz_tol']
     # create the sum composition lipid database
     scdb = SumCompLipidDB()
-    scdb.fill_db_from_config(lipid_class_params, min_c, max_c, odd_c)
+    scdb.fill_db_from_config(lipid_class_scdb_config, min_c, max_c, odd_c)
     # remove existing annotations if requested
     if overwrite:
         remove_lipid_annotations(results_db)
@@ -260,11 +260,11 @@ def annotate_lipids_sum_composition(results_db, params, overwrite, ionization):
     con = connect(results_db) 
     cur = con.cursor()
     # iterate through DIA features and get putative annotations
-    qry_sel = 'SELECT dia_feat_id, mz, dia_rt FROM CombinedFeatures'
-    qry_ins = 'INSERT INTO Lipids VALUES (?,?,?,?,?,?,?)'
-    for dia_feat_id, mz, rt in cur.execute(qry_sel).fetchall():
-        for cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, mz_tol):
-            qdata = (None, dia_feat_id, cname, cadduct, _ppm_error(cmz, mz), None, None)
+    qry_sel = 'SELECT dia_feat_id, mz FROM CombinedFeatures'
+    qry_ins = 'INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)'
+    for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
+        for clmidp, cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, mz_tol):
+            qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None, None)
             cur.execute(qry_ins, qdata)
     # clean up
     scdb.close()
@@ -272,29 +272,45 @@ def annotate_lipids_sum_composition(results_db, params, overwrite, ionization):
     con.close()
 
 
-def _get_lipid_classes_for_rt(rt):
+def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params):
     """
-    This is kind of a placeholder for now, need to think of a better solution for considering RT in the future...
+    filter feature annotations based on their retention times vs. expected retention time ranges
+    by lipid class for a specified chromatographic method
 
-    return a list of potential lipid classes (and number of chains) for a given RT
+    Parameters
+    ----------
+    results_db : ``srt``
+        path to DDA-DIA analysis results database
+    lipid_class_rt_ranges : ``str``
+        path to config file with lipid class RT ranges, None to use built-in default
+    params : ``dict(...)``
+        parameters for lipid annotation
     """
-    # key is (lipid class, n chains)
-    # value is [min RT, max RT]
-    rt_ranges = {
-        ('CAR', 1): [0, 5],
-        ('TG', 3): [23, 35],
-        ('SM', 2): [15, 28],
-        ('DG', 2): [20, 26],
-        ('Cer', 2): [23, 28],
-        ('PC', 2): [17, 24],
-        ('PE', 2): [19, 26],
-        ('PC', 1): [0, 15],
-        ('PE', 1): [0, 15],
-        ('CE', 1): [30, 35],
-    }
-    candidates = []
-    for candidate, (rt_min, rt_max) in rt_ranges.items():
-        if rt >= rt_min and rt <= rt_max:
-            candidates.append(candidate)
-    return candidates
-
+    # unpack params
+    params = params['annotation']['ann_rt_range']
+    # ann_rtr_only_keep_defined_classes
+    # load RT ranges
+    rtr_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/rt_ranges/default_HILIC.yml')
+    lipid_class_rt_ranges = rtr_path if lipid_class_rt_ranges is None else lipid_class_rt_ranges
+    with open(lipid_class_rt_ranges, 'r') as yf:
+        rt_ranges = yaml.safe_load(yf)
+    # connect to  results database
+    con = connect(results_db) 
+    cur = con.cursor()
+    # iterate through annotations, check if the RT is within specified range 
+    anns_to_del = []  # track annotation IDs to delete
+    qry_sel = 'SELECT ann_id, lmaps_id_prefix, rt FROM Lipids JOIN _DIAFeatures USING(dia_feat_id);'
+    for ann_id, lmid_prefix, rt in cur.execute(qry_sel).fetchall():
+        if lmid_prefix in rt_ranges:
+            rtmin, rtmax = rt_ranges[lmid_prefix]
+            if rt <= rtmin or rt >= rtmax:
+                anns_to_del.append(ann_id)
+        elif params['ann_rtr_only_keep_defined_classes']:
+            anns_to_del.append(ann_id)
+    # delete any annotations not within specified RT range
+    qry_del = 'DELETE FROM Lipids WHERE ann_id=?'
+    for ann_id in anns_to_del:
+        cur.execute(qry_del, (ann_id,))
+    # clean up
+    con.commit()
+    con.close()

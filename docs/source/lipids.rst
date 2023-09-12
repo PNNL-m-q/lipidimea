@@ -62,3 +62,8 @@ Annotation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autofunction:: LipidIMEA.lipids.annotation.annotate_lipids_sum_composition
+
+``filter_annotations_by_rt_range``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autofunction:: LipidIMEA.lipids.annotation.filter_annotations_by_rt_range

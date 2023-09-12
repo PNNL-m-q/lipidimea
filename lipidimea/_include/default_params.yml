@@ -137,7 +137,7 @@ dia:
             description: m/z tolerance for extracting precursor XICs
             advanced: false
         dia_cxf_pre_xic_rt_tol: 
-            default: 0.75
+            default: 1.0
             display_name: RT tolerance
             type: float
             description: retention time range (relative to DDA feature retention time) to extract XIC from DIA data
@@ -175,7 +175,7 @@ dia:
     dia_sel_xic_pks:
         display_name: XIC peak selection
         dia_sxp_target_rt_tol: 
-            default: 0.05
+            default: 0.1
             display_name: target RT tolerance
             type: float
             description: retention time tolerance for matching DIA XIC peaks to target DDA feature
@@ -288,20 +288,14 @@ annotation:
     display_name: lipid annotation
     ann_sum_comp:
         display_name: annotation at the level of sum composition using generated DB
-        ann_sc_lipid_class_params:
-            default: null
-            display_name: lipid class parameters file
-            type: str
-            description: parameter file with lipid class specific information for generating sum composition DB, leave blank to use default for ionization mode
-            advanced: false
         ann_sc_min_c:
             default: 12
             display_name: minimum FA chain length
             type: int
             description: minimum number of carbons in an individual FA chain
             advanced: false
-        ann_sc_max_c: 22
-            default:
+        ann_sc_max_c: 
+            default: 24
             display_name: maximum FA chain length
             type: int
             description: maximum number of carbons in an individual FA chain
@@ -313,11 +307,19 @@ annotation:
             description: include FAs with odd number of carbons in the generated DB
             advanced: false
         ann_sc_mz_tol:
-            default: 0.05
+            default: 0.025
             display_name: m/z tolerance for annotation
             type: float
             description: m/z tolerance for matching lipids from the sum composition DB
             advanced: false
+    ann_rt_range:
+        display_name: filter annotations based on lipid class RT ranges
+        ann_rtr_only_keep_defined_classes:
+            default: true
+            display_name: only retain annotations with explicitly defined RT ranges
+            type: bool
+            description: if true, drop any annotations for which no RT range has been defined 
+            advanced: true
 misc:
     display_name: miscellaneous
     do_dda_processing:
@@ -337,6 +339,18 @@ misc:
         display_name: do lipid annotation
         type: bool
         description: annotate DIA features with lipid identifications
+        advanced: false
+    overwrite_annotations:
+        default: true
+        display name: overwrite existing lipid annotations
+        type: bool
+        description: overwrite any existing lipid annotations in the results database before annotating DIA features
+        advanced: false
+    ionization:
+        default: POS
+        display_name: ionization
+        type: str
+        description: ionization mode data was acquired in (POS or NEG)
         advanced: false
     dia_store_blobs: 
         default: true
