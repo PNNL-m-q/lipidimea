@@ -300,8 +300,8 @@ annotation:
             type: int
             description: minimum number of carbons in an individual FA chain
             advanced: false
-        ann_sc_max_c: 22
-            default:
+        ann_sc_max_c:
+            default: 22
             display_name: maximum FA chain length
             type: int
             description: maximum number of carbons in an individual FA chain
