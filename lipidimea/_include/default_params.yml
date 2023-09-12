@@ -115,7 +115,7 @@ dda:
             description: m/z tolerance for consolidating features from different DDA data files
             advanced: false
         dda_fc_rt_tol: 
-            default: 0.05
+            default: 0.1
             display_name: RT tolerance
             type: float
             description: retention time tolerance for consolidating features from different DDA data files

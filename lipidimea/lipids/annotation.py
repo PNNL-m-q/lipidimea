@@ -245,7 +245,7 @@ def annotate_lipids_sum_composition(results_db, params, overwrite, ionization):
     params = params['annotation']['ann_sum_comp']
     lipid_class_params = params['ann_sc_lipid_class_params']
     # load default lipid class params if they werent specified
-    dlcp_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/default_params.yml')
+    dlcp_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/scdb_params')
     lipid_class_params = op.join(dlcp_path, 'default_{}.yml'.format(ionization)) if lipid_class_params is None else lipid_class_params
     # params for FA length
     min_c, max_c, odd_c = params['ann_sc_min_c'], params['ann_sc_max_c'], params['ann_sc_odd_c']

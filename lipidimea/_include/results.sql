@@ -209,7 +209,7 @@ INSERT INTO _Lipids_COLUMNS VALUES
     ('lipid', 'lipid annotation, made at the level of sum composition or higher if supporting fragment(s) found in MS2 spectrum'),
     ('adduct', 'MS adduct/ionization state'),
     ('ppm', 'mass error in ppm relative to theoretical monoisotopic mass'),
-    ('ccs_rel_err', 'relative CCS error in percent')
+    ('ccs_rel_err', 'relative CCS error in percent'),
     ('fragments', 'annotated peaks from MS2 spectrum in single line "{label}_{mz} {label}_{mz} ..." format');
 
 -- table with Lipid annotations
