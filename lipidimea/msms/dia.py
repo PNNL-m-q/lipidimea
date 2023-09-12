@@ -4,10 +4,7 @@ LipidIMEA/msms/dia.py
 Dylan Ross (dylan.ross@pnnl.gov)
 
     module with DIA MSMS utilities
-
-    TODO (Dylan Ross): get rid of all of the "if debug: print(...)" statements and implement 
-                       a debug handler instead, implement in and import from msms/_util.py, 
-                       will make these functions much cleaner
+    
 """
 
 
@@ -21,7 +18,8 @@ from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from LipidIMEA.msms._util import str_to_ms2, ms2_to_str, debug_handler, apply_args_and_kwargs
+from LipidIMEA.msms._util import str_to_ms2, ms2_to_str, apply_args_and_kwargs
+from LipidIMEA.util import debug_handler
 
 
 def _select_xic_peak(target_rt, target_rt_tol, pkrts, pkhts, pkwts):

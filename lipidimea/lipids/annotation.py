@@ -16,6 +16,7 @@ from mzapy._util import _ppm_error
 import yaml
 
 from LipidIMEA.lipids import Lipid
+from LipidIMEA.util import debug_handler
 
 
 class SumCompLipidDB():
@@ -226,7 +227,8 @@ def remove_lipid_annotations(results_db):
     con.close()
 
 
-def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params):
+def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params,
+                                    debug_flag=None, debug_cb=None):
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -239,7 +241,13 @@ def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params)
         path to lipid class config file for generating lipid database, None to use built-in default
     params : ``dict(...)``
         parameters for lipid annotation
+    debug_flag : ``str``, optional
+        specifies how to dispatch debugging messages, None to do nothing
+    debug_cb : ``func``, optional
+        callback function that takes the debugging message as an argument, can be None if
+        debug_flag is not set to 'textcb' or 'textcb_pid'
     """
+    debug_handler(debug_flag, debug_cb, 'ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABSE...')
     # unpack params
     ionization = params['misc']['ionization']
     overwrite = params['misc']['overwrite_annotations']
@@ -255,24 +263,37 @@ def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params)
     scdb.fill_db_from_config(lipid_class_scdb_config, min_c, max_c, odd_c)
     # remove existing annotations if requested
     if overwrite:
+        debug_handler(debug_flag, debug_cb, 'removing any existing lipid annotations')
         remove_lipid_annotations(results_db)
+    else:
+        debug_handler(debug_flag, debug_cb, 'appending new lipid annotations to any existing annotations')
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
     # iterate through DIA features and get putative annotations
     qry_sel = 'SELECT dia_feat_id, mz FROM CombinedFeatures'
     qry_ins = 'INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)'
+    n_feats, n_feats_annotated, n_anns = 0, 0, 0
     for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
+        n_feats += 1
+        annotated = False
         for clmidp, cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, mz_tol):
+            annotated = True
             qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None, None)
             cur.execute(qry_ins, qdata)
+            n_anns += 1
+        if annotated:
+            n_feats_annotated += 1
+    # report how many features were annotated
+    debug_handler(debug_flag, debug_cb, 'ANNOTATED: {} / {} DIA features ({} annotations total)'.format(n_feats_annotated, n_feats, n_anns))
     # clean up
     scdb.close()
     con.commit()
     con.close()
 
 
-def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params):
+def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params,
+                                   debug_flag=None, debug_cb=None):
     """
     filter feature annotations based on their retention times vs. expected retention time ranges
     by lipid class for a specified chromatographic method
@@ -285,7 +306,13 @@ def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params):
         path to config file with lipid class RT ranges, None to use built-in default
     params : ``dict(...)``
         parameters for lipid annotation
+    debug_flag : ``str``, optional
+        specifies how to dispatch debugging messages, None to do nothing
+    debug_cb : ``func``, optional
+        callback function that takes the debugging message as an argument, can be None if
+        debug_flag is not set to 'textcb' or 'textcb_pid'
     """
+    debug_handler(debug_flag, debug_cb, 'FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...')
     # unpack params
     params = params['annotation']['ann_rt_range']
     # ann_rtr_only_keep_defined_classes
@@ -300,7 +327,9 @@ def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params):
     # iterate through annotations, check if the RT is within specified range 
     anns_to_del = []  # track annotation IDs to delete
     qry_sel = 'SELECT ann_id, lmaps_id_prefix, rt FROM Lipids JOIN _DIAFeatures USING(dia_feat_id);'
+    n_anns = 0
     for ann_id, lmid_prefix, rt in cur.execute(qry_sel).fetchall():
+        n_anns += 1
         if lmid_prefix in rt_ranges:
             rtmin, rtmax = rt_ranges[lmid_prefix]
             if rt <= rtmin or rt >= rtmax:
@@ -314,3 +343,4 @@ def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params):
     # clean up
     con.commit()
     con.close()
+    debug_handler(debug_flag, debug_cb, 'FILTERED: {} / {} annotations based on lipid class RT ranges'.format(len(anns_to_del), n_anns))
