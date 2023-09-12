@@ -3,10 +3,12 @@
 const selectButtonDDA = document.getElementById('select-button-dda');
 const selectButtonDIA = document.getElementById('select-button-dia');
 const selectButtonDatabase = document.getElementById('select-button-database');
+const selectButtonAnnotation = document.getElementById('select-button-annotation');
 const fileInputDDA = document.getElementById('dda-file-input');
 const fileInputDIA = document.getElementById('dia-file-input');
 
 const fileInputDatabase = document.getElementById('database-file-input');
+const fileInputAnnotation = document.getElementById('annotation-file-input');
 
 const checkboxes = {
   general: {
@@ -38,7 +40,6 @@ for (let type in checkboxes) {
   for (let mode in checkboxes[type]) {
       checkboxes[type][mode].addEventListener("change", handleCheckboxChange);
       checkboxes[type][mode].addEventListener("change", UpdateFileOptions);
-      // checkboxes[type][mode].addEventListener("change",UpdateAnnotateOptions);
   }
 }
 
@@ -79,6 +80,12 @@ if (selectButtonDIA) {
   }
 )};
   
+if (selectButtonAnnotation) {
+  selectButtonAnnotation.addEventListener('click', () => {
+    fileInputAnnotation.click();
+  }
+)};
+
 if (selectButtonDatabase) {
   selectButtonDatabase.addEventListener('click', () => {
     fileInputDatabase.click();
@@ -103,6 +110,11 @@ if (fileInputDatabase) {
   });
 }
 
+if (fileInputAnnotation) {
+  fileInputAnnotation.addEventListener('change', () => {
+    handleFileSelection(fileInputAnnotation, fileListAnnotation, filesAnnotation);
+  });
+}
 
 
 newDB.addEventListener("change", UpdateExpName);
@@ -146,215 +158,122 @@ function openTab(evt, tabName) {
 
 
 
-// Receive DDA-DIA data from Defaults Yaml
 let loadyamlonce = true;
 window.api.receive('yamlDataBoth', (data) => {
-  data = { PARAMETERS: data };
-  // console.log("loadyamlonce:",loadyamlonce)
-  if (loadyamlonce === true) {
-    loadyamlonce = false
-  
-  if (data) {
-    const parametersBoth = { ...data.PARAMETERS.dda, ...data.PARAMETERS.dia };
-    const parametersTop = { ...data.PARAMETERS };
-    const mainElementTop = Object.keys(data.PARAMETERS);
+    data = { PARAMETERS: data };
 
-    const sectionsTopBoth = mainElementTop.filter(display_name => display_name !== 'misc');
+    if (loadyamlonce === true) {
+        loadyamlonce = false;
 
-    // const parametersColumnBothAdvanced = document.getElementById('parameters-column-both-advanced');
-    // const inputsColumnBothAdvanced = document.getElementById('inputs-column-both-advanced');
-    const duoinputsColumnBothGeneral = document.getElementById('duo-inputs-column-both-general');
-    const duoinputsColumnBothAdvanced = document.getElementById('duo-inputs-column-both-advanced');
-    // const parametersColumnBothGeneral = document.getElementById('parameters-column-both-general');
-    // const inputsColumnBothGeneral = document.getElementById('inputs-column-both-general');
+        if (data) {
+            const parametersBoth = { ...data.PARAMETERS.dda, ...data.PARAMETERS.dia, ...data.PARAMETERS.annotation };
+            const mainElementTop = Object.keys(data.PARAMETERS);
+            const sectionsTopBoth = mainElementTop.filter(display_name => display_name !== 'misc');
 
-    sectionsTopBoth.forEach((sectionTopBoth) => {
-      const sectionsBoth = Object.keys(parametersTop[sectionTopBoth]).filter(key => key !== "misc");
-    
-      const parameterTextBothAdvanced = document.createElement('p');
-      parameterTextBothAdvanced.textContent = sectionTopBoth;
-      parameterTextBothAdvanced.style.justifyContent= 'left';
-      parameterTextBothAdvanced.style.fontSize = '24px';
-      parameterTextBothAdvanced.style.fontWeight = 'bold';
-      parameterTextBothAdvanced.id = sectionTopBoth;
-      parameterTextBothAdvanced.style.gridColumn = '1';
-      // parameterTextBothAdvanced.class = 'parameters-column-both-advanced'
+            const duoinputsColumnBothGeneral = document.getElementById('duo-inputs-column-both-general');
+            const duoinputsColumnBothAdvanced = document.getElementById('duo-inputs-column-both-advanced');
 
-      // parameterTextBothAdvanced.style.border = '1px solid #940707';
-      // parameterTextBothAdvanced.style.textAlign = 'right';
-      parameterTextBothAdvanced.style.gridColumn = 'span 2';
-      parameterTextBothAdvanced.key = 'Ignore'; // Assign 'Ignore' to key property
-      duoinputsColumnBothAdvanced.appendChild(parameterTextBothAdvanced);
-      const emptyTextAdvanced = document.createElement('input');
-      emptyTextAdvanced.style.fontSize = '24px';
-      emptyTextAdvanced.textContent = '';
-      emptyTextAdvanced.key = 'Ignore';
-      emptyTextAdvanced.style.gridColumn = '2';
-      emptyTextAdvanced.style.display = 'none';
-      // emptyTextAdvanced.class = 'inputs-column-both-advanced'
-      // emptyTextAdvanced.style.border = '1px solid #940707';
-      duoinputsColumnBothAdvanced.appendChild(emptyTextAdvanced);
-    
-      const parameterTextBothGeneral = document.createElement('p');
-      parameterTextBothGeneral.textContent = sectionTopBoth;
-      // parameterTextBothGeneral.style.justifyContent= 'right';
-      parameterTextBothGeneral.style.fontSize = '24px';
-      parameterTextBothGeneral.style.fontWeight = 'bold';
-      // parameterTextBothGeneral.style.textAlign = 'right';
-      parameterTextBothGeneral.id = sectionTopBoth;
-      parameterTextBothGeneral.style.gridColumn = '1';
-      // parameterTextBothGeneral.style.border = '1px solid #940707';
-      parameterTextBothGeneral.style.gridColumn = 'span 2';
-      // parameterTextBothGeneral.style.display = 'none';
-      parameterTextBothGeneral.key = 'Ignore'; // Assign 'Ignore' to key property
-      // parameterTextBothGeneral.class = 'parameters-column-both-general'
-      duoinputsColumnBothGeneral.appendChild(parameterTextBothGeneral);
-      const emptyTextGeneral = document.createElement('input');
-      emptyTextGeneral.style.fontSize = '24px';
-      emptyTextGeneral.textContent = '';
-      emptyTextGeneral.key = 'Ignore';
-      emptyTextGeneral.style.display='none';
-      emptyTextGeneral.style.gridColumn = '2';
-      // emptyTextGeneral.class = 'inputs-column-both-general'
-      // emptyTextGeneral.style.border = '1px solid #940707';
-      duoinputsColumnBothGeneral.appendChild(emptyTextGeneral);
-    
-      sectionsBoth.forEach((sectionBoth) => {
-        const sectionDataBoth = parametersBoth[sectionBoth];
-        const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.advanced);
-        const advancedValues = Object.entries(sectionDataBoth);
+            sectionsTopBoth.forEach((sectionTopBoth) => {
+                const sectionsBoth = Object.keys(data.PARAMETERS[sectionTopBoth]).filter(key => key !== "misc" && key !== "display_name");
 
-        
-        if (advancedValues.length > 0 ) {
-        const parameterTextBothAdvanced = document.createElement('p');
-        parameterTextBothAdvanced.textContent = sectionBoth;
-        parameterTextBothAdvanced.style.fontSize = '24px';
-        parameterTextBothAdvanced.style.fontSize = '20px';
-        parameterTextBothAdvanced.style.fontWeight = 'bold';
-        // parameterTextBothAdvanced.style.justifyContent= 'right';
-        // parameterTextBothAdvanced.style.textAlign = 'right';
-        parameterTextBothAdvanced.id = sectionBoth;
-        parameterTextBothAdvanced.style.gridColumn = '1';
-        // parameterTextBothGeneral.class = 'parameters-column-both-advanced'
-        // parameterTextBothAdvanced.style.border = '1px solid #940707';
-        parameterTextBothAdvanced.style.gridColumn = 'span 2';
-        parameterTextBothAdvanced.key = 'Ignore'; // Assign 'Ignore' to key property
-        duoinputsColumnBothAdvanced.appendChild(parameterTextBothAdvanced);
-        const emptyTextAdvanced = document.createElement('input');
-        emptyTextAdvanced.style.fontSize = '20px';
-        emptyTextAdvanced.style.display = 'none';
-        emptyTextAdvanced.textContent = '';
-        emptyTextAdvanced.key = 'Ignore';
+                createHeaderElement(data.PARAMETERS[sectionTopBoth].display_name, duoinputsColumnBothAdvanced, sectionTopBoth);
+                createHeaderElement(data.PARAMETERS[sectionTopBoth].display_name, duoinputsColumnBothGeneral, sectionTopBoth);
 
-        emptyTextAdvanced.style.gridColumn = '2';
-        // emptyTextAdvanced = 'inputs-column-both-advanced'
-        // emptyTextAdvanced.style.border = '1px solid #940707';
-        duoinputsColumnBothAdvanced.appendChild(emptyTextAdvanced);
-        };
+                sectionsBoth.forEach((sectionBoth) => {
+                    const sectionDataBoth = parametersBoth[sectionBoth];
+                    const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.advanced && key !== "display_name");
+                    const allValues = Object.entries(sectionDataBoth).filter(([key]) => key !== "display_name");
 
-        if (generalValues.length > 0 ) {
-        const parameterTextBothGeneral = document.createElement('p');
-        parameterTextBothGeneral.textContent = sectionBoth;
-        parameterTextBothGeneral.style.fontWeight = 'bold';
-        // parameterTextBothGeneral.style.textAlign = 'right';
-        parameterTextBothGeneral.style.fontSize = '20px';
-        parameterTextBothGeneral.style.fontWeight = 'bold';
-        parameterTextBothGeneral.id = sectionBoth;
-        parameterTextBothGeneral.style.gridColumn = '1';
-        // parameterTextBothGeneral.class = 'parameters-column-both-advanced'
-        // parameterTextBothGeneral.style.border = '1px solid #940707';
-        parameterTextBothGeneral.style.gridColumn = 'span 2';
-        parameterTextBothGeneral.key = 'Ignore'; // Assign 'Ignore' to key property
-        duoinputsColumnBothGeneral.appendChild(parameterTextBothGeneral);
-        const emptyTextGeneral = document.createElement('input');
-        emptyTextGeneral.style.fontSize = '20px';
-        emptyTextGeneral.style.display = 'none';
-        emptyTextGeneral.textContent = '';
-        emptyTextGeneral.key = 'Ignore';
+                    if (generalValues.length > 0) {
+                        createSubHeaderElement(sectionDataBoth.display_name, duoinputsColumnBothGeneral,sectionBoth);
 
-        emptyTextGeneral.style.gridColumn = '2';
-        // emptyTextGeneral.class = 'inputs-column-both-general'
-        // emptyTextGeneral.style.border = '1px solid #940707';
-        duoinputsColumnBothGeneral.appendChild(emptyTextGeneral);
-        };
-        
-        // Only include values with "advanced" set to false in the "general" section
-        // const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.advanced);
+                        generalValues.forEach(([key, value]) => {
+                            createParameterElement(value.display_name, key, value.description, duoinputsColumnBothGeneral);
+                            createInput(value.type, value.default, key, duoinputsColumnBothGeneral, duoinputsColumnBothAdvanced);
+                        });
+                    }
 
-        generalValues.forEach(([key, value]) => {
-          const parameterTextBothGeneral = document.createElement('p');
-          parameterTextBothGeneral.textContent = value.display_name;
-          parameterTextBothGeneral.id = key;
-          parameterTextBothGeneral.title = value.description;
-          parameterTextBothGeneral.style.gridColumn = '1';
-          // parameterTextBothGeneral.class = 'parameters-column-both-general'
-          // parameterTextBothGeneral.style.border = '1px solid #940707';
-          // parameterTextBothGeneral.key = 'Ignore'; // Assign 'Ignore' to key property
-          duoinputsColumnBothGeneral.appendChild(parameterTextBothGeneral);
+                    if (allValues.length > 0) {
+                        createSubHeaderElement(sectionDataBoth.display_name, duoinputsColumnBothAdvanced,sectionBoth);
 
-          const inputBothGeneral = document.createElement('input');
-          inputBothGeneral.type = value.type;
-          inputBothGeneral.value = value.default;
-          inputBothGeneral.id = key;
-          inputBothGeneral.style.gridColumn = '2';
-          // inputBothGeneral.class = 'inputs-column-both-general'
-          // inputBothGeneral.style.border = '1px solid #940707';
-          duoinputsColumnBothGeneral.appendChild(inputBothGeneral);
-
-          // Event listener for changes in the 'general parameters' tab
-          inputBothGeneral.addEventListener('change', (event) => {
-            const updatedValue = event.target.value;
-            const correspondingInputAdvanced = document.getElementById('duo-inputs-column-both-advanced');        
-            const oldInputs = Array.from(correspondingInputAdvanced.getElementsByTagName('input'));
-            const index = oldInputs.findIndex((input) => input.id === event.target.id);
-          
-            if (index !== -1) {
-              oldInputs[index].value = updatedValue;
-            }
-          });
-        });
-
-        advancedValues.forEach(([key, value]) => {
-          const parameterTextBothAdvanced = document.createElement('p');
-          parameterTextBothAdvanced.textContent = value.display_name;
-          parameterTextBothAdvanced.id = key;
-          parameterTextBothAdvanced.title = value.description;
-          parameterTextBothAdvanced.style.gridColumn = '1';
-          // parameterTextBothAdvanced.class = 'parameters-column-both-advanced'
-          // parameterTextBothAdvanced.style.border = '1px solid #940707';
-          // parameterTextBothAdvanced.key = 'Ignore'; // Assign 'Ignore' to key property
-          duoinputsColumnBothAdvanced.appendChild(parameterTextBothAdvanced);
-          // inputsColumnBothAdvanced.appendChild(parameterTextBothAdvanced);
-
-
-          const inputBothAdvanced = document.createElement('input');
-          inputBothAdvanced.type = value.type;
-          inputBothAdvanced.value = value.default;
-          inputBothAdvanced.id = key;
-          inputBothAdvanced.style.gridColumn = '2';
-          // inputBothAdvanced.class = 'inputs-column-both-advanced'
-          // inputBothAdvanced.style.border = '1px solid #940707';
-          duoinputsColumnBothAdvanced.appendChild(inputBothAdvanced);
-          // inputsColumnBothAdvanced.appendChild(inputBothAdvanced);
-
-
-          // Event listener for changes in the 'advanced parameters' tab
-          inputBothAdvanced.addEventListener('change', (event) => {
-            const updatedValue = event.target.value;
-            const correspondingInputGeneral = document.getElementById('duo-inputs-column-both-general');
-            const oldInputs = Array.from(correspondingInputGeneral.getElementsByTagName('input'));
-            const index = oldInputs.findIndex((input) => input.id === event.target.id);
-
-            if (index !== -1) {
-              oldInputs[index].value = updatedValue;
-            }
-          });
-        });
-      });
-    });
-  }}
+                        allValues.forEach(([key, value]) => {
+                            createParameterElement(value.display_name, key, value.description, duoinputsColumnBothAdvanced);
+                            createInput(value.type, value.default, key, duoinputsColumnBothAdvanced, duoinputsColumnBothGeneral);
+                        });
+                    }
+                });
+            });
+        }
+    }
 });
 
+function createHeaderElement(textContent, parentNode,ID) {
+  const element = document.createElement('p');
+  element.textContent = textContent;
+  element.style.justifyContent = 'left';
+  element.style.fontSize = '24px';
+  element.style.fontWeight = 'bold';
+  element.style.gridColumn = 'span 2';
+  element.id = ID;
+  element.key = 'Ignore'; // Assign 'Ignore' to key property
+  parentNode.appendChild(element);
+
+  createHiddenInput(parentNode);  // Add hidden input for headers
+}
+
+function createSubHeaderElement(textContent, parentNode, ID) {
+  const element = document.createElement('p');
+  element.textContent = textContent;
+  element.id = ID;
+  element.style.fontSize = '20px';
+  element.style.fontWeight = 'bold';
+  element.style.gridColumn = 'span 2';
+  element.key = 'Ignore'; // Assign 'Ignore' to key property
+  parentNode.appendChild(element);
+
+  createHiddenInput(parentNode);  // Add hidden input for subheaders
+}
+
+function createHiddenInput(parentNode) {
+  const inputElement = document.createElement('input');
+  inputElement.type = 'hidden';  // The type is set to 'hidden' to hide the input
+  parentNode.appendChild(inputElement);
+}
+
+function createParameterElement(textContent, id, title, parentNode) {
+    const element = document.createElement('p');
+    element.textContent = textContent;
+    element.id = id;
+    element.title = title;
+    element.style.gridColumn = '1';
+    parentNode.appendChild(element);
+}
+
+function createInput(type, value, id, parentNode, otherTab) {
+    const inputElement = document.createElement('input');
+    inputElement.type = type;
+    inputElement.value = value;
+    inputElement.id = id;
+    inputElement.style.gridColumn = '2';
+    inputElement.key = 'Ignore'; // Assign 'Ignore' to key property
+
+    inputElement.addEventListener('change', (event) => {
+        const updatedValue = event.target.value;
+        const oldInputs = Array.from(otherTab.getElementsByTagName('input'));
+        const index = oldInputs.findIndex((input) => input.id === event.target.id);
+
+        if (index !== -1) {
+            oldInputs[index].value = updatedValue;
+        }
+    });
+
+    parentNode.appendChild(inputElement);
+}
+
+
+
+
+// ###
 
 
 function WriteToYaml(i) {
@@ -370,7 +289,7 @@ function WriteToYaml(i) {
     let input2 = inputs2[i];
 
     // Detect if the element represents a header
-    if (input2.id === "dda" || input2.id === "dia") {
+    if (input2.id === "dda" || input2.id === "dia" || input2.id === "annotation") {
       currentHeader = input2.id;
       inputValues[currentHeader] = {};
       currentSubheader = null;  // Reset subheader when a new header is detected
@@ -401,8 +320,23 @@ function WriteToYaml(i) {
     args: inputValues,
   };
 
-  window.api.send('run-python-yamlwriter', options);
+  window.api.send('request-filename-and-directory');
+
+  window.api.receive('selected-param-save-directory', (savePath) => {
+    const options = {
+        pythonPath: 'python3',
+        args: inputValues,
+        path: savePath
+    };
+    window.api.send('run-python-yamlwriter', options);
+  });
+
 }
+
+
+
+//   window.api.send('run-python-yamlwriter', options);
+// }
 
 
 
@@ -415,38 +349,7 @@ function handleLoadPersonalButtonClick() {
   });
 }
 
-// Currently Working Again
-// function populateInputsFromYaml(yamlData) {
-//   const keyValuePairs = Object.entries(yamlData);
 
-//   let inputsColumn;
-//   inputsColumn = document.getElementById('duo-inputs-column-both-advanced');
-//   let old_inputs = Array.from(inputsColumn.getElementsByTagName('input'));
-//   for (let i = 0; i < old_inputs.length; i++) {
-//     const oldInput = old_inputs[i];
-//     for (let j = 0; j < keyValuePairs.length; j++) {
-//       const [key, value] = keyValuePairs[j];
-//       if (key === oldInput.id) {
-//         oldInput.value = value;
-//         break;
-//       }
-//     }
-//   }
-
-//   inputsColumn = document.getElementById('duo-inputs-column-both-general');
-//   old_inputs = Array.from(inputsColumn.getElementsByTagName('input'));
-//   for (let i = 0; i < old_inputs.length; i++) {
-//     const oldInput = old_inputs[i];
-//     for (let j = 0; j < keyValuePairs.length; j++) {
-//       const [key, value] = keyValuePairs[j];
-//       if (key === oldInput.id) {
-//         oldInput.value = value;
-//         break;
-//       }
-//     }
-//   }
-
-// }
 
 function populateInputsFromYaml(yamlData) {
   // Helper function to set input values based on keys in the data
@@ -516,16 +419,18 @@ document.addEventListener('DOMContentLoaded', () => {
 const fileListDDA = document.getElementById('file-list-dda');
 const fileListDIA = document.getElementById('file-list-dia');
 const fileListDatabase = document.getElementById('file-list-database');
+const fileListAnnotation = document.getElementById('file-list-annotation');
 const filesDDA = [];
 const filesDIA = [];
 const filesDatabase= [];
+const filesAnnotation= [];
 
 
 function handleFileSelection(fileInput, fileList, filesArray) {
   const selectedFiles = Array.from(fileInput.files);
 
-  if (fileList.id === 'file-list-database') {
-    // Clear the filesArray and the fileList content only for 'file-list-database'
+  if (fileList.id === 'file-list-database' || fileList.id === 'file-list-annotation') {
+    // Clear the filesArray and the fileList content only for 'file-list-database' and 'file-list-annotation'
     filesArray.length = 0;
     fileList.innerHTML = '';
   }
@@ -634,25 +539,27 @@ function handleCheckboxChange() {
 }
 
 // Function to show all sections
-function showAllSections(parametersColumn, inputsColumn,paramEmpty) {
+function showAllSections(parametersColumn, inputsColumn, paramEmpty) {
 
   Array.from(parametersColumn).forEach((element) => {
     element.style.display = "block";
   });
   Array.from(inputsColumn).forEach((element) => {
-    if (element.key !== "Ignore") {
     element.style.display = "block";
-    }
   });
   paramEmpty.style.display = "none";
 }
 
 
 function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
-    key = ["dda","dia"]
+    key = ["DDA data analysis","DIA data analysis"]
     occurrence = 0
     const parameterElements = Array.from(parametersColumn);
     const inputElements = (inputsColumn);
+
+    // console.log("Here:")
+    // console.log("parameterElements:", parameterElements)
+    // console.log("inputElements:", inputElements)
 
     const targetIndex = parameterElements.findIndex(
       (element) => element.textContent === key[0]
@@ -660,14 +567,20 @@ function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
     // parameterElements[0]
     
     if (targetIndex !== -1) {
+      console.log("index is -1 or not found?")
       parameterElements[targetIndex].style.display = "none";
       inputElements[targetIndex].style.display = "none";
 
       let count = 0;
+      // let count2 = 0;
       for (let i = targetIndex + 1; i < parameterElements.length; i++) {
+        // console.log("iteration # : ", i)
+        // console.log("Checking ", parameterElements[i].textContent, " against ", key[1])
+        
         // console.log(parameterElements[i].textContent)
         if (parameterElements[i].textContent === key[0]) {
           count++;
+          // count2 ++;
           if (count > occurrence) {
             break;
           }
@@ -675,7 +588,8 @@ function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
         if (parameterElements[i].textContent === key[1]) {
           break;
         }
-        // console.log("param",parameterElements)
+        // console.log("param to hide",parameterElements[i])
+        // console.log("input to hide",inputElements[i])
         parameterElements[i].style.display = "none";
         inputElements[i].style.display = "none";
 
@@ -685,7 +599,7 @@ function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
 
 
     function hideDIASection(parametersColumn,inputsColumn,paramEmpty) {
-      key = ["dia","annotate"]
+      key = ["DIA data analysis","lipid annotation"]
       occurrence = 0
       const parameterElements = Array.from(parametersColumn);
       const inputElements = Array.from(inputsColumn);
@@ -718,7 +632,7 @@ function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
 
 // Change to annotate
 function hideAnnotateSection(parametersColumn,inputsColumn,paramEmpty) {
-  key = ["annotate","misc"]
+  key = ["lipid annotation","miscellaneous"]
   occurrence = 0
   const parameterElements = Array.from(parametersColumn);
   const inputElements = Array.from(inputsColumn);
@@ -776,17 +690,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // let diaCheckbox = document.getElementById('experiment-type-dia-general');
     let ddaFileSection = document.getElementById('dda-file-region');
     let diaFileSection = document.getElementById('dia-file-region');
+    let annFileSection = document.getElementById('annotate-file-region');
 
     if (target.id === 'experiment-type-dda-advanced') {
       toggleFileSection(checkboxes.advanced.dda, ddaFileSection);
     } else if (target.id === 'experiment-type-dia-advanced') {
       toggleFileSection(checkboxes.advanced.dia, diaFileSection);
+    } else if (target.id === 'experiment-type-annotate-advanced') {
+      toggleFileSection(checkboxes.advanced.annotate, annFileSection);
     } else if  (target.id === 'experiment-type-dda-general') {
       toggleFileSection(checkboxes.general.dda, ddaFileSection);
     } else if (target.id === 'experiment-type-dia-general') {
       toggleFileSection(checkboxes.advanced.dia, diaFileSection);
+    } else if (target.id === 'experiment-type-annotate-general') {
+      toggleFileSection(checkboxes.general.annotate, annFileSection);
     }
-
   });
 
   function toggleFileSection(checkbox, fileSection) {
@@ -803,9 +721,11 @@ document.addEventListener('DOMContentLoaded', function() {
 function UpdateFileOptions() {
   const ddaFileRegion = document.getElementById("dda-file-region");
   const diaFileRegion = document.getElementById("dia-file-region");
+  const annFileSection = document.getElementById('annotate-file-region');
 
   ddaFileRegion.style.display = (checkboxes.general.dda.checked || checkboxes.advanced.dda.checked) ? "block" : "none";
   diaFileRegion.style.display = (checkboxes.general.dia.checked || checkboxes.advanced.dia.checked) ? "block" : "none";
+  annFileSection.style.display = (checkboxes.general.annotate.checked || checkboxes.advanced.annotate.checked) ? "block" : "none";
 }
 
 
@@ -838,28 +758,16 @@ function getSelectedDatabaseOption() {
 
 
 function RunExperiment() {
-  // const parameters = {
-  //   dda: {
-  //     do_processing: false // Setting the default value to false.
-  //   },
-  //   dia: {
-  //     do_processing: false, // Setting the default value to false.
-  //     MISC: {
-  //       store_blobs: true
-  //     }
-  //   },
-  //   MISC: {
-  //     debug: false
-  //   }
-  // };
 
   const parameters = {
       dda: {},
       dia: {},
+      annotation: {},
       misc: {
         dia_store_blobs: true,
         do_dda_processing: false,
-        do_dia_processing: false
+        do_dia_processing: false,
+        do_annotation: false,
       }
     };
   // const parameters = {}
@@ -867,7 +775,8 @@ function RunExperiment() {
   const inputOutput = {
     dda_data_files: [],
     dia_data_files: [],
-    lipid_ids_db: []
+    lipid_ids_db: [],
+    annotation_file: []
   };
 
   const selectedDatabaseOption = getSelectedDatabaseOption()
@@ -899,49 +808,54 @@ function RunExperiment() {
     parameters.misc.do_dia_processing = true;
   }
 
+  if (checkboxes.advanced.annotate.checked === true) {
+    parameters.misc.do_annotation = true;
+  }
+  
+
   const filesDDA = fileListToArray(fileListDDA);
   const filesDIA = fileListToArray(fileListDIA);
   const filesDatabase = fileListToArray(fileListDatabase);
+  const filesAnnotation = fileListToArray(fileListAnnotation);
 
   let currentHeader = null;
   let currentSubheader = null;
 
+ 
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
-    let input2 = inputs2[i];
-    console.log("A",input2)
+    const input2 = inputs2[i];
 
-    if (input2.id === "dda" || input2.id === "dia") {
-      currentHeader = input2.id;
-      console.log("B/Current Header",input2.id)
-      continue;
+    if (input2.id === "dda" || input2.id === "dia" || input2.id === "annotation") {
+        currentHeader = input2.id;
+        continue;
     }
-    
+ 
     if (input2.key === 'Ignore') {
-      currentSubheader = input2.id;
-      if (currentHeader && !parameters[currentHeader][currentSubheader]) {
-        parameters[currentHeader][currentSubheader] = {};
-      }
-      continue;
+        currentSubheader = input2.id;
+        if (currentHeader && !parameters[currentHeader][currentSubheader]) {
+            parameters[currentHeader][currentSubheader] = {};
+        }
+        continue;
     }
 
     if (input && input2 && input.style.display !== 'none') {
-      if (currentHeader && currentSubheader) {
-        parameters[currentHeader][currentSubheader][input2.id] = input.value;
-      } else if (currentHeader) {
-        parameters[currentHeader][input2.id] = input.value;
-      } else {
-        parameters['misc'][input2.id] = input.value;
-      }
+        if (currentHeader && currentSubheader) {
+            parameters[currentHeader][currentSubheader][input2.id] = input.value;
+        } else if (currentHeader) {
+            parameters[currentHeader][input2.id] = input.value;
+        } else {
+            parameters['misc'][input2.id] = input.value;
+        }
     }
-  }
+}
+
 
   inputOutput['dda_data_files'] = filesDDA;
   inputOutput['dia_data_files'] = filesDIA;
-  inputOutput['lipid_ids_db'] = filesDatabase[0];  // Assuming there's only one file for Database
+  inputOutput['lipid_ids_db'] = filesDatabase[0];  // Only one file allowed
+  inputOutput['annotation_file'] = filesAnnotation[0];  // Only one file allowed
 
-
-  console.log("LOOK HERE:")
   console.log(gui_params)
   const options = {
     pythonPath: 'python3',
@@ -965,17 +879,6 @@ window.api.receive('python-result-experiment', (result) => {
   scrollToBottom(outputBox);
 });
 
-
-// function fileListToArray(fileList) {
-//   return Array.from(fileList.getElementsByTagName('li')).map((listItem) => {
-//     const fileText = listItem.querySelector('.file-text');
-//     console.log("fileText:",fileText)
-//     return {
-//       name: fileText.textContent,
-//       path: fileText.dataset.path,
-//     };
-//   });
-// }
 
 function fileListToArray(fileList) {
   return Array.from(fileList.getElementsByTagName('li')).map((listItem) => {
@@ -1072,11 +975,11 @@ function UpdateExpName() {
   const TF = document.getElementById("create-new-option").checked
   if (TF === true) {
     document.getElementById("new-db-name-container").style.display = "flex"
-    document.getElementById("selected-directory-container").style.display = "none"
+    document.getElementById("selected-directory-container").style.display = "flex"
   }
   else {
     document.getElementById("new-db-name-container").style.display = "none"
-    document.getElementById("selected-directory-container").style.display = "flex"
+    document.getElementById("selected-directory-container").style.display = "none"
   }
 }
 

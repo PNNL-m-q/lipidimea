@@ -45,6 +45,7 @@
                 <label for="experiment-type-dia-advanced">DIA</label>
                 <input type="checkbox" id="experiment-type-annotate-advanced" name="experiment-type" value="Annotate" checked>
                 <label for="experiment-type-annotate-advanced">Annotate</label>
+                
                 <!-- <h1>Upload your Files</h1> -->
                 </head>
                 <div id="dda-file-region">
@@ -83,7 +84,20 @@
                       <ul id="file-list-database" style="list-style-type: none;"></ul>
                       <!-- <ul>&nbsp</ul> -->
                   </div>
-                <!-- Add your file upload content here -->
+
+                <div id="annotate-file-region">
+                <div class="outer2">
+                    <h2>Annotation Parameter File (Optional)</h2>
+                        <button id="select-button-annotation">Select File</button>
+                    </div>
+                    <div class="file-section">
+                        <input type="file" id="annotation-file-input" style="display: none;" >
+                        <!-- <ul>&nbsp</ul> -->
+                        <ul id="file-list-annotation" style="list-style-type: none;"></ul>
+                        <!-- <ul>&nbsp</ul> -->
+                    </div>
+                </div>
+
             </div>
 
 
@@ -99,7 +113,7 @@
                   <input type="checkbox" id="experiment-type-annotate-general" name="experiment-type" value="Annotate" checked>
                   <label for="experiment-type-annotate-general">Annotate</label>
               <div class="out">
-                  <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-general')">Write Parameters To Yaml</button>
+                  <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-general')">Write Parameters To File</button>
                   <button id="load-personal-button-general">Load Parameters from YAML</button>
 
                   <!-- <button id="calculateBtn" onclick="runExperiment()">Run DDA-DIA</button> -->
@@ -173,19 +187,19 @@
                 </div>
 
 
-                <div class="section-container" id="annotate-options" style="display: none;">
+                <div class="section-container" id="annotate-options">
                     <label class="section-label">Annotation Options:</label>
-                    <div class="radio-option">
-                        <input type="radio" id="annotate-1" name="db_option" value="a" checked>
-                        <label for="append-option">Option 1</label>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="annotate-1" name="an_option_1" value="a">
+                        <label for="annotate-1">Option 1</label>
                     </div>
-                    <div class="radio-option">
-                        <input type="radio" id="annotate-3" name="db_option" value="b">
-                        <label for="overwrite-option">Option 2</label>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="annotate-2" name="an_option_2" value="b">
+                        <label for="annotate-2">Option 2</label>
                     </div>
-                    <div class="radio-option">
-                        <input type="radio" id="annotate-3" name="db_option" value="c">
-                        <label for="create-new-option">Option 2</label>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="annotate-3" name="an_option_3" value="c">
+                        <label for="annotate-3">Option 3</label>
                     </div>
                 </div>
 
@@ -209,7 +223,7 @@
                 </div>
 
                 <!-- Save Directory Section -->
-                <div class="section-container" id="selected-directory-container">
+                <div class="section-container" id="selected-directory-container" style="display: none;">
                     <label class="section-label">Results Save Location:</label>
                     <input type="text" id="selected-directory" readonly placeholder="No directory selected">
                     <button class="dir-btn" onclick="selectSaveDirectory()">Select Directory</button>
@@ -226,17 +240,6 @@
             
                 
                     
-                <!-- <label for="experiment-type">Save Parameters as Template?</label>
-                    <input type="checkbox" id="save-params" name="save-params" checked> -->
-                <!-- Add your run experiment content here -->
-            <!-- <div>
-                <h2></h2>
-                <label for="experiment-name">Experiment Name:</label>
-                <input type="text" id="experiment-name">
-                <br><br>
-                <button class="btn" onclick="RunExperiment()">Run Experiment</button>
-            </div> -->
-
             <div>
                 <br><br>
                 <label for="output-box" >Real-time Results:</label>

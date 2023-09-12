@@ -45,7 +45,7 @@ import sys
 # Ensure that you maintain order when loading the JSON
 input_values = json.loads(sys.argv[1], object_pairs_hook=OrderedDict)
 
-# ... rest of the Python script ...
+
 
 
 
@@ -53,9 +53,9 @@ def flatten_to_nested_structure(input_dict):
     nested_structure = {
         "INPUT_OUTPUT": {},
         "PARAMETERS": {
-            "DDA": {},
-            "DIA": {},
-            "MISC": {}
+            "dda": {},
+            "dia": {},
+            "annotation": {}
         }
     }
 
@@ -63,13 +63,13 @@ def flatten_to_nested_structure(input_dict):
         parts = key.split('_')
         if len(parts) == 2:
             section, param = parts
-            nested_structure['PARAMETERS']['DDA'][param] = value
+            nested_structure['PARAMETERS']['dda'][param] = value
         elif len(parts) == 3:
             section, sub_section, param = parts
             if section == "DIA":
-                if sub_section not in nested_structure['PARAMETERS']['DIA']:
-                    nested_structure['PARAMETERS']['DIA'][sub_section] = {}
-                nested_structure['PARAMETERS']['DIA'][sub_section][param] = value
+                if sub_section not in nested_structure['PARAMETERS']['dia']:
+                    nested_structure['PARAMETERS']['dia'][sub_section] = {}
+                nested_structure['PARAMETERS']['dia'][sub_section][param] = value
             else:
                 nested_structure['PARAMETERS'][section][param] = value
 
@@ -79,7 +79,15 @@ def flatten_to_nested_structure(input_dict):
 input_values = dict(json.loads(sys.argv[1]))
 nested_dict = flatten_to_nested_structure(input_values)
 
-with open('data.yaml', 'w') as f:
+
+
+
+# with open('data.yaml', 'w') as f:
+#     yaml.dump(input_values, f, default_flow_style=False, sort_keys=False)
+
+
+
+save_path = sys.argv[2] if len(sys.argv) > 2 else 'saved_lipidmea_params.yaml'
+
+with open(save_path, 'w') as f:
     yaml.dump(input_values, f, default_flow_style=False, sort_keys=False)
-
-

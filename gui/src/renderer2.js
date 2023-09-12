@@ -1,12 +1,3 @@
-// document.addEventListener("DOMContentLoaded", function() {
-//   var table = document.getElementById("table-container");
-//   if (table.querySelector("tr")) {
-//       table.style.border = "1px solid black";
-//   }
-// });
-
-
-
 
 
 
@@ -95,17 +86,17 @@ function showTable1(data) {
               diaDeconFragIds: row['dia_decon_frag_ids']
           };
 
-          const ddaFeatureIdElement = document.getElementById('dda-feature-id');
-          const diaFeatureIdElement = document.getElementById('dia-feature-id');
+          // const ddaFeatureIdElement = document.getElementById('dda-feature-id');
+          // const diaFeatureIdElement = document.getElementById('dia-feature-id');
           const mzValueElement = document.getElementById('mz-value');
           const DIArtValueElement = document.getElementById('dia-rt-value');
-          const arrivalTimeElement = document.getElementById('arrival-time');
+          // const arrivalTimeElement = document.getElementById('arrival-time');
           const dtValueElement = document.getElementById('dia-dt-value');
           const DTpkhtValueElement = document.getElementById('dia-dt-pkht-value');
           const DTfwhmValueElement = document.getElementById('dia-dt-fwhm-value');
           const DTpsnrValueElement = document.getElementById('dia-dt-psnr-value');
 
-          const DIArtValueElement2 = document.getElementById('dia-rt-value-2');
+          // const DIArtValueElement2 = document.getElementById('dia-rt-value-2');
           const DIArtPKHTValueElement = document.getElementById('dia-rt-pkht-value');
           const DIArtFWHMValueElement = document.getElementById('dia-rt-fwhm-value');
           const DIArtPSNRValueElement = document.getElementById('dia-rt-psnr-value');
@@ -122,17 +113,17 @@ function showTable1(data) {
           // const DIAPeaksValueElement = document.getElementById('dia-peaks-value');
 
 
-          ddaFeatureIdElement.textContent = row['DDA Feature ID'];
-          diaFeatureIdElement.textContent = row['DIA Feature ID'];
+          // ddaFeatureIdElement.textContent = row['DDA Feature ID'];
+          // diaFeatureIdElement.textContent = row['DIA Feature ID'];
           mzValueElement.textContent = formatDecimalValue(row['m/z']);
           DIArtValueElement.textContent = formatDecimalValue(row['RT']);
-          arrivalTimeElement.textContent = formatDecimalValue(row['Arrival Time']);
+          // arrivalTimeElement.textContent = formatDecimalValue(row['Arrival Time']);
           dtValueElement.textContent = formatDecimalValue(row['dia_dt']);
           DTpkhtValueElement.textContent = formatDecimalValue(row['dia_dt_pkht']);
           DTfwhmValueElement.textContent = formatDecimalValue(row['dia_dt_fwhm']);
           DTpsnrValueElement.textContent = formatDecimalValue(row['dia_dt_psnr']);
 
-          DIArtValueElement2.textContent = formatDecimalValue(row['RT']);
+          // DIArtValueElement2.textContent = formatDecimalValue(row['RT']);
           DIArtPKHTValueElement.textContent = formatDecimalValue(row['dia_rt_pkht']);
           DIArtFWHMValueElement.textContent = formatDecimalValue(row['dia_rt_fwhm']);
           DIArtPSNRValueElement.textContent = formatDecimalValue(row['dia_rt_psnr']);
@@ -163,8 +154,9 @@ function showTable1(data) {
             dia_ms1: row['dia_ms1']
           });
 
-          // window.api.send('fetch-related-dia-features', row['DDA Feature ID']);
-          // console.log("sending dda id: ", row['DDA Feature ID'])
+
+
+
           showTable3(data,row['DDA Feature ID']);
           console.log("error now")
           console.log(row['dda_ms2_peaks'])
@@ -182,12 +174,24 @@ function showTable1(data) {
             // Race conditions make it so this is rendered before table2
             // So the delay allows table2 to be generated first.
             setTimeout(() => {
+              document.getElementById("first-row-third-box-plot").style.display = "flex";
+              document.getElementById('error-message-bidirectional-plot').style.display = "none";
               plotBidirectionalColumn(ddaData, diaData);
             }, 200);
+          }
+          else { 
+            document.getElementById("first-row-third-box-plot").style.display = "none";
+            document.getElementById('error-message-bidirectional-plot').style.display = "flex";
           }
 
             const resultsDisplay = document.getElementById('below-table-content');
             resultsDisplay.style.display = 'block';
+
+
+        const diaFeatureIdColumn = row['DIA Feature ID'];
+          if (diaFeatureIdColumn !== undefined) {
+              findInTable4ByFeatureId(diaFeatureIdColumn);
+          }
         
       });
 
@@ -219,10 +223,36 @@ function showTable1(data) {
       const lastSelectedTableRow = tbody.querySelector(`[data-id="${lastSelectedRowValue.id}"]`);
       if (lastSelectedTableRow) {
           lastSelectedTableRow.classList.add('selected');
-          lastSelectedTableRow.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+          lastSelectedTableRow.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
       }
   }
 }
+
+
+function findInTable4ByFeatureId(featureId) {
+  const table4Container = document.getElementById('new-row-first-box-table');
+  const rows = table4Container.querySelectorAll('tr');
+
+      // Deselect all previously selected rows first
+  rows.forEach(row => {
+        if (row.classList.contains('selected')) {
+            row.classList.remove('selected');
+        }
+    });
+
+  rows.forEach(row => {
+      // Assuming the feature ID is in the first column
+      const featureIdCell = row.children[1];
+      if (featureIdCell && parseInt(featureIdCell.textContent, 10) === featureId) {
+        // row.dispatchEvent(new Event('click', { 'bubbles': true }));  
+        row.classList.add('selected'); 
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+  });
+}
+
+
+
 
 let mzRowMap = new Map();
 
@@ -316,35 +346,6 @@ function showTable2(data) {
   tableContainer.appendChild(table);
 }
 
-// function selectPlotPeak(mzValue) {
-//     mzValue = parseFloat(mzValue).toFixed(4); 
-//     // Find the specific chart by its container's ID
-//     const chart = Highcharts.charts.find(ch => ch.renderTo.id === 'first-row-third-box-plot');
-//     if (!chart) return;  // Exit if the chart was not found
-
-//     const pointIndex = chart.xAxis[0].categories.map(val => parseFloat(val).toFixed(4)).indexOf(mzValue);
-
-//     if (pointIndex !== -1) {
-//         // Deselect and reset visual style for any currently selected peak
-//         chart.series[1].data.forEach(point => {
-//             point.select(false, false);
-//             point.update({
-//                 color: getDIAColor(point.category, table2MzSet) // reset to its original color
-//             }, false);
-//         });
-
-//         // Select the corresponding peak and highlight it
-//         const point = chart.series[1].data[pointIndex];
-//         point.select(true);
-//         point.update({
-//             color: '#800080' // highlight color
-//         });
-//     }
-
-//     // Re-draw the chart to reflect the changes
-//     chart.redraw();
-// }
-
 
 
 function selectTableRow(mzValue) {
@@ -366,6 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.api.receive('selected-database-path', (result) => {
     filePath = result;
     window.api.send('fetch-database-table', result);
+    window.api.send('fetch-annotation-table', result);
   });
 });
 
@@ -416,6 +418,48 @@ window.api.receive('database-table-data', (data, isMapping, error, filepath) => 
   }
 });
 
+
+window.api.receive('database-annotation-data', (data, isMapping, error, filepath) => {
+  const tableContainer = document.getElementById('new-row-first-box-table');
+  const errorMessageElement = document.getElementById('error-message-annotation');
+  // const xicDistVal = document.getElementById('xic-dist-value');
+  // const atdDistVal = document.getElementById('atd-dist-value');
+  // const plotsElement = document.getElementById('plots-container');
+  // const tableMainContainer = document.getElementById('table-annotation-container');
+  console.log("TABLE4 DEBUG: database-annotation-data received")
+  if (error) {
+      // Hide the table in case of an error
+      // tableMainContainer.style.border = "none";
+      tableContainer.style.display = "none";
+      // xicDistVal.style.display = "none";
+      // atdDistVal.style.display = "none";
+      // plotsElement.style.display = "none";
+      if (error === "No IDs provided") {
+          // Specific message for missing ID values
+          errorMessageElement.textContent = 'failed.';
+      } else {
+          // General error handling
+          const errorMsg = `Error fetching data from the database: ${filepath.split("/").pop()}: ${error}`;
+          errorMessageElement.textContent = errorMsg;
+          console.error(errorMsg);
+      }
+      return;
+  }
+
+  showTable4(data);
+  // If no error, proceed with displaying the data
+  tableContainer.style.display = "block";
+  errorMessageElement.textContent = '';
+  // xicDistVal.style.display = "block";
+  // atdDistVal.style.display = "block";
+  // plotsElement.style.display = "block";
+  
+//   if (isMapping) {
+//       showTable2(data);
+//   } else {
+//       showTable1(data);
+//   }
+});
 
 
 function generateGaussianData(mean, height,width) {
@@ -1274,4 +1318,81 @@ Highcharts.chart('first-row-first-box-plot', {
       max: maxYValue  // Set the y-axis max value to maxYValue
   }
 });
+}
+
+
+function showTable4(data) {
+  const tableContainer = document.getElementById('new-row-first-box-table');
+  tableContainer.innerHTML = ''; // Clear previous content
+
+  if (!data || data.length === 0) {
+      console.error("No data provided.");
+      return;
+  }
+
+  // Sort data based on the 'dia_feat_id' column
+  data.sort((a, b) => {
+      return a['dia_feat_id'] - b['dia_feat_id'];
+  });
+
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const tbody = document.createElement('tbody');
+
+  // Create headers
+  const headers = Object.keys(data[0]);
+  const headerRow = document.createElement('tr');
+  headers.forEach(header => {
+      const th = document.createElement('th');
+      th.textContent = header;
+      headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+
+  // Create rows
+  data.forEach(row => {
+      const tableRow = document.createElement('tr');
+
+      headers.forEach(header => {
+          const td = document.createElement('td');
+          td.textContent = row[header];
+          tableRow.appendChild(td);
+      });
+
+      // Add event listener to make rows selectable
+      tableRow.addEventListener('click', function() {
+          // Remove selection from previously selected row
+          const selectedRow = tableContainer.querySelector('.selected-row');
+          if (selectedRow) {
+              selectedRow.classList.remove('selected-row');
+          }
+          // Add selection to the current row
+          tableRow.classList.add('selected-row');
+
+          const diaFeatureIdColumn = row['dia_feat_id'];
+          if (diaFeatureIdColumn !== undefined) {
+              findInTable1ByFeatureId(diaFeatureIdColumn);
+          }
+      });
+
+      tbody.appendChild(tableRow);
+  });
+
+  table.appendChild(thead);
+  table.appendChild(tbody);
+  tableContainer.appendChild(table);
+}
+
+
+function findInTable1ByFeatureId(featureId) {
+  const table1Container = document.getElementById('table-container');
+  const rows = table1Container.querySelectorAll('tr');
+  rows.forEach(row => {
+      // Assuming the feature ID is in the third column
+      const featureIdCell = row.children[2];
+      if (featureIdCell && parseInt(featureIdCell.textContent, 10) === featureId) {
+        row.dispatchEvent(new Event('click', { 'bubbles': true }));  
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+  });
 }

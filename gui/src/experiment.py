@@ -30,12 +30,13 @@ sys.path.append(resources_directory)
 print("AAA: ", sys.path)
 
 print("imports starting")
-from LipidIMEA.msms import create_lipid_ids_db, load_params
+from LipidIMEA.util import create_results_db, load_params
 print("import1 done")
 from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
 print("import2 done")
 from LipidIMEA.msms.dia import extract_dia_features_multiproc
 print("import3 done")
+from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition
 print("imports complete")
 
 
@@ -87,6 +88,12 @@ def main():
     print("params :", params)
     print("options :", options)
     
+        
+    if input_output['annotation_file']:
+        params["annotation"]["ann_sum_comp"]["ann_sc_lipid_class_params"] = input_output['annotation_file']
+
+    print("\n new params :", params)
+    
     # db_pick: getSelectedDatabaseOption(),
     # db_name: document.getElementById("experiment-name"),
     # save_loc: document.getElementById("selected-directory")
@@ -119,11 +126,11 @@ def main():
     if options["db_pick"] == "append" and input_output['lipid_ids_db']:
         pass
     elif options["db_pick"] == "overwrite" and input_output['lipid_ids_db']:
-        create_lipid_ids_db(input_output['lipid_ids_db'], overwrite=True)
+        create_results_db(input_output['lipid_ids_db'], overwrite=True)
     elif options["db_pick"] == "create_new" and not input_output['lipid_ids_db']:
         generate_new_db_name(options['save_loc'], options['db_name'])
         exp_name = os.path.join(options["save_loc"], options["db_name"] + ".db")
-        create_lipid_ids_db(exp_name, overwrite=True)
+        create_results_db(exp_name, overwrite=True)
         input_output['lipid_ids_db'] = exp_name
     else:
         print("conditions incorrect. exiting")
@@ -154,6 +161,19 @@ def main():
 
 
     print("\n\nExtraction Complete\n\n")
+
+
+    # Annotation
+    if params['misc']['do_annotation']:
+        annotate_lipids_sum_composition(input_output['lipid_ids_db'],
+                                        params)
+        # annotate_lipids_sum_composition(input_output['lipid_ids_db'],
+        #                                 params,options['annotate_overwrite'])
+    
+
+
+    print("\n\Annotation Complete\n\n")
+
 
 if __name__ == '__main__':
     main()

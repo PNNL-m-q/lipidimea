@@ -408,11 +408,14 @@ p {
 
 
 
-.plot-quarter, .plot-half {
+.plot-quarter, .plot-half, .plot-half-split {
   border: 1px solid #ddd; 
   height: 325px; 
   box-sizing: border-box; /* This ensures padding & border are included in the width. */
+  display: flex;
+  flex-direction: column;
 }
+
 
 .plot-quarter {
   width: 24%; /* A bit less than 25% to account for any default browser styling & ensure the elements fit in the same row. */
@@ -426,9 +429,41 @@ height: 250px;
 .plot-half {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: center;
   align-items: flex-start;
-  width: 49%; /* A bit less than 50% for the same reasons as above. */
+  width: 49%; 
+}
+
+.plot-half-split {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 49%; 
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.plot-full-top {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%; 
+  height: 200px;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.plot-full-bot {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%; 
+  height: 100px;
+  overflow-y: auto;
+  overflow-x: auto;
 }
 
 
@@ -487,6 +522,18 @@ height: 250px;
   border: 1px solid black;
 }
 
+#new-row-first-box-table {
+  margin-bottom: 20px; /* Adjust this value to your preference */
+  max-height: 90%;  /* Set max height to half the space */
+  width: 100%;
+  overflow-y: auto; /* Add vertical scrollbar when content exceeds the height */
+  overflow-x: auto; /* Add vertical scrollbar when content exceeds the height */
+}
+
+#new-row-first-box-table  table td {
+  border: 1px solid black;
+}
+
 #first-row-third-box-plot { 
   /* margin-bottom: 32px; Adjust this value to your preference */
   height: 100%;
@@ -535,6 +582,12 @@ height: 250px;
   align-items: center;
 }
 
+.radio-2-option {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+}
+
 .checkbox-option label,
 .radio-option label {
   margin-left: 5px;
@@ -558,3 +611,23 @@ height: 250px;
   /* cursor: not-allowed;   */
 }
 
+#precursor-info {
+  margin-bottom: 20px;
+}
+
+/* #error-message-bidirectional-plot {
+  color: black;
+  width: 100%;
+  text-align: center;
+} */
+
+
+/* 
+#new-row-first-box-table thead th {
+  background-color: #fff;  /* or any other solid color */
+/* } */
+
+
+/* #new-row-first-box-table thead th {
+  margin-top: -5px;
+} */

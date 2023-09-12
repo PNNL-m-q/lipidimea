@@ -4,7 +4,10 @@ const { PythonShell } = require('python-shell');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const sqlite3 = require('sqlite3');
+const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
+
+
 // const { fetchData } = require('./database');
 
 // const pythonProcess = spawn('python', ['experiment.py']);
@@ -75,7 +78,7 @@ app.on('activate', () => {
 
 // Get Defaults Data
 ipcMain.on('getYamlDataBoth', (event) => {
-  const yamlPathBoth = path.join(__dirname, '../../LipidIMEA/msms/default_params.yaml');
+  const yamlPathBoth = path.join(__dirname, '../../LipidIMEA/_include/default_params.yml');
   console.log('YAML Path:', yamlPathBoth);
 
   fs.readFile(yamlPathBoth, 'utf8', (err, data) => {
@@ -97,14 +100,50 @@ ipcMain.on('getYamlDataBoth', (event) => {
 });
 
 
+// ipcMain.on('selected-param-save-directory', (event, fileName) => {
+//   dialog.showOpenDialog({
+//       properties: ['openDirectory']
+//   }).then(result => {
+//       if (!result.canceled && result.filePaths.length > 0) {
+//           let savePath = path.join(result.filePaths[0], fileName);
+//           event.reply('selected-directory', savePath);
+//       }
+//   }).catch(err => {
+//       console.log(err);
+//   });
+// });
+
+ipcMain.on('request-filename-and-directory', (event) => {
+  prompt({
+      title: 'New file name',
+      label: 'Enter the filename:',
+      value: 'saved_lipidmea_params.yaml',
+      type: 'input'
+  }).then((fileName) => {
+      if (fileName !== null) {
+          dialog.showOpenDialog({
+              properties: ['openDirectory']
+          }).then(directoryResult => {
+              if (!directoryResult.canceled && directoryResult.filePaths.length > 0) {
+                  let savePath = path.join(directoryResult.filePaths[0], fileName);
+                  event.reply('selected-param-save-directory', savePath);
+              }
+          }).catch(err => {
+              console.log(err);
+          });
+      }
+  }).catch(console.error);
+});
+
+
 ipcMain.on('run-python-yamlwriter', (event, options) => {
   const inputNumber = options.args;
   console.log('yamlwriter input values:', inputNumber);
 
   const pyshell = new PythonShell(path.join(__dirname, 'yamlwriter.py'), {
     pythonPath: 'python3',
-    args: [JSON.stringify(inputNumber)], // Pass the input as an array if required by the Python script
-  });
+    args: [JSON.stringify(inputNumber), options.path], // Include the path
+});
 
   pyshell.on('message', (result) => {
     console.log('Python script result:', result);
@@ -269,6 +308,29 @@ ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
       event.reply('database-table-data', data, true, error.message);
     } else {
       event.reply('database-table-data', data, true);
+    }
+
+    db.close((closeError) => {
+      if (closeError) {
+        console.error('Error closing the database:', closeError);
+      }
+    });
+  });
+});
+
+
+
+ipcMain.on('fetch-annotation-table', (event, filePath) => {
+  const db = new sqlite3.Database(filePath);
+  console.log("LOG: index.js: Fetch data");
+
+  // db.all('SELECT dda_feat_id AS "DDA Feature ID", dda_f AS "DDA Data File", dia_feat_id AS "DIA Feature ID", dia_f AS "DIA Data File" ,mz AS "m/z", dia_rt AS RT, dt AS "Arrival Time", dia_decon_frag_ids, dia_xic,dia_dt,dia_dt_pkht,dia_dt_fwhm,dia_dt_psnr FROM CombinedFeatures', (error, data) => {
+  db.all('SELECT * FROM Lipids', (error, data) => {
+    if (error) {
+      console.error('Error fetching data from the database:', error);
+      event.reply('database-annotation-data', data, false, error.message, filePath);
+    } else {
+      event.reply('database-annotation-data', data, false);
     }
 
     db.close((closeError) => {
