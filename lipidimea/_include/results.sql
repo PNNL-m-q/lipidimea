@@ -60,6 +60,7 @@ INSERT INTO _DIAFeatures_COLUMNS VALUES
     ('dt_pkht', 'height of ATD peak'),
     ('dt_psnr', 'signal to noise ratio for ATD peak'),
     ('atd', 'raw ATD, numpy.ndarray (as bytes)'),
+    ('ccs', 'calibrated CCS'),
     ('ms2_n_peaks', 'number of peaks in centroided spectrum'),
     ('ms2_peaks', 'MS2 spectrum (centroided, unannotated) in single line "{mz}:{intensity} {mz}:{intensity} ..." format'),
     ('ms2', 'raw MS2 spectrum, numpy.ndarray (as bytes)'),
@@ -83,6 +84,7 @@ CREATE TABLE _DIAFeatures (
     dt_pkht REAL NOT NULL,
     dt_psnr REAL NOT NULL,
     atd BLOB,
+    ccs REAL,
     ms2_n_peaks INT,
     ms2_peaks TEXT,
     ms2 BLOB
@@ -134,6 +136,7 @@ CREATE VIEW DIAFeatures AS
         dt_pkht,
         dt_psnr,
         atd,
+        ccs,
         dia.ms2_n_peaks,
         dia.ms2_peaks,
         dia.ms2,
@@ -168,6 +171,7 @@ CREATE VIEW CombinedFeatures AS
         dia.rt AS dia_rt,
         dda.rt AS dda_rt,
         dia.dt AS dt,
+        dia.ccs AS ccs,
         dia.ms2_peaks AS dia_ms2_peaks,
         dda.ms2_peaks AS dda_ms2_peaks,
         dia.decon_frag_ids AS dia_decon_frag_ids,
@@ -205,6 +209,7 @@ INSERT INTO _Lipids_COLUMNS VALUES
     ('lipid', 'lipid annotation, made at the level of sum composition or higher if supporting fragment(s) found in MS2 spectrum'),
     ('adduct', 'MS adduct/ionization state'),
     ('ppm', 'mass error in ppm relative to theoretical monoisotopic mass'),
+    ('ccs_rel_err', 'relative CCS error in percent'),
     ('fragments', 'annotated peaks from MS2 spectrum in single line "{label}_{mz} {label}_{mz} ..." format');
 
 -- table with Lipid annotations
@@ -214,5 +219,6 @@ CREATE TABLE Lipids (
     lipid TEXT NOT NULL,
     adduct TEXT NOT NULL,
     ppm REAL NOT NULL,
+    ccs_rel_err REAL,
     fragments TEXT
 );

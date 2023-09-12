@@ -30,7 +30,8 @@ author = 'Dylan Ross'
 extensions = [
     'sphinx.ext.autodoc',
     'numpydoc',
-    'nbsphinx'
+    'nbsphinx',
+    # 'sphinx_js'
 ]
 
 # generate autosummary even if no references
@@ -44,6 +45,8 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# root of JS source for documenting any of the gui code (which is JS)
+#js_source_path = '../gui/src/'
 
 # -- Options for HTML output -------------------------------------------------
 
