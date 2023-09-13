@@ -117,3 +117,32 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# NodeJS/GUI related
+gui/node_modules/
+gui/npm-debug.log
+gui/yarn-error.log
+gui/package-lock.json
+gui/yarn.lock
+
+# Electron-builder output
+gui/dist/
+gui/build/
+gui/out/
+
+# OS generated files
+gui/.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.orig
+
+# GUI Editor directories
+gui/.vscode/
+gui/.idea/
+
+# Other GUI directories/files
+gui/logs/
+gui/*.log
+gui/*.pid
+gui/*.seed
