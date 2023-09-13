@@ -2,9 +2,11 @@
 <html lang="en">
 
 <head>
-    <title>DIA-DDA Lipid Identification</title>
+    <!-- Meta and Title -->
+    <title>Experimental Setup Page</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Stylesheet Link -->
     <link href="style.css" rel="stylesheet">
 </head>
 
@@ -19,17 +21,13 @@
     </div>
 
     <!-- Page content -->
-    <div>
+    <div class="content-wrapper">
 
-        <!-- The DIA Section -->
+        <!-- The Header -->
         <h1>Experimental Setup</h1>
-        <title id="active-page" class="both">DDA-DIA Section</title>
 
-        <div class="both-section">
-            <head>
-                <meta charset="UTF-8">
-                <!-- <script src="renderer.js"></script> -->
-                </head>
+        <div>
+            <!-- Tabs -->
             <div class="tab">
                 <button class="tablinks active" style="z-index:4; background-color: #C0B283;" onclick="openTab(event, 'file-upload'), UpdateFileOptions()">File Upload</button>
                 <button class="tablinks" style="z-index:3; background-color: #D46A6A;" onclick="openTab(event, 'parameter-general')">General Parameters</button>
@@ -37,7 +35,7 @@
                 <button class="tablinks" style="z-index:1; background-color: #126e07;" onclick="openTab(event, 'run-experiment')">Run Experiment</button>
             </div>
             <!-- File Upload Tab -->
-            <div id="file-upload" class="tabcontent outermost">
+            <div id="file-upload" class="tabcontent inner-background">
                 <label for="experiment-type">Experiment Type:</label>
                 <input type="checkbox" id="experiment-type-dda-advanced" name="experiment-type" value="DDA" checked>
                 <label for="experiment-type-dda-advanced">DDA</label>
@@ -46,65 +44,62 @@
                 <input type="checkbox" id="experiment-type-annotate-advanced" name="experiment-type" value="Annotate" checked>
                 <label for="experiment-type-annotate-advanced">Annotate</label>
                 
-                <!-- <h1>Upload your Files</h1> -->
-                </head>
+                
+
+                <!-- DDA File Upload -->
                 <div id="dda-file-region">
-                  <div class="outer2">
+                  <div class="file-area">
                     <h2>DDA Data Selection</h2>
                     <button id="select-button-dda">Select File(s)</button>
                   </div>
                     <div class="file-section">
                         <input type="file" id="dda-file-input" style="display: none;" multiple>
-                        <!-- <ul>&nbsp</ul> -->
                         <ul id="file-list-dda" style="list-style-type: none;"></ul>
-                        <!-- <ul>&nbsp</ul>                     -->
                     </div>
                 </div>
   
+                <!-- DIA File Upload -->
                 <div id="dia-file-region">
-                  <div class="outer2">
+                  <div class="file-area">
                     <h2>DIA Data Selection</h2>
                     <button id="select-button-dia">Select File(s)</button>
                   </div>
                       <div class="file-section">
                         <input type="file" id="dia-file-input" style="display: none;" multiple>
-                        <!-- <ul>&nbsp</ul> -->
                         <ul id="file-list-dia" style="list-style-type: none;"></ul>
-                        <!-- <ul>&nbsp</ul> -->
                     </div>
                 </div>
   
-                <div class="outer2">
+                <!-- Database File Upload -->
+                <div class="file-area">
                   <h2>Lipid ID Database Selection (Optional)</h2>
                       <button id="select-button-database">Select File</button>
                   </div>
                   <div class="file-section">
                       <input type="file" id="database-file-input" style="display: none;" >
-                      <!-- <ul>&nbsp</ul> -->
                       <ul id="file-list-database" style="list-style-type: none;"></ul>
-                      <!-- <ul>&nbsp</ul> -->
                   </div>
 
+                <!-- Annotation File Upload -->
                 <div id="annotate-file-region">
-                <div class="outer2">
+                <div class="file-area">
                     <h2>Annotation Parameter File (Optional)</h2>
                         <button id="select-button-annotation">Select File</button>
                     </div>
                     <div class="file-section">
                         <input type="file" id="annotation-file-input" style="display: none;" >
-                        <!-- <ul>&nbsp</ul> -->
                         <ul id="file-list-annotation" style="list-style-type: none;"></ul>
-                        <!-- <ul>&nbsp</ul> -->
                     </div>
                 </div>
 
             </div>
 
 
-            <!-- Parameter Selection Tab -->
-            <div id="parameter-general" class="tabcontent outermost" style="display: block;">
-              <!-- #Have parameters Defined in a for loop -->
-              <!-- <h1>Select your Parameters</h1> -->
+            <!-- General Parameter Selection Tab -->
+            <!-- <div id="parameter-general" class="tabcontent inner-background" style="display: block;"> -->
+            <div id="parameter-general" class="tabcontent inner-background">
+                <!-- General Checkboxes -->
+            <div class="centercontent">
               <label for="experiment-type">Experiment Type:</label>
                   <input type="checkbox" id="experiment-type-dda-general" name="experiment-type" value="DDA" checked>
                   <label for="experiment-type-dda-general">DDA</label>
@@ -112,22 +107,22 @@
                   <label for="experiment-type-dia-general">DIA</label>                  
                   <input type="checkbox" id="experiment-type-annotate-general" name="experiment-type" value="Annotate" checked>
                   <label for="experiment-type-annotate-general">Annotate</label>
-              <div class="out">
+            </div>
+              <div class="centercontent">
+                <!-- General Parameter Buttons -->
                   <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-general')">Write Parameters To File</button>
-                  <button id="load-personal-button-general">Load Parameters from YAML</button>
-
-                  <!-- <button id="calculateBtn" onclick="runExperiment()">Run DDA-DIA</button> -->
+                  <button id="upload-data-button-general">Load Parameters from File</button>
               </div>
               <div>
-                  <!-- <div id="parameters-column-both-general" class="inner"></div> -->
-                  <div id="duo-inputs-column-both-general" class="inner" ></div>
+                <!-- General Parameters are defined by default file in "_include" and formatted in renderer_exp.js -->
+                  <div id="duo-inputs-column-both-general" class="param-as-two-columns" ></div>
                   <div id="param-empty-gen" class="empty-params" style="display: none">No Parameters to Display. Select DIA and/or DDA to proceed.</div>
               </div>
           </div>
-            <!-- Parameter Selection Tab -->
-            <div id="parameter-advanced" class="tabcontent outermost" style="display: block;">
-                <!-- #Have parameters Defined in a for loop -->
-                <!-- <h1>Select your Parameters</h1> -->
+            <!-- Advanced Parameter Selection Tab -->
+            <div id="parameter-advanced" class="tabcontent inner-background" style="display: block;">
+                <!-- Advanced Checkboxes -->
+                <div class="centercontent">
                 <label for="experiment-type">Experiment Type:</label>
                     <input type="checkbox" id="experiment-type-dda-advanced" name="experiment-type" value="DDA" checked>
                     <label for="experiment-type-dda-advanced">DDA</label>
@@ -135,24 +130,25 @@
                     <label for="experiment-type-dia-advanced">DIA</label>
                     <input type="checkbox" id="experiment-type-annotate-advanced" name="experiment-type" value="Annotate" checked>
                     <label for="experiment-type-annotate-advanced">Annotate</label>
-                <div class="out">
-                    <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-advanced')">Write Parameters To Yaml</button>
-                    <button id="load-personal-button-advanced">Load Parameters from YAML</button>
-                    <!-- <button id="calculateBtn" onclick="runExperiment()">Run DDA-DIA</button> -->
+                </div> 
+                <div class="centercontent">
+                    <!-- Advanced Parameter Buttons -->
+                    <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-advanced')">Write Parameters To File</button>
+                    <button id="upload-data-button-advanced">Load Parameters from File</button>
                 </div>
                 <div>
-                    <!-- <div id="parameters-column-both-advanced" ></div>
-                    <div id="inputs-column-both-advanced" ></div> -->
-                    <div id="duo-inputs-column-both-advanced" class="inner"></div>
+                <!-- Advanced Parameters are defined by default file in "_include" and formatted in renderer_exp.js -->
+                    <div id="duo-inputs-column-both-advanced" class="param-as-two-columns"></div>
                     <div id="param-empty-adv" class="empty-params"  style="display: none">No Parameters to Display. Select DIA and/or DDA to proceed.</div>
                 </div>
             </div>
 
 
+            <!-- Note to Self - Checkboxes currently share IDs in this tab and previous. Update this when possible. -->
             <!-- Run Experiment Tab -->
-            <div id="run-experiment" class="tabcontent outermost">
+            <div id="run-experiment" class="tabcontent inner-background">
 
-                <!-- Experiment Type Section -->
+                <!-- Experiment Checkboxes -->
                 <div class="section-container">
                     <label class="section-label">Experiment Type:</label>
                     <div class="checkbox-option">
@@ -186,7 +182,7 @@
                     </div>
                 </div>
 
-
+                <!-- Annotation Options Section -->
                 <div class="section-container" id="annotate-options">
                     <label class="section-label">Annotation Options:</label>
                     <div class="checkbox-option">
@@ -203,13 +199,7 @@
                     </div>
                 </div>
 
-
-                <!-- New Database Name (will be hidden by default) -->
-                <!-- <div class="section-container" id="new-db-name-container" style="display: none;">
-                    <label class="section-label">New Database Name:</label>
-                    <input type="text" id="new-db-name" placeholder="Enter new database name">
-                </div>
-             -->
+                <!-- Note to self - update this button/checkbox. -->
                 <!-- Save Parameters Section -->
                 <div class="section-container">
                     <label class="section-label">Save Parameters:</label>
@@ -231,48 +221,30 @@
                 </div>
 
                 <!-- Run Experiment Button -->
-                <div class="button-container">
+                <div class="section-container">
                     <button class="btn run-btn" onclick="RunExperiment()">Run Experiment</button>
                 </div>
 
 
-                            
-            
-                
-                    
-            <div>
                 <br><br>
-                <label for="output-box" >Real-time Results:</label>
+                <label for="output-box" >Real-time Results</label>
                 <div class="output-box" id="output-box"></div>
 
             </div>
 
 
         </div>
-        </div>
     </div>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 100px;
-        }
-    </style>
-
-    <script src="renderer.js"></script>
 
 </body>
 
+<!-- Footer -->
+<footer class="footer">
+    <a href="#documentation">Documentation</a>
+    <a href="#contact">Contact</a>
+</footer>
+
+<script src="renderer_exp.js"></script>
+    
 </html>
-
-
-    <!-- Footer -->
-    <footer class="footer">
-        <a href="#documentation">Documentation</a>
-        <a href="#contact">Contact</a>
-      </footer>
-    
-    </body>
-    
-    </html>

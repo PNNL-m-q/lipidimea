@@ -1,15 +1,25 @@
 
+// Declare All Variables
+// This includes:
+// - Button elements
+// - Checkbox elements
+// - Radiobutton elements
+// - FilePaths
+// - param/input elements
 
+// Matching Parameters may exist across File Upload, General, Advanced, Experiment Tabs
+
+// Buttons for file selection
 const selectButtonDDA = document.getElementById('select-button-dda');
 const selectButtonDIA = document.getElementById('select-button-dia');
 const selectButtonDatabase = document.getElementById('select-button-database');
 const selectButtonAnnotation = document.getElementById('select-button-annotation');
 const fileInputDDA = document.getElementById('dda-file-input');
 const fileInputDIA = document.getElementById('dia-file-input');
-
 const fileInputDatabase = document.getElementById('database-file-input');
 const fileInputAnnotation = document.getElementById('annotation-file-input');
 
+// Checkboxes
 const checkboxes = {
   general: {
       dda: document.getElementById("experiment-type-dda-general"),
@@ -22,51 +32,67 @@ const checkboxes = {
       annotate: document.getElementById("experiment-type-annotate-advanced")
   }
 };
-
+// Parameters and inputs
 const parametersColumnGeneral = document.getElementById("duo-inputs-column-both-general").getElementsByTagName('p');
 const inputsColumnGeneral = document.getElementById("duo-inputs-column-both-general").getElementsByTagName('input');
-
-
 const parametersColumnAdvanced = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
 const inputsColumnAdvanced = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
-
 const ParamEmptyGeneral = document.getElementById("param-empty-gen");
 const ParamEmptyAdvanced= document.getElementById("param-empty-adv");
+const databaseOptions = document.getElementById('db-options');
 
-const newDB = document.getElementById('db-options');
+
+//  Files Section
+const fileListDDA = document.getElementById('file-list-dda');
+const fileListDIA = document.getElementById('file-list-dia');
+const fileListDatabase = document.getElementById('file-list-database');
+const fileListAnnotation = document.getElementById('file-list-annotation');
+const filesDDA = [];
+const filesDIA = [];
+const filesDatabase= [];
+const filesAnnotation= [];
+
+// Python Experiment Results Box
+const outputBox = document.getElementById('output-box');
 
 
+// Add Event listeners. DOM triggers immediately
+
+
+// Checkbox eventlisteners
 for (let type in checkboxes) {
   for (let mode in checkboxes[type]) {
       checkboxes[type][mode].addEventListener("change", handleCheckboxChange);
       checkboxes[type][mode].addEventListener("change", UpdateFileOptions);
   }
 }
-
 document.addEventListener('DOMContentLoaded', () => {
-  window.api.send('getYamlDataBoth');
+  window.api.send('getDefaults');
 });
 
+// document.addEventListener('DOMContentLoaded', () => {
+//   window.api.send('file-content');
+// });
+
+// document.addEventListener('DOMContentLoaded', () => {
+//   window.api.send('selected-database-path');
+// });
+
+// Add Event listeners. Click or change triggers when activated
+
+
+// Listener for uploading params 
 document.addEventListener('DOMContentLoaded', () => {
-  window.api.send('file-content');
+  const uploadDataButton = document.getElementById('upload-data-button-general');
+  uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
 });
 
-
+// Listener for uploading params 
 document.addEventListener('DOMContentLoaded', () => {
-  window.api.send('selected-database-path');
+  const uploadDataButton = document.getElementById('upload-data-button-advanced');
+  uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
 });
 
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  const loadPersonalButton = document.getElementById('load-personal-button-general');
-  loadPersonalButton.addEventListener('click', handleLoadPersonalButtonClick);
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  const loadPersonalButton = document.getElementById('load-personal-button-advanced');
-  loadPersonalButton.addEventListener('click', handleLoadPersonalButtonClick);
-});
 
 if (selectButtonDDA) {
   selectButtonDDA.addEventListener('click', () => {
@@ -117,17 +143,18 @@ if (fileInputAnnotation) {
 }
 
 
-newDB.addEventListener("change", UpdateExpName);
+
+databaseOptions.addEventListener("change", UpdateExpName);
 
 
-// const newAn = document.getElementById("experiment-type-annotate-general")
-// newAn.addEventListener("change",UpdateAnnotateOptions)
+// Update file upload options when clicking checkbox in file upload tab.
+// document.addEventListener('DOMContentLoaded', function() {
+//   UpdateFileAvail()
+// });
+
 
 // Call the synchronizeCheckboxes function when the page is loaded
 document.addEventListener('DOMContentLoaded', synchronizeCheckboxes);
-
-
-
 
 
 // Tab navigation of Experiment Page
@@ -157,9 +184,37 @@ function openTab(evt, tabName) {
 }
 
 
+// Synchronize Checkboxes across tabs whenever they change
+function synchronizeCheckboxes() {
+  const tabs = [
+      '#file-upload',
+      '#parameter-general',
+      '#parameter-advanced',
+      '#run-experiment'
+  ];
 
+  tabs.forEach((tab, index) => {
+      const checkboxesInCurrentTab = document.querySelectorAll(`${tab} input[name="experiment-type"]`);
+
+      checkboxesInCurrentTab.forEach((checkbox, checkboxIndex) => {
+          checkbox.addEventListener('click', function() {
+              tabs.forEach((otherTab, otherTabIndex) => {
+                  if (index !== otherTabIndex) {
+                      const checkboxesInOtherTab = document.querySelectorAll(`${otherTab} input[name="experiment-type"]`);
+                      checkboxesInOtherTab[checkboxIndex].checked = checkbox.checked;
+                      handleCheckboxChange();
+                      UpdateAnnotateOptions();
+                  }
+              });
+          });
+      });
+  });
+}
+
+
+// Load Default Params. Create Related Elements.
 let loadyamlonce = true;
-window.api.receive('yamlDataBoth', (data) => {
+window.api.receive('returnDefaults', (data) => {
     data = { PARAMETERS: data };
 
     if (loadyamlonce === true) {
@@ -206,7 +261,9 @@ window.api.receive('yamlDataBoth', (data) => {
         }
     }
 });
-
+// A series of functions to create the param elements
+// Ideally style should be formatted in css.
+// Note to self - fix this if time.
 function createHeaderElement(textContent, parentNode,ID) {
   const element = document.createElement('p');
   element.textContent = textContent;
@@ -272,10 +329,7 @@ function createInput(type, value, id, parentNode, otherTab) {
 
 
 
-
-// ###
-
-
+// Write User Updated Parameter Values to file
 function WriteToYaml(i) {
   const inputValues = {};
   const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
@@ -295,14 +349,12 @@ function WriteToYaml(i) {
       currentSubheader = null;  // Reset subheader when a new header is detected
       continue;
     }
-
     // Detect if the element represents a subheader
     if (input2 && input2.key === "Ignore") {
       currentSubheader = input2.id;
       inputValues[currentHeader][currentSubheader] = {};  // Initialize a sub dictionary for the subheader
       continue;
     }
-
     // If we're within a header and subheader, nest the input values accordingly
     if (input && input2 && input.style.display != "none") {
       if (currentHeader && currentSubheader) {
@@ -333,24 +385,26 @@ function WriteToYaml(i) {
 
 }
 
+// Receive filepath to update parameter values from personal file
+window.api.receive('file-dialog-selection', (filePath) => {
+  window.api.send('file-dialog-selection', filePath);
+});
+
+// Receive data to update parameter values 
+window.api.receive('file-content', (fileContent) => {
+  populateInputsFromYaml(fileContent);
+});
 
 
-//   window.api.send('run-python-yamlwriter', options);
-// }
-
-
-
-
-
-function handleLoadPersonalButtonClick() {
+// Load Parameter Values from personal file.
+function handleuploadDataButtonClick() {
   window.api.send('open-file-dialog', {
     filters: [{ name: 'YAML Files', extensions: ['yaml', 'yml'] }],
     properties: ['openFile'],
   });
 }
 
-
-
+// Change param values to match inputs
 function populateInputsFromYaml(yamlData) {
   // Helper function to set input values based on keys in the data
   function setInputValues(inputElements, data) {
@@ -363,7 +417,7 @@ function populateInputsFromYaml(yamlData) {
       }
   }
 
-  // Function to flatten the nested structure into a single object
+  // Helper function to flatten the nested structure into a single object
   function flattenYamlData(data) {
       let flatData = {};
       for (const [key, value] of Object.entries(data)) {
@@ -388,44 +442,24 @@ function populateInputsFromYaml(yamlData) {
 
 
 
-window.api.receive('file-content', (fileContent) => {
-  populateInputsFromYaml(fileContent);
-});
-
-window.api.receive('file-dialog-selection', (filePath) => {
-  window.api.send('file-dialog-selection', filePath);
-});
-
-
 // window.api.receive('selected-database-path', (fileContent) => {
 //   console.log("ooga booga", fileContent)
 //   // populateInputsFromYaml(fileContent);
 // });
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Add event listener after the file is selected
-  window.api.receive('selected-database-path', (filePath) => {
-    console.log("LOG: renderer.js selected-database-path", filePath);
-    // Perform any additional logic with the selected file path
-    // For example, you can send the file path to the main process to fetch data from the database
-    window.api.send('fetch-database-table', filePath);
-  });
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//   // Add event listener after the file is selected
+//   window.api.receive('selected-database-path', (filePath) => {
+//     console.log("LOG: renderer.js selected-database-path", filePath);
+//     // Perform any additional logic with the selected file path
+//     // For example, you can send the file path to the main process to fetch data from the database
+//     window.api.send('fetch-database-table', filePath);
+//   });
+// });
 
 
 
-// Upload Files Section
-// const selectButton = document.getElementById('select-button');
-const fileListDDA = document.getElementById('file-list-dda');
-const fileListDIA = document.getElementById('file-list-dia');
-const fileListDatabase = document.getElementById('file-list-database');
-const fileListAnnotation = document.getElementById('file-list-annotation');
-const filesDDA = [];
-const filesDIA = [];
-const filesDatabase= [];
-const filesAnnotation= [];
-
-
+// File Upload Section
 function handleFileSelection(fileInput, fileList, filesArray) {
   const selectedFiles = Array.from(fileInput.files);
 
@@ -461,80 +495,31 @@ function handleFileSelection(fileInput, fileList, filesArray) {
 
 
 
-function synchronizeCheckboxes() {
-  const tabs = [
-      '#file-upload',
-      '#parameter-general',
-      '#parameter-advanced',
-      '#run-experiment'
-  ];
-
-  tabs.forEach((tab, index) => {
-      const checkboxesInCurrentTab = document.querySelectorAll(`${tab} input[name="experiment-type"]`);
-
-      checkboxesInCurrentTab.forEach((checkbox, checkboxIndex) => {
-          checkbox.addEventListener('click', function() {
-              tabs.forEach((otherTab, otherTabIndex) => {
-                  if (index !== otherTabIndex) {
-                      const checkboxesInOtherTab = document.querySelectorAll(`${otherTab} input[name="experiment-type"]`);
-                      checkboxesInOtherTab[checkboxIndex].checked = checkbox.checked;
-                      handleCheckboxChange();
-                      UpdateAnnotateOptions();
-                  }
-              });
-          });
-      });
-  });
-}
-
-
 // Function to handle checkbox change
+// Hide / Unhide appropriate sections
+// These sections have a bit of hard coding...
 function handleCheckboxChange() {
   const isDDA = checkboxes.general.dda.checked || checkboxes.advanced.dda.checked;
   const isDIA = checkboxes.general.dia.checked || checkboxes.advanced.dia.checked;
   const isAnnotate = checkboxes.general.annotate.checked || checkboxes.advanced.annotate.checked;
 
-
   showAllSections(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
   showAllSections(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  if (isDDA && isDIA && isAnnotate) {
-      showAllSections(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      showAllSections(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  } else if (!isDDA && isDIA && isAnnotate) {
+    if (!isDDA) {
       hideDDASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
       hideDDASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  } else if (isDDA && !isDIA && isAnnotate) {
-      hideDIASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideDIASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  } else if (isDDA && isDIA && !isAnnotate) {
-      hideAnnotateSection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideAnnotateSection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  } else if (isDDA && !isDIA && !isAnnotate) {
-      hideDIASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideDIASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-      hideAnnotateSection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideAnnotateSection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  } else if (!isDDA && isDIA && !isAnnotate) {
-      hideDDASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideDDASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-      hideAnnotateSection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideAnnotateSection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  } else if (!isDDA && !isDIA && isAnnotate) {
-      hideDDASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideDDASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-      hideDIASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideDIASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  // } else {
-  //   hideDDASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-  //   hideDDASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  //   hideDIASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-  //   hideDIASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  //   // hideAnnotateSection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-  //   // hideAnnotateSection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
-  // }
-  } else {
-      hideAllSections(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
-      hideAllSections(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
+  } 
+  if (!isDIA) {
+    hideDIASection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
+    hideDIASection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
+  } 
+  if (!isAnnotate) {
+    hideAnnotateSection(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
+    hideAnnotateSection(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
+  }
+  if (!isDDA && !isDIA && !isAnnotate) {
+    hideAllSections(parametersColumnGeneral, inputsColumnGeneral, ParamEmptyGeneral);
+    hideAllSections(parametersColumnAdvanced, inputsColumnAdvanced, ParamEmptyAdvanced);
   }
 }
 
@@ -550,21 +535,15 @@ function showAllSections(parametersColumn, inputsColumn, paramEmpty) {
   paramEmpty.style.display = "none";
 }
 
-
+// Hide DDA Section
 function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
     key = ["DDA data analysis","DIA data analysis"]
     occurrence = 0
     const parameterElements = Array.from(parametersColumn);
     const inputElements = (inputsColumn);
-
-    // console.log("Here:")
-    // console.log("parameterElements:", parameterElements)
-    // console.log("inputElements:", inputElements)
-
     const targetIndex = parameterElements.findIndex(
       (element) => element.textContent === key[0]
     );
-    // parameterElements[0]
     
     if (targetIndex !== -1) {
       console.log("index is -1 or not found?")
@@ -572,15 +551,9 @@ function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
       inputElements[targetIndex].style.display = "none";
 
       let count = 0;
-      // let count2 = 0;
       for (let i = targetIndex + 1; i < parameterElements.length; i++) {
-        // console.log("iteration # : ", i)
-        // console.log("Checking ", parameterElements[i].textContent, " against ", key[1])
-        
-        // console.log(parameterElements[i].textContent)
         if (parameterElements[i].textContent === key[0]) {
           count++;
-          // count2 ++;
           if (count > occurrence) {
             break;
           }
@@ -588,8 +561,6 @@ function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
         if (parameterElements[i].textContent === key[1]) {
           break;
         }
-        // console.log("param to hide",parameterElements[i])
-        // console.log("input to hide",inputElements[i])
         parameterElements[i].style.display = "none";
         inputElements[i].style.display = "none";
 
@@ -597,40 +568,39 @@ function hideDDASection(parametersColumn,inputsColumn,paramEmpty) {
     paramEmpty.style.display = "none";
   }
 
+// Hide DIA Section
+function hideDIASection(parametersColumn,inputsColumn,paramEmpty) {
+  key = ["DIA data analysis","lipid annotation"]
+  occurrence = 0
+  const parameterElements = Array.from(parametersColumn);
+  const inputElements = Array.from(inputsColumn);
 
-    function hideDIASection(parametersColumn,inputsColumn,paramEmpty) {
-      key = ["DIA data analysis","lipid annotation"]
-      occurrence = 0
-      const parameterElements = Array.from(parametersColumn);
-      const inputElements = Array.from(inputsColumn);
+  const targetIndex = parameterElements.findIndex(
+    (element) => element.textContent === key[0]
+  );
   
-      const targetIndex = parameterElements.findIndex(
-        (element) => element.textContent === key[0]
-      );
-      
-      if (targetIndex !== -1) {
-        parameterElements[targetIndex].style.display = "none";
-        inputElements[targetIndex].style.display = "none";
-  
-        let count = 0;
-        for (let i = targetIndex + 1; i < parameterElements.length; i++) {
-          // console.log(parameterElements[i].textContent)
-          if (parameterElements[i].textContent === key[0]) {
-            count++;
-            if (count > occurrence) {
-              break;
-            }
-          }
-          if (parameterElements[i].textContent === key[1]) {
-            break;
-          }
-          parameterElements[i].style.display = "none";
-          inputElements[i].style.display = "none";
-        }};
-      paramEmpty.style.display = "none";
+  if (targetIndex !== -1) {
+    parameterElements[targetIndex].style.display = "none";
+    inputElements[targetIndex].style.display = "none";
+
+    let count = 0;
+    for (let i = targetIndex + 1; i < parameterElements.length; i++) {
+      if (parameterElements[i].textContent === key[0]) {
+        count++;
+        if (count > occurrence) {
+          break;
+        }
+      }
+      if (parameterElements[i].textContent === key[1]) {
+        break;
+      }
+      parameterElements[i].style.display = "none";
+      inputElements[i].style.display = "none";
+    }};
+  paramEmpty.style.display = "none";
 }
 
-// Change to annotate
+// Hide Annotate Section
 function hideAnnotateSection(parametersColumn,inputsColumn,paramEmpty) {
   key = ["lipid annotation","miscellaneous"]
   occurrence = 0
@@ -647,7 +617,6 @@ function hideAnnotateSection(parametersColumn,inputsColumn,paramEmpty) {
 
     let count = 0;
     for (let i = targetIndex + 1; i < parameterElements.length; i++) {
-      // console.log(parameterElements[i].textContent)
       if (parameterElements[i].textContent === key[0]) {
         count++;
         if (count > occurrence) {
@@ -663,7 +632,6 @@ function hideAnnotateSection(parametersColumn,inputsColumn,paramEmpty) {
   paramEmpty.style.display = "none";
 }
 
-
 // Function to hide all sections
 function hideAllSections(parametersColumn, inputsColumn,paramEmpty) {
   Array.from(parametersColumn).forEach((element) => {
@@ -677,52 +645,45 @@ function hideAllSections(parametersColumn, inputsColumn,paramEmpty) {
 
 
 
-// Update file upload options when clicking checkbox in file upload tab.
-document.addEventListener('DOMContentLoaded', function() {
-  let fileUploadSection = document.getElementById('file-upload');
-  console.log("File Upload Section:", fileUploadSection);
+// function UpdateFileAvail() {
+//   let fileUploadSection = document.getElementById('file-upload');
+//   console.log("File Upload Section:", fileUploadSection);
 
-  fileUploadSection.addEventListener('change', function(event) {
-    let target = event.target;
-    // let DDACheckboxAdvanced = document.getElementById('experiment-type-dda-advanced');
-    // let diaCheckbox = document.getElementById('experiment-type-dia-advanced');
-    // let ddaCheckbox = document.getElementById('experiment-type-dda-general');
-    // let diaCheckbox = document.getElementById('experiment-type-dia-general');
-    let ddaFileSection = document.getElementById('dda-file-region');
-    let diaFileSection = document.getElementById('dia-file-region');
-    let annFileSection = document.getElementById('annotate-file-region');
+//   fileUploadSection.addEventListener('change', function(event) {
+//     let target = event.target;
+//     let ddaFileSection = document.getElementById('dda-file-region');
+//     let diaFileSection = document.getElementById('dia-file-region');
+//     let annFileSection = document.getElementById('annotate-file-region');
 
-    if (target.id === 'experiment-type-dda-advanced') {
-      toggleFileSection(checkboxes.advanced.dda, ddaFileSection);
-    } else if (target.id === 'experiment-type-dia-advanced') {
-      toggleFileSection(checkboxes.advanced.dia, diaFileSection);
-    } else if (target.id === 'experiment-type-annotate-advanced') {
-      toggleFileSection(checkboxes.advanced.annotate, annFileSection);
-    } else if  (target.id === 'experiment-type-dda-general') {
-      toggleFileSection(checkboxes.general.dda, ddaFileSection);
-    } else if (target.id === 'experiment-type-dia-general') {
-      toggleFileSection(checkboxes.advanced.dia, diaFileSection);
-    } else if (target.id === 'experiment-type-annotate-general') {
-      toggleFileSection(checkboxes.general.annotate, annFileSection);
-    }
-  });
+//     if (target.id === 'experiment-type-dda-advanced') {
+//       toggleFileSection(checkboxes.advanced.dda, ddaFileSection);
+//     } else if (target.id === 'experiment-type-dia-advanced') {
+//       toggleFileSection(checkboxes.advanced.dia, diaFileSection);
+//     } else if (target.id === 'experiment-type-annotate-advanced') {
+//       toggleFileSection(checkboxes.advanced.annotate, annFileSection);
+//     } else if  (target.id === 'experiment-type-dda-general') {
+//       toggleFileSection(checkboxes.general.dda, ddaFileSection);
+//     } else if (target.id === 'experiment-type-dia-general') {
+//       toggleFileSection(checkboxes.advanced.dia, diaFileSection);
+//     } else if (target.id === 'experiment-type-annotate-general') {
+//       toggleFileSection(checkboxes.general.annotate, annFileSection);
+//     }
+//   });
 
-  function toggleFileSection(checkbox, fileSection) {
-    if (checkbox.checked) {
-      fileSection.style.display = 'block';
-    } else {
-      fileSection.style.display = 'none';
-    }
-  }
-  
-});
+//   function toggleFileSection(checkbox, fileSection) {
+//     if (checkbox.checked) {
+//       fileSection.style.display = 'block';
+//     } else {
+//       fileSection.style.display = 'none';
+//     }
+//   }
+// }
 
-
+// Update which file upload options are available depending on checkboxes
 function UpdateFileOptions() {
   const ddaFileRegion = document.getElementById("dda-file-region");
   const diaFileRegion = document.getElementById("dia-file-region");
   const annFileSection = document.getElementById('annotate-file-region');
-
   ddaFileRegion.style.display = (checkboxes.general.dda.checked || checkboxes.advanced.dda.checked) ? "block" : "none";
   diaFileRegion.style.display = (checkboxes.general.dia.checked || checkboxes.advanced.dia.checked) ? "block" : "none";
   annFileSection.style.display = (checkboxes.general.annotate.checked || checkboxes.advanced.annotate.checked) ? "block" : "none";
@@ -730,9 +691,7 @@ function UpdateFileOptions() {
 
 
 
-const outputBox = document.getElementById('output-box');
-
-
+// Python Results Box scroll to bottom by default
 function scrollToBottom(element) {
   element.scrollTo({
     top: element.scrollHeight,
@@ -741,8 +700,7 @@ function scrollToBottom(element) {
   });
 }
 
-
-
+// Radio Box checker for database options
 function getSelectedDatabaseOption() {
   let radios = document.querySelectorAll('.section-container input[name="db_option"]');
   
@@ -753,10 +711,62 @@ function getSelectedDatabaseOption() {
   }
 }
 
+// Save directorypath for experiment results
+function selectSaveDirectory() {
+  window.api.send('open-directory-dialog');
+}
+
+window.api.receive('directory-selected', (path) => {
+  console.log("Selected directory:", path);
+  document.getElementById('selected-directory').value = path;
+});
+
+// Database New Name for Experiment
+function UpdateExpName() {
+  const TF = document.getElementById("create-new-option").checked
+  if (TF === true) {
+    document.getElementById("new-db-name-container").style.display = "flex"
+    document.getElementById("selected-directory-container").style.display = "flex"
+  }
+  else {
+    document.getElementById("new-db-name-container").style.display = "none"
+    document.getElementById("selected-directory-container").style.display = "none"
+  }
+}
+
+// Annotation Options for experiment
+function UpdateAnnotateOptions() {
+  const TF = checkboxes.general.annotate.checked
+  console.log("TF: ", TF)
+
+  if (TF === true) {
+    document.getElementById("annotate-options").style.display = "flex"
+  }
+  else {
+    document.getElementById("annotate-options").style.display = "none"
+  }
+}
 
 
+// Receive Python Experiment Results to display
+window.api.receive('python-result-experiment', (result) => {
+  console.log('Received result:', result);
+  outputBox.innerText += result + '\n'; // Append the result to the output box
+  scrollToBottom(outputBox);
+});
 
 
+// Get List of files from Array
+function fileListToArray(fileList) {
+  return Array.from(fileList.getElementsByTagName('li')).map((listItem) => {
+    const fileText = listItem.querySelector('.file-text');
+    console.log("fileText:",fileText);
+    // Return only the path for each file
+    return fileText.dataset.path;
+  });
+}
+
+// Run Experiment in Python. Format all inputs to experiment
 function RunExperiment() {
 
   const parameters = {
@@ -770,7 +780,6 @@ function RunExperiment() {
         do_annotation: false,
       }
     };
-  // const parameters = {}
   
   const inputOutput = {
     dda_data_files: [],
@@ -871,127 +880,72 @@ function RunExperiment() {
 
 
 
+// function getFilePaths(filesArray) {
+//   console.log("filesArray:",filesArray.map((file) => file.path))
+//   return filesArray.map((file) => file.path);
+// }
 
 
-window.api.receive('python-result-experiment', (result) => {
-  console.log('Received result:', result);
-  outputBox.innerText += result + '\n'; // Append the result to the output box
-  scrollToBottom(outputBox);
-});
+// function displayFileName(input) {
+//   const selectedFileNameElement = document.getElementById('selectedFileName');
+//   if (input.files.length > 0) {
+//     selectedFileNameElement.textContent = input.files[0].name;
+//   } else {
+//     selectedFileNameElement.textContent = '';
+//   }
+// }
 
 
-function fileListToArray(fileList) {
-  return Array.from(fileList.getElementsByTagName('li')).map((listItem) => {
-    const fileText = listItem.querySelector('.file-text');
-    console.log("fileText:",fileText);
-    // Return only the path for each file
-    return fileText.dataset.path;
-  });
-}
-
-function getFilePaths(filesArray) {
-  console.log("filesArray:",filesArray.map((file) => file.path))
-  return filesArray.map((file) => file.path);
-}
-
-
-function displayFileName(input) {
-  const selectedFileNameElement = document.getElementById('selectedFileName');
-  if (input.files.length > 0) {
-    selectedFileNameElement.textContent = input.files[0].name;
-  } else {
-    selectedFileNameElement.textContent = '';
-  }
-}
-
-
-function databaseDialog() {
-  window.api.send('open-database-dialog',"Sent.");
-}
+// function databaseDialog() {
+//   window.api.send('open-database-dialog',"Sent.");
+// }
 
 
 
-document.addEventListener('DOMContentLoaded', () => {
-  console.log("LOG: renderer.js DOMContentLoaded");
+// document.addEventListener('DOMContentLoaded', () => {
+//   console.log("LOG: renderer.js DOMContentLoaded");
 
-  window.api.receive('selected-database-path', (result) => {
-    console.log("LOG: renderer.js selected-database-path", result);
-    window.api.send('fetch-database-table', result);
-  });
-});
+//   window.api.receive('selected-database-path', (result) => {
+//     console.log("LOG: renderer.js selected-database-path", result);
+//     window.api.send('fetch-database-table', result);
+//   });
+// });
+
 
 
 // Listen for the database table data from the main process
-window.api.receive('database-table-data', (data) => {
-  // Display the fetched data in a table on the results.html page
-  // You can modify this code to format and display the data as desired
-  console.log("yay")
-  const tableContainer = document.getElementById('table-container');
-  tableContainer.innerHTML = ''; // Clear previous table content
+// window.api.receive('database-table-data', (data) => {
+//   // Display the fetched data in a table on the results.html page
+//   // You can modify this code to format and display the data as desired
+//   const tableContainer = document.getElementById('table-container');
+//   tableContainer.innerHTML = ''; // Clear previous table content
 
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  const tbody = document.createElement('tbody');
+//   const table = document.createElement('table');
+//   const thead = document.createElement('thead');
+//   const tbody = document.createElement('tbody');
 
-  // Add table headers
-  const headers = Object.keys(data[0]);
-  const headerRow = document.createElement('tr');
-  headers.forEach((header) => {
-    const th = document.createElement('th');
-    th.textContent = header;
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
+//   // Add table headers
+//   const headers = Object.keys(data[0]);
+//   const headerRow = document.createElement('tr');
+//   headers.forEach((header) => {
+//     const th = document.createElement('th');
+//     th.textContent = header;
+//     headerRow.appendChild(th);
+//   });
+//   thead.appendChild(headerRow);
 
-  // Add table rows
-  data.forEach((row) => {
-    const tableRow = document.createElement('tr');
-    headers.forEach((header) => {
-      const td = document.createElement('td');
-      td.textContent = row[header];
-      tableRow.appendChild(td);
-    });
-    tbody.appendChild(tableRow);
-  });
+//   // Add table rows
+//   data.forEach((row) => {
+//     const tableRow = document.createElement('tr');
+//     headers.forEach((header) => {
+//       const td = document.createElement('td');
+//       td.textContent = row[header];
+//       tableRow.appendChild(td);
+//     });
+//     tbody.appendChild(tableRow);
+//   });
 
-  table.appendChild(thead);
-  table.appendChild(tbody);
-  tableContainer.appendChild(table);
-});
-
-
-
-function selectSaveDirectory() {
-  window.api.send('open-directory-dialog');
-}
-
-window.api.receive('directory-selected', (path) => {
-  console.log("Selected directory:", path);
-  document.getElementById('selected-directory').value = path;
-});
-
-
-function UpdateExpName() {
-  const TF = document.getElementById("create-new-option").checked
-  if (TF === true) {
-    document.getElementById("new-db-name-container").style.display = "flex"
-    document.getElementById("selected-directory-container").style.display = "flex"
-  }
-  else {
-    document.getElementById("new-db-name-container").style.display = "none"
-    document.getElementById("selected-directory-container").style.display = "none"
-  }
-}
-
-function UpdateAnnotateOptions() {
-  const TF = checkboxes.general.annotate.checked
-  console.log("TF: ", TF)
-
-  if (TF === true) {
-    document.getElementById("annotate-options").style.display = "flex"
-  }
-  else {
-    document.getElementById("annotate-options").style.display = "none"
-  }
-}
-
+//   table.appendChild(thead);
+//   table.appendChild(tbody);
+//   tableContainer.appendChild(table);
+// });

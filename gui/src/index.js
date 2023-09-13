@@ -7,12 +7,9 @@ const sqlite3 = require('sqlite3');
 const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
 
-
-// const { fetchData } = require('./database');
-
-// const pythonProcess = spawn('python', ['experiment.py']);
-
-
+// This variable will hold the path to the sql database in Results. 
+// It is globally defined because it is called frequently.
+let dbPath = null;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
@@ -76,43 +73,34 @@ app.on('activate', () => {
 });
 
 
-// Get Defaults Data
-ipcMain.on('getYamlDataBoth', (event) => {
-  const yamlPathBoth = path.join(__dirname, '../../LipidIMEA/_include/default_params.yml');
-  console.log('YAML Path:', yamlPathBoth);
+// ------------ Experiment Section ----------
 
-  fs.readFile(yamlPathBoth, 'utf8', (err, data) => {
+// Load on DOM
+// Get Defaults Data
+ipcMain.on('getDefaults', (event) => {
+  const defaultsPath = path.join(__dirname, '../../LipidIMEA/_include/default_params.yml');
+  console.log('YAML Path:', defaultsPath);
+
+  fs.readFile(defaultsPath, 'utf8', (err, data) => {
     if (err) {
       console.error('Error reading YAML file:', err);
-      event.reply('yamlDataBoth', null);
+      event.reply('returnDefaults', null);
       return;
     }
 
     try {
-      const yamlDataBoth = yaml.load(data);
-      console.log('YAML Data:', yamlDataBoth);
-      event.reply('yamlDataBoth', yamlDataBoth);
+      const returnDefaults = yaml.load(data);
+      console.log('YAML Data:', returnDefaults);
+      event.reply('returnDefaults', returnDefaults);
     } catch (error) {
       console.error('Error parsing YAML file:', error);
-      event.reply('yamlDataBoth', null);
+      event.reply('returnDefaults', null);
     }
   });
 });
 
-
-// ipcMain.on('selected-param-save-directory', (event, fileName) => {
-//   dialog.showOpenDialog({
-//       properties: ['openDirectory']
-//   }).then(result => {
-//       if (!result.canceled && result.filePaths.length > 0) {
-//           let savePath = path.join(result.filePaths[0], fileName);
-//           event.reply('selected-directory', savePath);
-//       }
-//   }).catch(err => {
-//       console.log(err);
-//   });
-// });
-
+// Trigger on "Save Params as file" Button
+// Open dialog to enter file name and search for save directory.
 ipcMain.on('request-filename-and-directory', (event) => {
   prompt({
       title: 'New file name',
@@ -135,7 +123,22 @@ ipcMain.on('request-filename-and-directory', (event) => {
   }).catch(console.error);
 });
 
+// Open Save Directory Dialog. 
+ipcMain.on('open-directory-dialog', (event) => {
+  dialog.showOpenDialog({
+      properties: ['openDirectory']
+  }).then(result => {
+      if (!result.canceled) {
+          const selectedDirectory = result.filePaths[0];
+          event.sender.send('directory-selected', selectedDirectory);
+      }
+  }).catch(err => {
+      console.error("Directory selection error:", err);
+  });
+});
 
+
+// Run python script to save params to file.
 ipcMain.on('run-python-yamlwriter', (event, options) => {
   const inputNumber = options.args;
   console.log('yamlwriter input values:', inputNumber);
@@ -155,6 +158,7 @@ ipcMain.on('run-python-yamlwriter', (event, options) => {
   });
 });
 
+// Generic function for opening dialog to select a file
 ipcMain.on('open-file-dialog', (event, options) => {
   const window = BrowserWindow.getFocusedWindow();
 
@@ -172,13 +176,15 @@ ipcMain.on('open-file-dialog', (event, options) => {
 });
 
 
-ipcMain.handle('read-file-content', (event, filePath) => {
-  // Read the content of the file and return the data
-  const fileContent = readFile(filePath);
-  return fileContent;
-});
+// Is this still in use?
+// ipcMain.handle('read-file-content', (event, filePath) => {
+//   // Read the content of the file and return the data
+//   const fileContent = readFile(filePath);
+//   return fileContent;
+// });
 
 
+// Function to load in yaml data
 function parseYaml(content) {
   try {
     const data = yaml.load(content);
@@ -189,7 +195,7 @@ function parseYaml(content) {
   }
 }
 
-// Define the 'file-dialog-selection' IPC handler
+// Read in YAML File to replace default param values.
 ipcMain.on('file-dialog-selection', (event, filePath) => {
   
   // Read the content of the selected YAML file
@@ -202,14 +208,14 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
 
 
 
-// Run Experiment
+// Run python script to run the Lipidimea workflow
 ipcMain.on('run-python-experiment', (event, options) => {
   const inputNumber = options.args;
   console.log('Experiment input values:', inputNumber);
 
   const pyshell = new PythonShell(path.join(__dirname, 'experiment.py'), {
     pythonPath: 'python3',
-    args: [JSON.stringify(inputNumber)], // Pass the input as an array if required by the Python script
+    args: [JSON.stringify(inputNumber)], 
   });
 
   pyshell.on('message', (result) => {
@@ -224,17 +230,18 @@ ipcMain.on('run-python-experiment', (event, options) => {
 
 
 
-let filePath = null; // Variable to store the selected database file path
+// ------------ Results Section ----------
 
+// Get Sql Database path when in the Results tab.
 ipcMain.on('open-database-dialog', (event, options) => {
   const window = BrowserWindow.getFocusedWindow();
   console.log("LOG: Index.js open-database-dialog")
   dialog.showOpenDialog(window, options)
     .then((result) => {
       if (!result.canceled && result.filePaths.length > 0) {
-        filePath = result.filePaths[0]; // Store the selected file path
-        console.log("LOG: Index.js selected-database-path", filePath);
-        event.reply('selected-database-path', filePath);
+        dbPath = result.filePaths[0]; // Set the global dbPath variable here
+        console.log("LOG: Index.js selected-database-path", dbPath);
+        event.reply('selected-database-path', dbPath);
       }
     })
     .catch((error) => {
@@ -242,15 +249,41 @@ ipcMain.on('open-database-dialog', (event, options) => {
     });
 });
 
+// Run main SQL Query and return results.
 ipcMain.on('fetch-database-table', (event, filePath) => {
   const db = new sqlite3.Database(filePath);
   console.log("LOG: index.js: Fetch data");
-
-  // db.all('SELECT dda_feat_id AS "DDA Feature ID", dda_f AS "DDA Data File", dia_feat_id AS "DIA Feature ID", dia_f AS "DIA Data File" ,mz AS "m/z", dia_rt AS RT, dt AS "Arrival Time", dia_decon_frag_ids, dia_xic,dia_dt,dia_dt_pkht,dia_dt_fwhm,dia_dt_psnr FROM CombinedFeatures', (error, data) => {
-  db.all('SELECT dda_feat_id AS "DDA Feature ID", dda_f AS "DDA Data File", dia_feat_id AS "DIA Feature ID", dia_f AS "DIA Data File" ,mz AS "m/z", dia_rt AS RT, dt AS "Arrival Time", dia_decon_frag_ids, dia_xic, dia_atd, dt AS dia_dt, dia_dt_pkht, dia_dt_fwhm, dia_dt_psnr, dia_rt_pkht, dia_rt_fwhm, dia_rt_psnr,dda_rt_pkht, dda_rt_fwhm, dda_rt_psnr, dda_rt, dda_ms2_peaks, dia_ms2_peaks, dia_ms1 FROM CombinedFeatures', (error, data) => {
+    db.all(`
+    SELECT 
+      dda_feat_id AS "DDA Feature ID", 
+      dda_f AS "DDA Data File", 
+      dia_feat_id AS "DIA Feature ID", 
+      dia_f AS "DIA Data File", 
+      mz AS "m/z", 
+      dia_rt AS RT, 
+      dt AS "Arrival Time", 
+      dia_decon_frag_ids, 
+      dia_xic, 
+      dia_atd, 
+      dt AS dia_dt, 
+      dia_dt_pkht, 
+      dia_dt_fwhm, 
+      dia_dt_psnr, 
+      dia_rt_pkht, 
+      dia_rt_fwhm, 
+      dia_rt_psnr,
+      dda_rt_pkht, 
+      dda_rt_fwhm, 
+      dda_rt_psnr, 
+      dda_rt, 
+      dda_ms2_peaks, 
+      dia_ms2_peaks, 
+      dia_ms1 
+    FROM CombinedFeatures
+    `, (error, data) => {
     if (error) {
       console.error('Error fetching data from the database:', error);
-      event.reply('database-table-data', data, false, error.message, filePath);
+      event.reply('database-table-data', data, false, error.message, databasePath);
     } else {
       event.reply('database-table-data', data, false);
     }
@@ -264,9 +297,9 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
 });
 
 
-
+// Run SQL Query to get blobs and info for decon frags
 ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
-  const db = new sqlite3.Database(filePath); // Access the filePath variable here
+  const db = new sqlite3.Database(dbPath); // Access the global dbPath variable here
   console.log("LOG: index.js: Fetch mapping data");
 
   if (!selectedRowValue.diaDeconFragIds || selectedRowValue.diaDeconFragIds.trim() === "") {
@@ -274,18 +307,10 @@ ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
     console.error('No IDs provided for fetching mapping data.');
     event.reply('database-table-data', [], true, "No IDs provided");
     return;
-    
   }
 
-  // Convert diaDeconFragIds to an array by splitting on spaces
   const selectedIDs = selectedRowValue.diaDeconFragIds.split(' ').map(id => id.trim()).filter(Boolean);
-
-  // Create placeholders for SQLite query based on the number of IDs.
   const placeholders = selectedIDs.map(() => '?').join(',');
-
-  // Update the query to use the IN clause.
-  // const query = `SELECT decon_frag_id, mz, xic_dist, atd_dist, xic, atd FROM DIADeconFragments WHERE decon_frag_id IN (${placeholders})`;
-
   const combinedFeaturesQuery = `
   SELECT 
       c.dia_xic, 
@@ -319,12 +344,11 @@ ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
 });
 
 
-
+// Run SQL Query to get annotation table
 ipcMain.on('fetch-annotation-table', (event, filePath) => {
   const db = new sqlite3.Database(filePath);
   console.log("LOG: index.js: Fetch data");
 
-  // db.all('SELECT dda_feat_id AS "DDA Feature ID", dda_f AS "DDA Data File", dia_feat_id AS "DIA Feature ID", dia_f AS "DIA Data File" ,mz AS "m/z", dia_rt AS RT, dt AS "Arrival Time", dia_decon_frag_ids, dia_xic,dia_dt,dia_dt_pkht,dia_dt_fwhm,dia_dt_psnr FROM CombinedFeatures', (error, data) => {
   db.all('SELECT * FROM Lipids', (error, data) => {
     if (error) {
       console.error('Error fetching data from the database:', error);
@@ -342,100 +366,17 @@ ipcMain.on('fetch-annotation-table', (event, filePath) => {
 });
 
 
-
-ipcMain.on('process-blob-data', (event, blobs) => {
-  try {
-
-    const xic = unpackData(blobToFloatArray(blobs.dia_xic));
-    const atd = unpackData(blobToFloatArray(blobs.dia_atd));
-    const PreXic = unpackData(blobToFloatArray(blobs.pre_dia_xic));
-    const PreAtd = unpackData(blobToFloatArray(blobs.pre_dia_atd));
-
-    const xicPairs = xic.x.map((x, i) => [x, xic.y[i]]);
-    const atdPairs = atd.x.map((x, i) => [x, atd.y[i]]);
-    const PreXicPairs = PreXic.x.map((x, i) => [x, PreXic.y[i]]);
-    const PreAtdPairs = PreAtd.x.map((x, i) => [x, PreAtd.y[i]]);
-
-
-    event.reply('processed-4-blob-data', {
-      xicArray: xicPairs,
-      atdArray: atdPairs,
-      PreXicArray: PreXicPairs,
-      PreAtdArray: PreAtdPairs
-    });
-  } catch (err) {
-    console.error("Error processing the blob data:", err);
-    event.reply('processed-4-blob-data', { error: err.message });
-  }
-});
-
-
-ipcMain.on('process-blob-data-mid-bot', (event, blobs) => {
-  try {
-    console.log("string: ",blobs.dia_atd)
-    const atd = unpackData(blobToFloatArray(blobs.dia_atd));
-    console.log(atd)
-    // const atd = unpackData(blobs.dia_atd);
-
-    const atdPairs = atd.x.map((x, i) => [x, atd.y[i]]);
-
-    event.reply('processed-blob-data-mid-bot', {
-      atdArray: atdPairs,
-    });
-  } catch (err) {
-    console.error("Error processing the blob data:", err);
-    event.reply('processed-blob-data-mid-bot', { error: err.message });
-  }
-});
-
-
-ipcMain.on('process-blob-data-mid-top', (event, blobs) => {
-  try {
-    console.log("blob: ",blobs.dia_xic)
-    const xic = unpackData(blobToFloatArray(blobs.dia_xic));
-    console.log(xic)
-
-    const xicPairs = xic.x.map((x, i) => [x, xic.y[i]]);
-
-    event.reply('processed-blob-data-mid-top', {
-      xicArray: xicPairs,
-    });
-  } catch (err) {
-    console.error("Error processing the blob data:", err);
-    event.reply('processed-blob-data-mid-top', { error: err.message });
-  }
-});
-
-
-
-ipcMain.on('process-blob-data-left-top', (event, blobs) => {
-  try {
-    console.log("blob: ",blobs.dia_ms1)
-    const ms1 = unpackData(blobToFloatArray(blobs.dia_ms1));
-    console.log(ms1)
-
-    const ms1Pairs = ms1.x.map((x, i) => [x, ms1.y[i]]);
-
-    event.reply('processed-blob-data-left-top', {
-      ms1Array: ms1Pairs,
-    });
-  } catch (err) {
-    console.error("Error processing the blob data:", err);
-    event.reply('processed-blob-data-left-top', { error: err.message });
-  }
-});
-
+// Function to process Blobs
 function blobToFloatArray(blob) {
   const buffer = Buffer.from(blob);
   const floatArray = [];
   for(let i = 0; i < buffer.length; i += 8) {
       floatArray.push(buffer.readDoubleLE(i));
   }
-  
   return floatArray;
 }
 
-
+// Function to unpack blobs
 function unpackData(floatArray) {
   const halfLength = floatArray.length / 2;
   const x = floatArray.slice(0, halfLength);
@@ -444,17 +385,84 @@ function unpackData(floatArray) {
   return { x, y };
 }
 
+// Process blob data for decon xic and atd tables
+ipcMain.on('process-decon-blob-data', (event, blobs) => {
+  try {
+
+    const xic = unpackData(blobToFloatArray(blobs.dia_xic));
+    const atd = unpackData(blobToFloatArray(blobs.dia_atd));
+    const PreXic = unpackData(blobToFloatArray(blobs.pre_dia_xic));
+    const PreAtd = unpackData(blobToFloatArray(blobs.pre_dia_atd));
+    const xicPairs = xic.x.map((x, i) => [x, xic.y[i]]);
+    const atdPairs = atd.x.map((x, i) => [x, atd.y[i]]);
+    const PreXicPairs = PreXic.x.map((x, i) => [x, PreXic.y[i]]);
+    const PreAtdPairs = PreAtd.x.map((x, i) => [x, PreAtd.y[i]]);
 
 
-ipcMain.on('open-directory-dialog', (event) => {
-  dialog.showOpenDialog({
-      properties: ['openDirectory']
-  }).then(result => {
-      if (!result.canceled) {
-          const selectedDirectory = result.filePaths[0];
-          event.sender.send('directory-selected', selectedDirectory);
-      }
-  }).catch(err => {
-      console.error("Directory selection error:", err);
-  });
+    event.reply('return-decon-blob-data', {
+      xicArray: xicPairs,
+      atdArray: atdPairs,
+      PreXicArray: PreXicPairs,
+      PreAtdArray: PreAtdPairs
+    });
+  } catch (err) {
+    console.error("Error processing the blob data:", err);
+    event.reply('return-decon-blob-data', { error: err.message });
+  }
+});
+
+
+// Process blob data for Arrival Time Distribution Plot
+ipcMain.on('process-atd-blob-data', (event, blobs) => {
+  try {
+    console.log("string: ",blobs.dia_atd)
+    const atd = unpackData(blobToFloatArray(blobs.dia_atd));
+    console.log(atd)
+
+    const atdPairs = atd.x.map((x, i) => [x, atd.y[i]]);
+
+    event.reply('return-atd-blob-data', {
+      atdArray: atdPairs,
+    });
+  } catch (err) {
+    console.error("Error processing the blob data:", err);
+    event.reply('return-atd-blob-data', { error: err.message });
+  }
+});
+
+// Process blob data for XIC Plot
+ipcMain.on('process-xic-blob-data', (event, blobs) => {
+  try {
+    console.log("blob: ",blobs.dia_xic)
+    const xic = unpackData(blobToFloatArray(blobs.dia_xic));
+    console.log(xic)
+
+    const xicPairs = xic.x.map((x, i) => [x, xic.y[i]]);
+
+    event.reply('return-xic-blob-data', {
+      xicArray: xicPairs,
+    });
+  } catch (err) {
+    console.error("Error processing the blob data:", err);
+    event.reply('return-xic-blob-data', { error: err.message });
+  }
+});
+
+
+// Process blob data for MS1 Plot
+ipcMain.on('process-ms1-blob-data', (event, blobs) => {
+  try {
+    console.log("blob: ",blobs.dia_ms1)
+    const ms1 = unpackData(blobToFloatArray(blobs.dia_ms1));
+    console.log(ms1)
+
+    const ms1Pairs = ms1.x.map((x, i) => [x, ms1.y[i]]);
+
+    event.reply('return-ms1-blob-data', {
+      ms1Array: ms1Pairs,
+    });
+  } catch (err) {
+    console.error("Error processing the blob data:", err);
+    event.reply('return-ms1-blob-data', { error: err.message });
+  }
 });

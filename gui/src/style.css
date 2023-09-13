@@ -32,6 +32,7 @@ ul{
   .menu{
     display: flex;
     height: 50px;
+    /* margin-bottom: 50px; */
     width:100%; 
     border: 1px solid grey;
     background-color: black;
@@ -43,6 +44,10 @@ ul{
   .menu-item:hover{
     background-color: #408EC5;
   }
+
+  .content-wrapper {
+    margin-top: 60px; /* Giving it a margin-top to compensate for navbar */
+}
  
 
   a:link { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
@@ -126,34 +131,39 @@ ul{
     }
   }
 
-      
+.centercontent {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 10px;
+    gap: 5px;
+}
 
 
 body {
         font-family: "Lato", sans-serif;
         margin-top: 0;
     }
-        .out {
+        /* .out {
         background-color: lightgray;
         grid-template-columns: 2fr 2fr 2fr;
         padding: 1%;
-        /* border-style: solid;
+        border-style: solid;
         border-color: black;
-        border-radius: 10px; */
-    }
+        border-radius: 10px;
+    } */
     .outer {
         display: grid;
         grid-template-columns: 2fr 2fr;
         justify-content: space-between;
     }
 
-    .outer2 {
+    .file-area {
         display: grid;
         grid-template-columns: 4fr 1fr;
         justify-content: space-around;
     }
 
-    .inner {
+    .param-as-two-columns {
         display: grid;
         grid-template-columns: 1fr 1fr;
         text-align: center;
@@ -165,7 +175,9 @@ body {
         text-align: center;
     }
 
-    .outermost {
+    .inner-background {
+        display: inline-block;
+        justify-content: center;
         background-color: lightgray;
         padding: 1%;
         border-style: solid;
@@ -421,7 +433,7 @@ p {
   width: 24%; /* A bit less than 25% to account for any default browser styling & ensure the elements fit in the same row. */
   margin-right: 1%; /* Spacing between plots. */
 }
-#second-row-second-box-plot, #first-row-second-box-plot, #first-row-first-box-plot {
+#ms1-plot, #ion-chromatogram-plot, #arrival-time-plot {
 height: 250px;
 }
 
@@ -487,9 +499,9 @@ height: 250px;
   justify-content: space-between;
 }
 
-#second-row-third-box-xic-plot, #second-row-third-box-atd-plot {
+#decon-xic-plot, #decon-atd-plot {
   width: 100%; 
-  height: 48%;
+  height: 50%;
 }
 
 .plot-half .plot-div {
@@ -497,7 +509,7 @@ height: 250px;
   height: 48%; /* This will stack them vertically with a small gap */
   margin-bottom: 5px; /* Add some space between the plots, adjust if needed */
 }
-
+small-plot
 
 .label {
   font-weight: bold;
@@ -512,17 +524,17 @@ height: 250px;
   display: none;
 }
 
-#second-row-third-box-table {
+#deconvoluted-frags-table {
   margin-bottom: 30px; /* Adjust this value to your preference */
   max-height: 200px;  /* Set max height to half the space */
   overflow-y: auto; /* Add vertical scrollbar when content exceeds the height */
 }
 
-#second-row-third-box-table table td {
+#deconvoluted-frags-table table td {
   border: 1px solid black;
 }
 
-#new-row-first-box-table {
+#annotation-table {
   margin-bottom: 20px; /* Adjust this value to your preference */
   max-height: 90%;  /* Set max height to half the space */
   width: 100%;
@@ -530,11 +542,11 @@ height: 250px;
   overflow-x: auto; /* Add vertical scrollbar when content exceeds the height */
 }
 
-#new-row-first-box-table  table td {
+#nannotation-table  table td {
   border: 1px solid black;
 }
 
-#first-row-third-box-plot { 
+#bidirectional-plot { 
   /* margin-bottom: 32px; Adjust this value to your preference */
   height: 100%;
   max-height: 100%;  /* Set max height to half the space */
@@ -594,10 +606,10 @@ height: 250px;
 }
 
 
-.button-container {
+/* .button-container {
   text-align: center;
   margin-top: 20px;
-}
+} */
 
 
 #selected-directory {
