@@ -20,7 +20,8 @@ import numpy as np
 import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from LipidIMEA.msms._util import ms2_to_str, debug_handler, apply_args_and_kwargs
+from LipidIMEA.msms._util import ms2_to_str, apply_args_and_kwargs
+from LipidIMEA.util import debug_handler
 
 
 class _MSMSReaderDDA():

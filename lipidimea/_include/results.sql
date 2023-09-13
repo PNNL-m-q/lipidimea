@@ -207,6 +207,7 @@ INSERT INTO _Lipids_COLUMNS VALUES
     ('ann_id', 'unique annotation identifier'),
     ('dia_feat_id', 'reference to feature identifier from DIAFeatures table'),
     ('lipid', 'lipid annotation, made at the level of sum composition or higher if supporting fragment(s) found in MS2 spectrum'),
+    ('lmaps_id_prefix', 'LipidMAPS ID prefix (reflects lipid category, class, and sub-class)'),
     ('adduct', 'MS adduct/ionization state'),
     ('ppm', 'mass error in ppm relative to theoretical monoisotopic mass'),
     ('ccs_rel_err', 'relative CCS error in percent'),
@@ -216,6 +217,7 @@ INSERT INTO _Lipids_COLUMNS VALUES
 CREATE TABLE Lipids (
     ann_id INTEGER PRIMARY KEY,
     dia_feat_id INT NOT NULL,
+    lmaps_id_prefix TEXT NOT NULL,
     lipid TEXT NOT NULL,
     adduct TEXT NOT NULL,
     ppm REAL NOT NULL,
