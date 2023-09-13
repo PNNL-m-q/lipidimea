@@ -58,7 +58,6 @@ const outputBox = document.getElementById('output-box');
 
 // Add Event listeners. DOM triggers immediately
 
-
 // Checkbox eventlisteners
 for (let type in checkboxes) {
   for (let mode in checkboxes[type]) {
@@ -69,17 +68,6 @@ for (let type in checkboxes) {
 document.addEventListener('DOMContentLoaded', () => {
   window.api.send('getDefaults');
 });
-
-// document.addEventListener('DOMContentLoaded', () => {
-//   window.api.send('file-content');
-// });
-
-// document.addEventListener('DOMContentLoaded', () => {
-//   window.api.send('selected-database-path');
-// });
-
-// Add Event listeners. Click or change triggers when activated
-
 
 // Listener for uploading params 
 document.addEventListener('DOMContentLoaded', () => {
@@ -142,20 +130,10 @@ if (fileInputAnnotation) {
   });
 }
 
-
-
 databaseOptions.addEventListener("change", UpdateExpName);
-
-
-// Update file upload options when clicking checkbox in file upload tab.
-// document.addEventListener('DOMContentLoaded', function() {
-//   UpdateFileAvail()
-// });
-
 
 // Call the synchronizeCheckboxes function when the page is loaded
 document.addEventListener('DOMContentLoaded', synchronizeCheckboxes);
-
 
 // Tab navigation of Experiment Page
 document.addEventListener('DOMContentLoaded', () => {
@@ -328,7 +306,6 @@ function createInput(type, value, id, parentNode, otherTab) {
 }
 
 
-
 // Write User Updated Parameter Values to file
 function WriteToYaml(i) {
   const inputValues = {};
@@ -441,24 +418,6 @@ function populateInputsFromYaml(yamlData) {
 }
 
 
-
-// window.api.receive('selected-database-path', (fileContent) => {
-//   console.log("ooga booga", fileContent)
-//   // populateInputsFromYaml(fileContent);
-// });
-
-// document.addEventListener('DOMContentLoaded', () => {
-//   // Add event listener after the file is selected
-//   window.api.receive('selected-database-path', (filePath) => {
-//     console.log("LOG: renderer.js selected-database-path", filePath);
-//     // Perform any additional logic with the selected file path
-//     // For example, you can send the file path to the main process to fetch data from the database
-//     window.api.send('fetch-database-table', filePath);
-//   });
-// });
-
-
-
 // File Upload Section
 function handleFileSelection(fileInput, fileList, filesArray) {
   const selectedFiles = Array.from(fileInput.files);
@@ -492,7 +451,6 @@ function handleFileSelection(fileInput, fileList, filesArray) {
 
   fileInput.value = null; // Reset file input
 }
-
 
 
 // Function to handle checkbox change
@@ -643,42 +601,6 @@ function hideAllSections(parametersColumn, inputsColumn,paramEmpty) {
   paramEmpty.style.display = "flex";
 }
 
-
-
-// function UpdateFileAvail() {
-//   let fileUploadSection = document.getElementById('file-upload');
-//   console.log("File Upload Section:", fileUploadSection);
-
-//   fileUploadSection.addEventListener('change', function(event) {
-//     let target = event.target;
-//     let ddaFileSection = document.getElementById('dda-file-region');
-//     let diaFileSection = document.getElementById('dia-file-region');
-//     let annFileSection = document.getElementById('annotate-file-region');
-
-//     if (target.id === 'experiment-type-dda-advanced') {
-//       toggleFileSection(checkboxes.advanced.dda, ddaFileSection);
-//     } else if (target.id === 'experiment-type-dia-advanced') {
-//       toggleFileSection(checkboxes.advanced.dia, diaFileSection);
-//     } else if (target.id === 'experiment-type-annotate-advanced') {
-//       toggleFileSection(checkboxes.advanced.annotate, annFileSection);
-//     } else if  (target.id === 'experiment-type-dda-general') {
-//       toggleFileSection(checkboxes.general.dda, ddaFileSection);
-//     } else if (target.id === 'experiment-type-dia-general') {
-//       toggleFileSection(checkboxes.advanced.dia, diaFileSection);
-//     } else if (target.id === 'experiment-type-annotate-general') {
-//       toggleFileSection(checkboxes.general.annotate, annFileSection);
-//     }
-//   });
-
-//   function toggleFileSection(checkbox, fileSection) {
-//     if (checkbox.checked) {
-//       fileSection.style.display = 'block';
-//     } else {
-//       fileSection.style.display = 'none';
-//     }
-//   }
-// }
-
 // Update which file upload options are available depending on checkboxes
 function UpdateFileOptions() {
   const ddaFileRegion = document.getElementById("dda-file-region");
@@ -688,7 +610,6 @@ function UpdateFileOptions() {
   diaFileRegion.style.display = (checkboxes.general.dia.checked || checkboxes.advanced.dia.checked) ? "block" : "none";
   annFileSection.style.display = (checkboxes.general.annotate.checked || checkboxes.advanced.annotate.checked) ? "block" : "none";
 }
-
 
 
 // Python Results Box scroll to bottom by default
@@ -741,9 +662,11 @@ function UpdateAnnotateOptions() {
 
   if (TF === true) {
     document.getElementById("annotate-options").style.display = "flex"
+    document.getElementById("annotate-behavior").style.display = "flex"
   }
   else {
     document.getElementById("annotate-options").style.display = "none"
+    document.getElementById("annotate-behavior").style.display = "none"
   }
 }
 
@@ -766,8 +689,22 @@ function fileListToArray(fileList) {
   });
 }
 
-// Run Experiment in Python. Format all inputs to experiment
+// Run Experiment in Python. Format all inputs to match experiment requirements
 function RunExperiment() {
+  const selectedDatabaseOption = getSelectedDatabaseOption()
+  const selectedDatabaseName = document.getElementById("experiment-name").value
+  const selectedSaveLocation = document.getElementById("selected-directory").value
+  const isIonizationPositive = document.getElementById("ionization-positive").checked;
+  const isAnnotationAppend = document.getElementById("annotation-append").checked;
+  const filesDDA = fileListToArray(fileListDDA);
+  const filesDIA = fileListToArray(fileListDIA);
+  const filesDatabase = fileListToArray(fileListDatabase);
+  const filesAnnotation = fileListToArray(fileListAnnotation);
+  const currentHeader = null;
+  const currentSubheader = null;
+  const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
+  const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
+  const isBehaviorDefault = document.getElementById("behavior-custom").checked;
 
   const parameters = {
       dda: {},
@@ -778,6 +715,8 @@ function RunExperiment() {
         do_dda_processing: false,
         do_dia_processing: false,
         do_annotation: false,
+        overwrite_annotations: false,
+        ionization: POS
       }
     };
   
@@ -785,29 +724,14 @@ function RunExperiment() {
     dda_data_files: [],
     dia_data_files: [],
     lipid_ids_db: [],
-    annotation_file: []
+    lipid_class_scdb_config: []
   };
-
-  const selectedDatabaseOption = getSelectedDatabaseOption()
-  const selectedDatabaseName = document.getElementById("experiment-name").value
-  const selectedSaveLocation = document.getElementById("selected-directory").value
-
-  console.log("1:",selectedDatabaseOption)
-  console.log("2:", selectedDatabaseName)
-  console.log("3:", selectedSaveLocation)
-
 
   const gui_params = {
     db_pick: selectedDatabaseOption,
     db_name: selectedDatabaseName,
     save_loc: selectedSaveLocation
   }
-
-  const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
-  const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
-
-  console.log(checkboxes.advanced.dda.checked)
-  console.log(checkboxes.advanced.dia.checked)
 
   if (checkboxes.advanced.dda.checked === true) {
     parameters.misc.do_dda_processing = true;
@@ -820,17 +744,16 @@ function RunExperiment() {
   if (checkboxes.advanced.annotate.checked === true) {
     parameters.misc.do_annotation = true;
   }
-  
 
-  const filesDDA = fileListToArray(fileListDDA);
-  const filesDIA = fileListToArray(fileListDIA);
-  const filesDatabase = fileListToArray(fileListDatabase);
-  const filesAnnotation = fileListToArray(fileListAnnotation);
+  if (isAnnotationAppend === false) {
+    parameters.misc.overwrite_annotations = false;
+  }
 
-  let currentHeader = null;
-  let currentSubheader = null;
+  if (isIonizationPositive === false) {
+    parameters.misc.ionization = NEG;
+  }
 
- 
+  // Add in parameter values
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
     const input2 = inputs2[i];
@@ -857,13 +780,17 @@ function RunExperiment() {
             parameters['misc'][input2.id] = input.value;
         }
     }
-}
+  }
 
-
+  // Update files with those selected by user
   inputOutput['dda_data_files'] = filesDDA;
   inputOutput['dia_data_files'] = filesDIA;
   inputOutput['lipid_ids_db'] = filesDatabase[0];  // Only one file allowed
-  inputOutput['annotation_file'] = filesAnnotation[0];  // Only one file allowed
+
+  // Annotation File is only assigned if annotation behaivor is set to custom file.
+  if (isBehaviorDefault === true) {
+    inputOutput['lipid_class_scdb_config'] = filesAnnotation[0]; // Only one file allowed
+  }
 
   console.log(gui_params)
   const options = {
@@ -877,75 +804,3 @@ function RunExperiment() {
 
   window.api.send('run-python-experiment', options);
 } 
-
-
-
-// function getFilePaths(filesArray) {
-//   console.log("filesArray:",filesArray.map((file) => file.path))
-//   return filesArray.map((file) => file.path);
-// }
-
-
-// function displayFileName(input) {
-//   const selectedFileNameElement = document.getElementById('selectedFileName');
-//   if (input.files.length > 0) {
-//     selectedFileNameElement.textContent = input.files[0].name;
-//   } else {
-//     selectedFileNameElement.textContent = '';
-//   }
-// }
-
-
-// function databaseDialog() {
-//   window.api.send('open-database-dialog',"Sent.");
-// }
-
-
-
-// document.addEventListener('DOMContentLoaded', () => {
-//   console.log("LOG: renderer.js DOMContentLoaded");
-
-//   window.api.receive('selected-database-path', (result) => {
-//     console.log("LOG: renderer.js selected-database-path", result);
-//     window.api.send('fetch-database-table', result);
-//   });
-// });
-
-
-
-// Listen for the database table data from the main process
-// window.api.receive('database-table-data', (data) => {
-//   // Display the fetched data in a table on the results.html page
-//   // You can modify this code to format and display the data as desired
-//   const tableContainer = document.getElementById('table-container');
-//   tableContainer.innerHTML = ''; // Clear previous table content
-
-//   const table = document.createElement('table');
-//   const thead = document.createElement('thead');
-//   const tbody = document.createElement('tbody');
-
-//   // Add table headers
-//   const headers = Object.keys(data[0]);
-//   const headerRow = document.createElement('tr');
-//   headers.forEach((header) => {
-//     const th = document.createElement('th');
-//     th.textContent = header;
-//     headerRow.appendChild(th);
-//   });
-//   thead.appendChild(headerRow);
-
-//   // Add table rows
-//   data.forEach((row) => {
-//     const tableRow = document.createElement('tr');
-//     headers.forEach((header) => {
-//       const td = document.createElement('td');
-//       td.textContent = row[header];
-//       tableRow.appendChild(td);
-//     });
-//     tbody.appendChild(tableRow);
-//   });
-
-//   table.appendChild(thead);
-//   table.appendChild(tbody);
-//   tableContainer.appendChild(table);
-// });

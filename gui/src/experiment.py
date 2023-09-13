@@ -14,8 +14,7 @@ install("h5py")
 install("hdf5plugin")
 install("pandas")
 install("mzapy")
-# install("pyyaml")
-# install("pyyaml")
+
 
 
 #find imports
@@ -163,13 +162,18 @@ def main():
     print("\n\nExtraction Complete\n\n")
 
 
-    # Annotation
+    #  Annotation
     if params['misc']['do_annotation']:
-        annotate_lipids_sum_composition(input_output['lipid_ids_db'],
-                                        params)
-        # annotate_lipids_sum_composition(input_output['lipid_ids_db'],
-        #                                 params,options['annotate_overwrite'])
-    
+        annotate_lipids_sum_composition(input_output['results_db'],
+                                        # input_output['lipid_class_scdb_config'],
+                                        params,
+                                        overwrite=False,
+                                        ionization="POS")
+        
+        # filter_annotations_by_rt_range(input_output['results_db'],
+        #                                input_output['lipid_class_rt_ranges'],
+        #                                params, 
+        #                                debug_flag='text')
 
 
     print("\n\Annotation Complete\n\n")
