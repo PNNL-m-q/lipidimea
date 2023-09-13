@@ -1,9 +1,6 @@
 ul{
     list-style-type: disc;
-    /* padding: 0;
-    margin: 0; */
   }
-/* Default styles for .menu-item */
 .menu-item {
   display: inline-block;
   background-color: black;
@@ -13,23 +10,42 @@ ul{
   padding: 5px;
 }
 
-/* Media query for smaller screen sizes */
+/* Media query for screen sizes less than or equal to 768px */
 @media (max-width: 768px) {
   .menu-item {
-    width: 25%; /* Adjust the width for smaller screens */
-    /* Add any other styles you want to change for smaller screens */
+    width: 25%; 
+  }
+
+  .tablinks {
+    font-size: 18px;
+    margin-left: -10px;
+  }
+  h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+  h2 {
+    font-size: 20px;
+    margin-bottom: 5px;
+  }
+  p {
+    font-size: 16px;
   }
 }
 
-/* Media query for even smaller screen sizes */
+/* Media query for screen sizes less than or equal to 480px */
 @media (max-width: 480px) {
   .menu-item {
-    width: 50%; /* Adjust the width for even smaller screens */
-    /* Add any other styles you want to change for even smaller screens */
+    width: 50%;
+  }
+
+  .tablinks {
+    font-size: 16px;
+    margin-left: -5px;
   }
 }
 
-  .menu{
+.menu{
     display: flex;
     height: 50px;
     /* margin-bottom: 50px; */
@@ -41,7 +57,7 @@ ul{
     margin-left: -10px;
     top: 0px;
   }
-  .menu-item:hover{
+.menu-item:hover{
     background-color: #408EC5;
   }
 
@@ -50,86 +66,49 @@ ul{
 }
  
 
-  a:link { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
-  a:visited { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
-  a:hover { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px;};
-  a:active { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
+a:link { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
+a:visited { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
+a:hover { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px;};
+a:active { text-decoration: none; background-color: black; color: white; font-size: 15px; text-align: center;vertical-align: middle; line-height: 50px};
 
 
-  .btn{
-
+.btn{
     background-color: rgb(92, 92, 92);
-    
-    }
+}
 
-  .btn:active{
-
+.btn:active{
     background-color: rgb(123, 180, 17);
-    
-    }
+}
 
-
-      .tablinks::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: grey;
-        opacity: 0;
-        transition: opacity 0.3s;
-      }
-      
-      .tablinks:hover::before {
-        opacity: 0.5;
-      }
-      
-      .tab {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        grid-column-gap: 0px;
-        background-color: lightgray;
-        border-style: solid;
-        border-color: black;
-        border-style: solid solid none solid;
-        overflow: hidden;
-        border-top-color: black;
-      }
+.tab {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-column-gap: 0px;
+  background-color: lightgray;
+  border-style: solid;
+  border-color: black;
+  border-style: solid solid none solid;
+  overflow: hidden;
+  border-top-color: black;
+}
         
-  .tablinks {
-    position: relative;
-    z-index: 1;
-    font-size: 20px;
-    border-radius: 10px;
-    overflow: hidden;
-    height: 50px;
-    line-height: 50px;
-    float: right;
-    text-align: center;
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 25px 25px;
-    margin-left: -25px;
-    overflow: hidden;
-    border-top-color: black;
-    padding: 5px 20px;
-  }
-
-  /* Media query for smaller screen sizes */
-  @media (max-width: 768px) {
-    .tablinks {
-      font-size: 18px;
-      margin-left: -10px;
-    }
-  }
-
-  /* Media query for even smaller screen sizes */
-  @media (max-width: 480px) {
-    .tablinks {
-      font-size: 16px;
-      margin-left: -5; 
-    }
-  }
+.tablinks {
+  position: relative;
+  z-index: 1;
+  font-size: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 50px;
+  line-height: 50px;
+  float: right;
+  text-align: center;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 25px 25px;
+  margin-left: -25px;
+  overflow: hidden;
+  border-top-color: black;
+  padding: 5px 20px;
+}
 
 .centercontent {
     display: flex;
@@ -138,19 +117,10 @@ ul{
     gap: 5px;
 }
 
-
 body {
         font-family: "Lato", sans-serif;
         margin-top: 0;
     }
-        /* .out {
-        background-color: lightgray;
-        grid-template-columns: 2fr 2fr 2fr;
-        padding: 1%;
-        border-style: solid;
-        border-color: black;
-        border-radius: 10px;
-    } */
     .outer {
         display: grid;
         grid-template-columns: 2fr 2fr;
@@ -168,12 +138,8 @@ body {
         grid-template-columns: 1fr 1fr;
         text-align: center;
         justify-content: space-between;
-        /* border: 1px solid #940707; */
     }
 
-    .headLine1 {
-        text-align: center;
-    }
 
     .inner-background {
         display: inline-block;
@@ -191,7 +157,6 @@ body {
     
     .file-section {
         background-color: white;
-        /* grid-template-columns: 2fr; */
         border-style: solid;
         border-color: black;
         min-height: 50px;
@@ -209,107 +174,31 @@ body {
 
     .output-box {
         background-color: whitesmoke;
-        /* padding: 1%; */
-        /* margin: 5%; */
         border-style: solid;
         border-color: black;
         overflow:scroll;
-        /* overflow-y:auto; */
         height: 148px;
         text-align: left;
     }
-
 
 .empty-params {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 300px;
-      /* border: 1px solid #940707; */
-}
-
-.remove-button {
-    border-style: solid;
-    border-color: transparent;
 }
 
 .file-text {
     font-size: large;
 
 }
-
 .results-body {
   font-family: Arial, sans-serif;
   text-align: center;
   margin-top: 100px;
 }
 
-table {
-  border-collapse: collapse;
-  width: 100%;
-  border: double;
-  border-color: black;
-  font-size: 8px;
-}
 
-th, td {
-  text-align: left;
-  padding: 8px;
-  font-size: 8px;
-}
-
-th {
-  background-color: white;
-  text-align: left;
-  vertical-align: middle;
-  white-space: nowrap;
-  /* z-index: 1; */
-  overflow: visible; 
-  /* position: relative; */
-  font-size: 8px;
-}
-
-thead {
-  /* display: table; */
-  position: sticky;
-  top: 0;
-  background-color: lightgrey;
-  font-size: 8px;
-}
-
-tr.hover {
-  background-color: lightblue;
-  cursor: pointer;
-  font-size: 8px;
-}
-
-tbody tr:nth-child(even) {
-  background-color: lightgrey;
-  font-size: 8px;
-}
-
-tbody tr.selected {
-  background-color: lightslategrey;
-  font-size: 8px;
-}
-
-tbody tr.selected-row {
-  background-color: lightslategrey;
-}
-
-tbody tr:hover {
-  background-color: lightblue;
-  cursor: pointer;
-  font-size: 8px;
-}
-
-
-
-
-
-/* ... (previous styles) ... */
-
-/* Page content styles */
 .instruction-page-background {
   background-color: #f1f1f1;
   padding: 20px;
@@ -322,41 +211,40 @@ tbody tr:hover {
 
 .instruction-section {
   padding: 40px;
-  background-color: #fff; /* White background */
-  border: 1px solid #ddd; /* Light gray border */
-  border-radius: 10px; /* Rounded corners */
-  margin-bottom: 20px; /* Add some space between sections */
+  background-color: #fff; 
+  border: 1px solid #ddd; 
+  border-radius: 10px; 
+  margin-bottom: 20px;
 }
 
 hr {
   border: none;
   height: 2px;
-  background-color: #ddd; /* Light gray line */
-  margin: 20px 0; /* Add space above and below the line */
+  background-color: #ddd; /
+  margin: 20px 0; 
 }
 
 h1 {
   font-size: 36px;
-  margin-bottom: 20px; /* Add space below headings */
+  margin-bottom: 20px; 
 }
 
 h2 {
   font-size: 24px;
-  font-weight: bold; /* Make the tab names bold */
-  margin-bottom: 10px; /* Add space below subheadings */
+  font-weight: bold;
+  margin-bottom: 10px; 
 }
 
 p {
   font-size: 18px;
-  line-height: 1.2; /* Improve line spacing for better readability */
+  line-height: 1.2;
 }
 
-/* Footer styles */
 
 .empty-element { 
 
   width: 100%;
-  height: 200px; /* Adjust the height as needed */
+  height: 200px; 
 }
 .footer {
   background-color: #333;
@@ -386,17 +274,12 @@ p {
 .top-table {
   overflow: auto;
   max-height: 200px;
-  /* border: 1px solid;
-  border-color: black; */
 }
-
-
-
 
 .plot-row {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px; /* This adds some space between rows. Adjust as needed. */
+  margin-bottom: 10px; 
 }
 
 .plot-row-labels {
@@ -407,7 +290,7 @@ p {
 .label-quarter {
   width: 25%;
   justify-content: center;
-  box-sizing: border-box; /* This ensures padding & border are included in the width. */
+  box-sizing: border-box; 
 }
 
 .label-half {
@@ -415,23 +298,21 @@ p {
   justify-content: center;
   flex-direction: row;
   align-items: flex-start;
-  width: 50%; /* A bit less than 50% for the same reasons as above. */
+  width: 50%; 
 }
-
-
 
 .plot-quarter, .plot-half, .plot-half-split {
   border: 1px solid #ddd; 
   height: 325px; 
-  box-sizing: border-box; /* This ensures padding & border are included in the width. */
+  box-sizing: border-box; 
   display: flex;
   flex-direction: column;
 }
 
 
 .plot-quarter {
-  width: 24%; /* A bit less than 25% to account for any default browser styling & ensure the elements fit in the same row. */
-  margin-right: 1%; /* Spacing between plots. */
+  width: 24%; 
+  margin-right: 1%; 
 }
 #ms1-plot, #ion-chromatogram-plot, #arrival-time-plot {
 height: 250px;
@@ -481,13 +362,13 @@ height: 250px;
 
 .left-section {
   display: flex;
-  flex-direction: column;  /* Arrange children vertically */
-  flex: 1;  /* Take up 1 portion of available space */
-  padding-right: 10px;  /* Add some space between the two sections for breathing room */
+  flex-direction: column; 
+  flex: 1;  
+  padding-right: 10px;
 }
 
 .right-section {
-  flex: 3;  /* Take up 2 portions of available space */
+  flex: 3;
 }
 
 
@@ -506,10 +387,9 @@ height: 250px;
 
 .plot-half .plot-div {
   width: 100%;
-  height: 48%; /* This will stack them vertically with a small gap */
-  margin-bottom: 5px; /* Add some space between the plots, adjust if needed */
+  height: 48%; 
+  margin-bottom: 5px;
 }
-small-plot
 
 .label {
   font-weight: bold;
@@ -525,9 +405,9 @@ small-plot
 }
 
 #deconvoluted-frags-table {
-  margin-bottom: 30px; /* Adjust this value to your preference */
-  max-height: 200px;  /* Set max height to half the space */
-  overflow-y: auto; /* Add vertical scrollbar when content exceeds the height */
+  margin-bottom: 30px;
+  max-height: 200px;  
+  overflow-y: auto;
 }
 
 #deconvoluted-frags-table table td {
@@ -535,44 +415,24 @@ small-plot
 }
 
 #annotation-table {
-  margin-bottom: 20px; /* Adjust this value to your preference */
-  max-height: 90%;  /* Set max height to half the space */
+  margin-bottom: 20px; 
+  max-height: 90%;  
   width: 100%;
-  overflow-y: auto; /* Add vertical scrollbar when content exceeds the height */
-  overflow-x: auto; /* Add vertical scrollbar when content exceeds the height */
+  overflow-y: auto; 
+  overflow-x: auto; 
 }
 
-#nannotation-table  table td {
+#annotation-table  table td {
   border: 1px solid black;
 }
 
 #bidirectional-plot { 
-  /* margin-bottom: 32px; Adjust this value to your preference */
   height: 100%;
-  max-height: 100%;  /* Set max height to half the space */
+  max-height: 100%;
   max-width: 100%;
   width: 100%;
-  overflow-y: auto; /* Add vertical scrollbar when content exceeds the height */
+  overflow-y: auto; 
 }
-
-/* Responsive styles */
-@media screen and (max-width: 768px) {
-  h1 {
-    font-size: 28px;
-    margin-bottom: 10px;
-  }
-
-  h2 {
-    font-size: 20px;
-    margin-bottom: 5px;
-  }
-
-  p {
-    font-size: 16px;
-  }
-}
-
-
 
 
 .section-container {
@@ -584,17 +444,11 @@ small-plot
 .section-label {
   font-weight: bold;
   margin-right: 15px;
-  width: 160px; /* Fixed width for alignment */
+  width: 160px; 
 }
 
 .checkbox-option,
 .radio-option {
-  margin-left: 10px;
-  display: flex;
-  align-items: center;
-}
-
-.radio-2-option {
   margin-left: 10px;
   display: flex;
   align-items: center;
@@ -605,41 +459,71 @@ small-plot
   margin-left: 5px;
 }
 
-
-/* .button-container {
-  text-align: center;
-  margin-top: 20px;
-} */
-
-
 #selected-directory {
   background-color: #f2f2f2; 
   height: 100%;
   width: 60%;           
-  /* padding: 10px 0px;     */
   box-sizing: border-box;   
   white-space: nowrap;     
   text-overflow: scroll;   
-  /* cursor: not-allowed;   */
 }
 
-#precursor-info {
-  margin-bottom: 20px;
-}
 
-/* #error-message-bidirectional-plot {
-  color: black;
+
+
+/* The following sections are for table styling */
+table {
+  border-collapse: collapse;
   width: 100%;
-  text-align: center;
-} */
+  border: double;
+  border-color: black;
+  font-size: 8px;
+}
 
+th, td {
+  text-align: left;
+  padding: 8px;
+  font-size: 8px;
+}
 
-/* 
-#new-row-first-box-table thead th {
-  background-color: #fff;  /* or any other solid color */
-/* } */
+th {
+  background-color: white;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: visible; 
+  font-size: 8px;
+}
 
+thead {
+  position: sticky;
+  top: 0;
+  background-color: lightgrey;
+  font-size: 8px;
+}
 
-/* #new-row-first-box-table thead th {
-  margin-top: -5px;
-} */
+tr.hover {
+  background-color: lightblue;
+  cursor: pointer;
+  font-size: 8px;
+}
+
+tbody tr:nth-child(even) {
+  background-color: lightgrey;
+  font-size: 8px;
+}
+
+tbody tr.selected {
+  background-color: lightslategrey;
+  font-size: 8px;
+}
+
+tbody tr.selected-row {
+  background-color: lightslategrey;
+}
+
+tbody tr:hover {
+  background-color: lightblue;
+  cursor: pointer;
+  font-size: 8px;
+}

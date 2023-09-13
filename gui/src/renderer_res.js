@@ -1,4 +1,3 @@
-
 // Declare Variables
 
 let filePath = null;
@@ -9,17 +8,12 @@ let mzRowMap = new Map();
 let DeconTableMzSet;
 const DeconTable_MATCH_COLOR = '#E6A7B2';
 
-
 // ------ Event Listeners and Receivers ----------
-
-
-
 
 // Open Database Dialog
 function databaseDialog() {
   window.api.send('open-database-dialog', "Sent.");
 }
-
 
 // Create Deconvoluted Plots when receiving this data
 window.api.receive('return-decon-blob-data', (data) => {
@@ -263,10 +257,36 @@ function generateGaussianData(mean, height, width) {
   return data;
 }
 
+// Select Decon Table Row. Called on clicked from Bidirectional Plot
+function selectDeconTableRow(mzValue) {
+  const tableRow = mzRowMap.get(parseFloat(mzValue).toFixed(4));
+  if (tableRow) {
+      // Deselect previously selected row (if any)
+      const selectedRows = document.querySelectorAll('.selected-row');
+      selectedRows.forEach(row => row.classList.remove('selected-row'));
+      // Select the current row
+      tableRow.classList.add('selected-row');
+      tableRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+  // When selecting a different a row in the Decon Table, update Decon Plots.
+function processDeconRowData(row) {
+    const mzValueElement = document.getElementById('atd-dist-value');
+    const rtValueElement = document.getElementById('xic-dist-value');
+    mzValueElement.textContent = "XIC Distance: " + formatDecimalValue(row['xic_dist']);
+    rtValueElement.textContent = "ATD Distance: " + formatDecimalValue(row['atd_dist']);
+
+    window.api.send('process-decon-blob-data', {
+      dia_xic: row['xic'],
+      dia_atd: row['atd'],
+      pre_dia_xic: row['dia_xic'],
+      pre_dia_atd: row['dia_atd']
+    });
+}
 
 
 // ------ Table Creation Functions ----------
-
 
 
 // Create Main Table
@@ -337,69 +357,49 @@ function showMainTable(data) {
               diaDeconFragIds: row['dia_decon_frag_ids']
           };
 
-          // const ddaFeatureIdElement = document.getElementById('dda-feature-id');
-          // const diaFeatureIdElement = document.getElementById('dia-feature-id');
           const mzValueElement = document.getElementById('mz-value');
           const DIArtValueElement = document.getElementById('dia-rt-value');
-          // const arrivalTimeElement = document.getElementById('arrival-time');
           const dtValueElement = document.getElementById('dia-dt-value');
           const DTpkhtValueElement = document.getElementById('dia-dt-pkht-value');
           const DTfwhmValueElement = document.getElementById('dia-dt-fwhm-value');
           const DTpsnrValueElement = document.getElementById('dia-dt-psnr-value');
-
-          // const DIArtValueElement2 = document.getElementById('dia-rt-value-2');
           const DIArtPKHTValueElement = document.getElementById('dia-rt-pkht-value');
           const DIArtFWHMValueElement = document.getElementById('dia-rt-fwhm-value');
           const DIArtPSNRValueElement = document.getElementById('dia-rt-psnr-value');
-
           const DDArtValueElement = document.getElementById('dda-rt-value');
           const DDArtPKHTValueElement = document.getElementById('dda-rt-pkht-value');
           const DDArtFWHMValueElement = document.getElementById('dda-rt-fwhm-value');
           const DDArtPSNRValueElement = document.getElementById('dda-rt-psnr-value');
-
           const PreDIAatdValueElement = document.getElementById('dia-atd-value');
           const PreDIAxicValueElement = document.getElementById('dia-xic-value');
 
-          // const DDAPeaksValueElement = document.getElementById('dda-peaks-value');
-          // const DIAPeaksValueElement = document.getElementById('dia-peaks-value');
-          // ddaFeatureIdElement.textContent = row['DDA Feature ID'];
-          // diaFeatureIdElement.textContent = row['DIA Feature ID'];
           mzValueElement.textContent = formatDecimalValue(row['m/z']);
           DIArtValueElement.textContent = formatDecimalValue(row['RT']);
-          // arrivalTimeElement.textContent = formatDecimalValue(row['Arrival Time']);
           dtValueElement.textContent = formatDecimalValue(row['dia_dt']);
           DTpkhtValueElement.textContent = formatDecimalValue(row['dia_dt_pkht']);
           DTfwhmValueElement.textContent = formatDecimalValue(row['dia_dt_fwhm']);
           DTpsnrValueElement.textContent = formatDecimalValue(row['dia_dt_psnr']);
-
-          // DIArtValueElement2.textContent = formatDecimalValue(row['RT']);
           DIArtPKHTValueElement.textContent = formatDecimalValue(row['dia_rt_pkht']);
           DIArtFWHMValueElement.textContent = formatDecimalValue(row['dia_rt_fwhm']);
           DIArtPSNRValueElement.textContent = formatDecimalValue(row['dia_rt_psnr']);
-
           DDArtValueElement.textContent = formatDecimalValue(row['dda_rt']);
           DDArtPKHTValueElement.textContent = formatDecimalValue(row['dda_rt_pkht']);
           DDArtFWHMValueElement.textContent = formatDecimalValue(row['dda_rt_fwhm']);
           DDArtPSNRValueElement.textContent = formatDecimalValue(row['dda_rt_psnr']);
-
-
           PreDIAatdValueElement.textContent = row['dia_xic'];
           PreDIAxicValueElement.textContent = row['dia_atd'];
 
           window.api.send('fetch-mapping-table', selectedRowValue);
 
           window.api.send('process-xic-blob-data', {
-            // dia_xic: document.getElementById('dia-xic-value').textContent,
             dia_xic: row['dia_xic']
           });
 
           window.api.send('process-atd-blob-data', {
-            // dia_xic: document.getElementById('dia-xic-value').textContent,
             dia_atd: row['dia_atd']
           });
 
           window.api.send('process-ms1-blob-data', {
-            // dia_xic: document.getElementById('dia-xic-value').textContent,
             dia_ms1: row['dia_ms1']
           });
 
@@ -407,15 +407,10 @@ function showMainTable(data) {
           showMappedFeatureTable(data,row['DDA Feature ID']);
           console.log("error now")
           console.log(row['dda_ms2_peaks'])
-          console.log(row['dia_ms2_peaks'])
-          // ADD NOTE WHEN NO PEAKS FOUND!
-          
-          // 
+          console.log(row['dia_ms2_peaks'])          
           if (row['dda_ms2_peaks'] !== null || row['dia_ms2_peaks'] !== null) {
             const ddaData = parsePeaks(row['dda_ms2_peaks'])
             const diaData = parsePeaks(row['dia_ms2_peaks'])
-          
-            // plotBidirectionalColumn(ddaData, diaData);
 
             // This a patch fix. If time, find better fix.
             // Race conditions make it so this is rendered before DeconTable
@@ -433,7 +428,6 @@ function showMainTable(data) {
 
             const resultsDisplay = document.getElementById('below-table-content');
             resultsDisplay.style.display = 'block';
-
 
         const diaFeatureIdColumn = row['DIA Feature ID'];
           if (diaFeatureIdColumn !== undefined) {
@@ -458,32 +452,16 @@ function showMainTable(data) {
   table.appendChild(thead);
   table.appendChild(tbody);
   tableContainer.appendChild(table);
-
-  // if (isMappingTable) {
-  //     const selectedTableRow = tbody.querySelector(`[data-id="${selectedRowValue.id}"]`);
-  //     if (selectedTableRow) {
-  //         selectedTableRow.classList.add('selected');
-  //     }
-  // } else if (lastSelectedRowValue) {
-  //     const lastSelectedTableRow = tbody.querySelector(`[data-id="${lastSelectedRowValue.id}"]`);
-  //     if (lastSelectedTableRow) {
-  //         lastSelectedTableRow.classList.add('selected');
-  //         lastSelectedTableRow.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-  //     }
-  // }
 }
-
 
 
 // Create Deconvoluted Feature Table
 function showDeconTable(data) {
   const tableContainer = document.getElementById('deconvoluted-frags-table');
   tableContainer.innerHTML = ''; // Clear previous content
-
   const table = document.createElement('table');
   const thead = document.createElement('thead');
   const tbody = document.createElement('tbody');
-
   // Add table headers
   let mzColumnIndex = -1;
   const headers = ["m/z"];
@@ -497,7 +475,6 @@ function showDeconTable(data) {
       }
   });
   thead.appendChild(headerRow);
-
   // Create an observer instance for monitoring class changes
   const observer = new MutationObserver((mutationsList, observer) => {
     for(let mutation of mutationsList) {
@@ -505,78 +482,39 @@ function showDeconTable(data) {
             const tableRow = mutation.target;
             if (tableRow.classList.contains('selected-row')) {
                 const mzValue = parseFloat(tableRow.children[mzColumnIndex].textContent);
-                const TOLERANCE = 1e-4;  // Adjust this value as necessary
+                const TOLERANCE = 1e-4; 
                 const row = data.find(r => Math.abs(r.mz - mzValue) < TOLERANCE);
-                  processRowData(row);
+                  processDeconRowData(row);
               }
           }
       }
   });
-
-  function processRowData(row) {
-    const mzValueElement = document.getElementById('atd-dist-value');
-    const rtValueElement = document.getElementById('xic-dist-value');
-
-    mzValueElement.textContent = "XIC Distance: " + formatDecimalValue(row['xic_dist']);
-    rtValueElement.textContent = "ATD Distance: " + formatDecimalValue(row['atd_dist']);
-
-    window.api.send('process-decon-blob-data', {
-      dia_xic: row['xic'],
-      dia_atd: row['atd'],
-      pre_dia_xic: row['dia_xic'],
-      pre_dia_atd: row['dia_atd']
-    });
-  }
-
-  // Add table rows
   data.forEach((row) => {
       const tableRow = document.createElement('tr');
       const td = document.createElement('td');
       td.textContent = formatDecimalValue(row['mz']);
       tableRow.appendChild(td);
-
       // Store the row in the map
       mzRowMap.set(parseFloat(row['mz']).toFixed(4), tableRow);
-
       // Observe the row for class changes
       observer.observe(tableRow, { attributes: true, attributeFilter: ['class'] });
-
       // Click event to perform actions
       tableRow.addEventListener('click', () => {
           const selectedRows = document.querySelectorAll('.selected-row');
           selectedRows.forEach(row => row.classList.remove('selected-row'));
           tableRow.classList.add('selected-row');
-          processRowData(row);
+          processDeconRowData(row);
       });
-
       tbody.appendChild(tableRow);
-
   });
 
   if (tbody.childNodes.length > 0) {
     // Automatically select the first row
     tbody.childNodes[0].click();
   }
-
   table.appendChild(thead);
   table.appendChild(tbody);
   tableContainer.appendChild(table);
-}
-
-
-
-function selectTableRow(mzValue) {
-  // Find the row for the given m/z value
-  const tableRow = mzRowMap.get(parseFloat(mzValue).toFixed(4));
-  if (tableRow) {
-      // Deselect previously selected row (if any)
-      const selectedRows = document.querySelectorAll('.selected-row');
-      selectedRows.forEach(row => row.classList.remove('selected-row'));
-
-      // Select the current row
-      tableRow.classList.add('selected-row');
-      tableRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
 }
 
 
@@ -1215,7 +1153,7 @@ function plotBidirectionalColumn(ddaData, diaData) {
         events: {
           click: function (event) {
             if (this.name === 'DIA' && event.point.color === DeconTable_MATCH_COLOR) {  
-              selectTableRow(event.point.category);
+              selectDeconTableRow(event.point.category);
             }
           }
         }        
