@@ -182,6 +182,7 @@ function synchronizeCheckboxes() {
                       checkboxesInOtherTab[checkboxIndex].checked = checkbox.checked;
                       handleCheckboxChange();
                       UpdateAnnotateOptions();
+                      UpdateDatabaseOptions();
                   }
               });
           });
@@ -670,6 +671,18 @@ function UpdateAnnotateOptions() {
   }
 }
 
+function UpdateDatabaseOptions() {
+  const dda = checkboxes.general.dda.checked
+  const dia = checkboxes.general.dia.checked
+
+  if (dda === true || dia === true) {
+    document.getElementById("db-options").style.display = "flex"
+  }
+  else {
+    document.getElementById("db-options").style.display = "none"
+  }
+}
+
 
 // Receive Python Experiment Results to display
 window.api.receive('python-result-experiment', (result) => {
@@ -700,8 +713,8 @@ function RunExperiment() {
   const filesDIA = fileListToArray(fileListDIA);
   const filesDatabase = fileListToArray(fileListDatabase);
   const filesAnnotation = fileListToArray(fileListAnnotation);
-  const currentHeader = null;
-  const currentSubheader = null;
+  let currentHeader = null;
+  let currentSubheader = null;
   const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
   const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
   const isBehaviorDefault = document.getElementById("behavior-custom").checked;
@@ -716,14 +729,14 @@ function RunExperiment() {
         do_dia_processing: false,
         do_annotation: false,
         overwrite_annotations: false,
-        ionization: POS
+        ionization: "POS"
       }
     };
   
   const inputOutput = {
     dda_data_files: [],
     dia_data_files: [],
-    lipid_ids_db: [],
+    results_db: [],
     lipid_class_scdb_config: []
   };
 
@@ -746,11 +759,11 @@ function RunExperiment() {
   }
 
   if (isAnnotationAppend === false) {
-    parameters.misc.overwrite_annotations = false;
+    parameters.misc.overwrite_annotations = true;
   }
 
   if (isIonizationPositive === false) {
-    parameters.misc.ionization = NEG;
+    parameters.misc.ionization = "NEG";
   }
 
   // Add in parameter values
@@ -785,7 +798,7 @@ function RunExperiment() {
   // Update files with those selected by user
   inputOutput['dda_data_files'] = filesDDA;
   inputOutput['dia_data_files'] = filesDIA;
-  inputOutput['lipid_ids_db'] = filesDatabase[0];  // Only one file allowed
+  inputOutput['results_db'] = filesDatabase[0];  // Only one file allowed
 
   // Annotation File is only assigned if annotation behaivor is set to custom file.
   if (isBehaviorDefault === true) {

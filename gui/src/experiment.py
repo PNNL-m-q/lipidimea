@@ -35,7 +35,7 @@ from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
 print("import2 done")
 from LipidIMEA.msms.dia import extract_dia_features_multiproc
 print("import3 done")
-from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition
+from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
 print("imports complete")
 
 
@@ -88,8 +88,8 @@ def main():
     print("options :", options)
     
         
-    if input_output['annotation_file']:
-        params["annotation"]["ann_sum_comp"]["ann_sc_lipid_class_params"] = input_output['annotation_file']
+    # if input_output['lipid_class_scdb_config']:
+    #     params["annotation"]["ann_sum_comp"]["ann_sc_lipid_class_params"] = input_output['annotation_file']
 
     print("\n new params :", params)
     
@@ -102,39 +102,38 @@ def main():
     
     
     print("check here before:",input_output)
-    #assign False if 'lipid_ids_db' not present.
-    if input_output.get('lipid_ids_db') is None:
-        input_output['lipid_ids_db'] = None
+    #assign False if 'results_db' not present.
+    if input_output.get('results_db') is None:
+        input_output['results_db'] = None
         
     print("check here after:",input_output)
     # create lipid IDs database, returns the filename
     
     
-    #why copy...?
-    
-    # if not input_output['lipid_ids_db']:
-    #     shutil.copy(options["db_name"], options['save_loc'])
-    # elif input_output['lipid_ids_db']:
-    #     shutil.copy(input_output['lipid_ids_db'], options['save_loc'])
-    # else:
-    #     print("conditions incorrect 1. exiting")
-    #     sys.exit()
+
         
         
     #If database is present, append.
-    if options["db_pick"] == "append" and input_output['lipid_ids_db']:
+    if options["db_pick"] == "append" and input_output['results_db']:
         pass
-    elif options["db_pick"] == "overwrite" and input_output['lipid_ids_db']:
-        create_results_db(input_output['lipid_ids_db'], overwrite=True)
-    elif options["db_pick"] == "create_new" and not input_output['lipid_ids_db']:
+    elif options["db_pick"] == "overwrite" and input_output['results_db']:
+        create_results_db(input_output['results_db'], overwrite=True)
+    elif options["db_pick"] == "create_new" and not input_output['results_db']:
         generate_new_db_name(options['save_loc'], options['db_name'])
         exp_name = os.path.join(options["save_loc"], options["db_name"] + ".db")
         create_results_db(exp_name, overwrite=True)
-        input_output['lipid_ids_db'] = exp_name
+        input_output['results_db'] = exp_name
     else:
         print("conditions incorrect. exiting")
         sys.exit()
 
+
+    if input_output['lipid_class_scdb_config'] == []:
+        input_output['lipid_class_scdb_config'] = None
+        
+    if 'lipid_class_rt_ranges' not in input_output:
+        input_output['lipid_class_rt_ranges'] = None
+    
 
 
 
@@ -142,17 +141,17 @@ def main():
     if params['misc']['do_dda_processing']:
         for dda_data_file in input_output['dda_data_files']:
             extract_dda_features(dda_data_file,
-                                 input_output['lipid_ids_db'],
+                                 input_output['results_db'],
                                  params,
                                  debug_flag='text')
-        consolidate_dda_features(input_output['lipid_ids_db'],
+            consolidate_dda_features(input_output['results_db'],
                                  params,
                                  debug_flag='text')
 
     # DIA analysis
     if params['misc']['do_dia_processing']:
         extract_dia_features_multiproc(input_output['dia_data_files'],
-                                       input_output['lipid_ids_db'], 
+                                       input_output['results_db'], 
                                        params, 
                                        4, 
                                        debug_flag='text_pid')
@@ -165,15 +164,15 @@ def main():
     #  Annotation
     if params['misc']['do_annotation']:
         annotate_lipids_sum_composition(input_output['results_db'],
-                                        # input_output['lipid_class_scdb_config'],
+                                        input_output['lipid_class_scdb_config'],
                                         params,
-                                        overwrite=False,
-                                        ionization="POS")
-        
-        # filter_annotations_by_rt_range(input_output['results_db'],
-        #                                input_output['lipid_class_rt_ranges'],
-        #                                params, 
-        #                                debug_flag='text')
+                                        debug_flag='text')
+        #  input_output['lipid_class_rt_ranges'] doesn't exist yet.
+        filter_annotations_by_rt_range(input_output['results_db'],
+                                       input_output['lipid_class_rt_ranges'],
+                                       params, 
+                                       debug_flag='text')
+
 
 
     print("\n\Annotation Complete\n\n")
