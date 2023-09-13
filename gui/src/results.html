@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Meta and Title -->
+  <meta charset="UTF-8">
+  <title>DIA-DDA Lipid Identification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Stylesheet Link -->
+  <link href="style.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="menu">
+  <a href="./index.html" class="menu-item">Instructions</a>
+  <a href="./experiment.html" class="menu-item">Experiment</a>
+  <a href="#./results.html" class="menu-item">Results</a>
+</nav>
+
+<!-- Page content -->
+<div style="max-width:2000px;margin-top:20px">
+  
+  <!-- Inital Box containing  'Explore New Database' Button -->
+  <html>
+  <body class ='results-body'>
+  <div class="results-outer-box">
+    <button id="show-table-button-2" onclick="databaseDialog()">Explore New Database</button>
+    <button id="show-table-button" style="display:none" onclick="databaseDialog()"></button>
+    <br><br>
+    <!-- Main Table from SQLite -->
+    <div class="top-table" id="main-table-container"></div>
+    <br><br>
+    <!-- Results Section -->
+    <div id='below-table-content' style="display: none">
+
+    <!-- Row 1 Labels -->
+    <div class="plot-row-labels">
+      <div class="label-half"><span class="label" >Annotated Features</span></div>
+      <div class="label-half"><span class="label" >MS2 Spectra (centroided)</span></div>
+    </div>
+
+   <!-- Row Formatter -->
+    <div class="plot-row">
+      <!-- Annotated Features, Other Features from DDA/DIA -->
+        <div class="plot-half-split"> 
+          <div id="annotation-table" class="plot-full-top"></div>
+          <div id="error-message-annotation" style="color: black;"></div>
+          <span class="label" >Other DDA Features from the selected DIA Feature</span>
+          <div class="top-table" id="table-dda-mapped-dia" class="plot-full-bot"></div>
+        </div>
+        <!-- Bidirectional DDA/DIA Plot -->
+        <div class="plot-half">
+          <div id="bidirectional-plot"></div>
+          <div id="error-message-bidirectional-plot" style="color: black;">MS2 peaks not found for DDA or DIA.</div>
+        </div>
+    </div>
+
+    <!-- Row 2 Labels -->
+    <div class="plot-row-labels">
+      <div class="label-quarter"><span class="label">MS1 Spectra</span></div>
+      <div class="label-quarter"><span class="label">Extracted Ion Chromatogram</span></div>
+      <div class="label-quarter"><span class="label">Arrival Time Distribution</span></div>
+      <div class="label-half"><span class="label">Deconvoluted DIA Fragments</span></div>
+    </div>
+    <!-- Row Formatter -->
+    <div class="plot-row">
+        <div class="plot-quarter">
+          <!-- MS1 Spectra Plot -->
+          <div id="ms1-plot"></div>
+          <span class="label" >All DIA Features from the selected DDA Feature</span>
+          <div><span class="label">m/z:</span> <span class="info"id="mz-value"></span></div>
+        </div>
+        <div class="plot-quarter">
+          <!-- Extracted Ion Chomatogram -->
+            <div id="ion-chromatogram-plot"></div>
+            <div><span class="label">RT:</span> <span class="info"id="dia-rt-value"></span> <span class="info"> min</span></div>
+            <div><span class="label">Height:</span> <span class="info" id="dia-rt-pkht-value"></span></div>
+            <div><span class="label">FWHM:</span> <span class="info" id="dia-rt-fwhm-value"></span></div>
+            <div><span class="label">SNR:</span> <span class="info" id="dia-rt-psnr-value"></span></div>
+        </div>
+        <div class="plot-quarter">
+          <!-- Arrival Time Distribution Plot -->
+          <div id="arrival-time-plot"></div>
+          <div><span class="label">Arrival Time:</span> <span class="info" id="dia-dt-value"></span></div>
+          <div><span class="label">Height:</span> <span class="info" id="dia-dt-pkht-value"></span></div>
+          <div><span class="label">FWHM:</span> <span class="info" id="dia-dt-fwhm-value"></span></div>
+          <div><span class="label">SNR:</span> <span class="info" id="dia-dt-psnr-value"></span></div>
+          <!-- Hidden Elements - Currently needed as references for things in renderer_res. -->
+          <!-- Note to self - remove these after updating renderer_res. -->
+          <div style="display: none"><span class="label">RT:</span> <span class="info"id="dda-rt-value"></span> <span class="info"> min</span></div>
+          <div style="display: none"><span class="label">Height:</span> <span class="info" id="dda-rt-pkht-value"></span></div>
+          <div style="display: none"><span class="label">FWHM:</span> <span class="info" id="dda-rt-fwhm-value"></span></div>
+          <div style="display: none"><span class="label">SNR:</span> <span class="info" id="dda-rt-psnr-value"></span></div>
+          <div style="display: none"><span class="label"></span> <span class="info" id="dia-atd-value"></span></div>
+          <div style="display: none"><span class="label"></span> <span class="info" id="dia-xic-value"></span></div>
+
+      </div>
+        <div class="plot-half">
+          <!-- Deconvoluted Fragment Table  -->
+          <div class="left-section">
+              <div id="deconvoluted-frags-table"></div>
+              <div id="error-message" style="color: black;"></div>
+              <div><span class="info" id="xic-dist-value"></span></div>
+              <div><span class="info" id="atd-dist-value"></span></div>
+          </div>
+          <div class="right-section" id="plots-container">
+            <!-- Deconvoluted Fragment XIC Plot   -->
+              <div class = "plot-half" id="decon-xic-plot"></div>
+            <!-- Deconvoluted Fragment ATD Plot   -->
+              <div class = "plot-half" id="decon-atd-plot"></div>
+          </div>
+      </div>
+      
+    </div>
+  </div>
+
+</div>
+  <!-- Add space between results and Footer -->
+<div class="empty-element"></div>
+</body>
+
+<!-- Footer -->
+
+<footer class="footer">
+    <a href="#documentation">Documentation</a>
+    <a href="#contact">Contact</a>
+</footer>
+
+
+<!-- End Page Content -->
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="renderer_res.js"></script>
+
+
+</html>
