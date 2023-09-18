@@ -6,10 +6,12 @@
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package",
+    "package": "electron-forge package --arch=x64 --platform=darwin",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "rebuild-x64": "electron-rebuild -w sqlite3 --arch=x64",
+    "rebuild-arm64": "electron-rebuild -w sqlite3 --arch=arm64"
   },
   "keywords": [],
   "author": {
@@ -21,7 +23,16 @@
     "forge": {
       "packagerConfig": {
         "asar": false,
-        "extraResource": ["../LipidIMEA"]
+        "arch": [
+          "universal"
+        ],
+        "ignore": [
+          "^.*\\.forge-meta$"
+        ],
+        "platform": "darwin",
+        "extraResource": [
+          "../LipidIMEA"
+        ]
       },
       "makers": [
         {
@@ -32,7 +43,9 @@
         },
         {
           "name": "@electron-forge/maker-zip",
-          "platforms": ["darwin"]
+          "platforms": [
+            "darwin"
+          ]
         },
         {
           "name": "@electron-forge/maker-deb",
@@ -47,13 +60,12 @@
   },
   "dependencies": {
     "chart.js": "^4.3.3",
-    "electron-builder": "^24.6.3",
     "electron-ipc-bridge-factory": "^0.0.0-beta.3",
+    "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.0",
     "fs": "^0.0.1-security",
     "js-yaml": "^4.1.0",
     "knex": "^2.5.0",
-    "mysql": "^2.18.1",
     "plotly.js-dist": "^2.25.1",
     "python-shell": "^5.0.0",
     "sqlite3": "^5.1.6"
@@ -64,8 +76,7 @@
     "@electron-forge/maker-rpm": "^6.1.1",
     "@electron-forge/maker-squirrel": "^6.1.1",
     "@electron-forge/maker-zip": "^6.1.1",
-    "electron": "^24.3.1",
-    "electron-rebuild": "^3.2.9"
+    "@electron/universal": "^1.4.2",
+    "electron": "^24.3.1"
   }
 }
-

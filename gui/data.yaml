@@ -1,55 +1,63 @@
-DDA:
-  CHROMATOGRAM_EXTRACTION_AND_FITTING:
-    pre_xic_mz_tol: '0.01'
-    pre_xic_rt_tol: '0.75'
-    min_rel_height: '0.2'
-    min_abs_height: '1000'
-    fwhm_min: '0.05'
-    fwhm_max: '0.5'
-    max_peaks: '3'
-  CHROMATOGRAPHIC_FEATURE_CONSOLIDATION:
-    fc_mz_tol: '0.05'
-    fc_rt_tol: '0.05'
-  MS2_EXTRACTION_AND_FITTING:
-    ms2_pre_mz_tol: '0.05'
-    ms2_mz_bin_min: '50'
-    ms2_mz_bin_size: '0.05'
-    ms2_min_rel_height: '0.001'
-    ms2_min_abs_height: '1000'
-    ms2_fwhm_min: '0.05'
-    ms2_fwhm_max: '0.25'
-    ms2_min_dist: '0.1'
-  FEATURE_CONSOLIDATION:
-    fc_mz_tol: '0.05'
-    fc_rt_tol: '0.05'
-DIA:
-  CHROMATOGRAM_EXTRACTION_AND_FITTING:
-    pre_xic_mz_tol: '0.01'
-    pre_xic_rt_tol: '0.75'
-    min_rel_height: '0.2'
-    min_abs_height: '1000'
-    fwhm_min: '0.05'
-    fwhm_max: '0.5'
-    max_peaks: '3'
-  SELECTING_XIC_PEAKS:
-    target_rt_shift: '0'
-    target_rt_tol: '0.05'
-  ATD_FITTING:
-    atd_min_rel_height: '0.2'
-    atd_min_abs_height: '1000'
-    atd_fwhm_min: '0.3'
-    atd_fwhm_max: '3'
-    atd_max_peaks: '3'
-  MS2_PEAK_FITTING:
-    ms2_min_rel_height: '0.001'
-    ms2_min_abs_height: '1000'
-    ms2_fwhm_min: '0.05'
-    ms2_fwhm_max: '0.25'
-    ms2_min_dist: '0.1'
-  MS2_PEAK_MATCHING:
-    ms2_pk_mz_tol: '0.05'
-  MS2_DECONVOLUTION:
-    decon_xic_dist_threshold: '0.75'
-    decon_atd_dist_threshold: '0.75'
-    decon_xic_dist_metric: cosine
-    decon_atd_dist_metric: cosine
+dda:
+  dda_chrom_ext_fit:
+    dda_cxf_mz_tol: '0.01'
+    dda_cxf_min_rel_height: '0.2'
+    dda_cxf_min_abs_height: '1000'
+    dda_cxf_fwhm_min: '0.05'
+    dda_cxf_fwhm_max: '0.5'
+    dda_cxf_max_peaks: '2'
+    dda_cxf_min_psnr: '10'
+  dda_chrom_feat_cons:
+    dda_cfc_mz_tol: '0.05'
+    dda_cfc_rt_tol: '0.05'
+  dda_ms2_ext_fit:
+    dda_mxf_pre_mz_tol: '0.05'
+    dda_mxf_mz_bin_min: '50'
+    dda_mxf_mz_bin_size: '0.05'
+    dda_mxf_min_rel_height: '0.001'
+    dda_mxf_min_abs_height: '1000'
+    dda_mxf_fwhm_min: '0.05'
+    dda_mxf_fwhm_max: '0.25'
+    dda_mxf_min_dist: '0.2'
+  dda_feat_cons:
+    dda_fc_mz_tol: '0.05'
+    dda_fc_rt_tol: '0.05'
+    dda_fc_drop_if_no_ms2: 'true999'
+dia:
+  dia_chrom_ext_fit:
+    dia_cxf_pre_xic_mz_tol: '0.01'
+    dia_cxf_pre_xic_rt_tol: '0.75'
+    dia_cxf_min_rel_height: '0.2'
+    dia_cxf_min_abs_height: '1000'
+    dia_cxf_fwhm_min: '0.05'
+    dia_cxf_fwhm_max: '0.5'
+    dia_cxf_max_peaks: '1'
+  dia_sel_xic_pks:
+    dia_sxp_target_rt_tol: '0.05'
+    dia_sxp_target_rt_shift: '0'
+  dia_atd_ext_fit:
+    dia_axf_min_rel_height: '0.2'
+    dia_axf_min_abs_height: '1000'
+    dia_axf_fwhm_min: '0.3'
+    dia_axf_fwhm_max: '3'
+    dia_axf_max_peaks: '2'
+  dia_ms2_ext_fit:
+    dia_mxf_min_rel_height: '0.001'
+    dia_mxf_min_abs_height: '1000'
+    dia_mxf_fwhm_min: '0.05'
+    dia_mxf_fwhm_max: '0.25'
+    dia_mxf_min_dist: '0.2'
+  dia_ms2_pk_mat:
+    dia_mpm_mz_tol: '0.05'
+  dia_ms2_decon:
+    dia_md_xic_dist_threshold: '0.75'
+    dia_md_atd_dist_threshold: '0.75'
+    dia_md_xic_dist_metric: cosine
+    dia_md_atd_dist_metric: mosine
+annotation:
+  ann_sum_comp:
+    ann_sc_lipid_class_params: ''
+    ann_sc_min_c: '12'
+    ann_sc_max_c: '22'
+    ann_sc_odd_c: 'true'
+    ann_sc_mz_tol: '0.aaa05'

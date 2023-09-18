@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+
+import multiprocessing
 import sys
 import json
 import subprocess
@@ -6,37 +9,52 @@ import os
 import shutil
 
 
-def install(package):
-    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+# current_directory = os.path.dirname(os.path.abspath(__file__))
+# resources_directory = os.path.dirname(os.path.dirname(current_directory))
+# sys.path.append(resources_directory)
 
-install("pyyaml")
-install("h5py")
-install("hdf5plugin")
-install("pandas")
-install("mzapy")
+
+# sys.path.append("/Users/jaco059/Library/CloudStorage/OneDrive-PNNL/Desktop/OZID_DDA_DIA_Project/lipidimea/LipidIMEA")
+# print("\n\n\n\n\n\n")
+# print("BEGIN LIPID IMPORTS")
+
+# print("current_directory ", current_directory)
+# print("resources_directory: ", resources_directory)
+# print("sys.path: ", sys.path)
+
+print("\n\n\n\n\n\n")
+from LipidIMEA.util import create_results_db, load_params
+from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
+from LipidIMEA.msms.dia import extract_dia_features_multiproc
+from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
+
+
+
+
+# def install(package):
+#     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+# install("pyyaml")
+# install("h5py")
+# install("hdf5plugin")
+# install("pandas")
+# install("mzapy")
 
 
 
 #find imports
-current_directory = os.path.dirname(os.path.abspath(__file__))
-resources_directory = os.path.dirname(os.path.dirname(current_directory))
-sys.path.append(resources_directory)
 
 
-# #for  local:
-# sys.path.append("../")
 
-print("AAA: ", sys.path)
+# # #for  local:
+# # sys.path.append("../")
 
-print("imports starting")
-from LipidIMEA.util import create_results_db, load_params
-print("import1 done")
-from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
-print("import2 done")
-from LipidIMEA.msms.dia import extract_dia_features_multiproc
-print("import3 done")
-from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
-print("imports complete")
+# print("AAA: ", sys.path)
+
+# from LipidIMEA.util import create_results_db, load_params
+# from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
+# from LipidIMEA.msms.dia import extract_dia_features_multiproc
+# from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
 
 
 
@@ -58,9 +76,6 @@ def convert_nest(d):
             d[k] = convert_nest(v)
     return d
 
-# inputValues= dict(json.loads(sys.argv[1]))
-
-# print(inputValues)
 
 def generate_new_db_name(directory, db_name):
     base_name = db_name
@@ -179,4 +194,6 @@ def main():
 
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
+    multiprocessing.set_start_method('spawn')
     main()
