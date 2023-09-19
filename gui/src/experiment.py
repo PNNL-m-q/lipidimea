@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-
 import multiprocessing
 import sys
 import json
@@ -8,54 +7,13 @@ import subprocess
 import os
 import shutil
 
-
-# current_directory = os.path.dirname(os.path.abspath(__file__))
-# resources_directory = os.path.dirname(os.path.dirname(current_directory))
-# sys.path.append(resources_directory)
-
-
-# sys.path.append("/Users/jaco059/Library/CloudStorage/OneDrive-PNNL/Desktop/OZID_DDA_DIA_Project/lipidimea/LipidIMEA")
-# print("\n\n\n\n\n\n")
-# print("BEGIN LIPID IMPORTS")
-
-# print("current_directory ", current_directory)
-# print("resources_directory: ", resources_directory)
-# print("sys.path: ", sys.path)
-
-print("\n\n\n\n\n\n")
 from LipidIMEA.util import create_results_db, load_params
 from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
 from LipidIMEA.msms.dia import extract_dia_features_multiproc
 from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
 
 
-
-
-# def install(package):
-#     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# install("pyyaml")
-# install("h5py")
-# install("hdf5plugin")
-# install("pandas")
-# install("mzapy")
-
-
-
-#find imports
-
-
-
-# # #for  local:
-# # sys.path.append("../")
-
-# print("AAA: ", sys.path)
-
-# from LipidIMEA.util import create_results_db, load_params
-# from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
-# from LipidIMEA.msms.dia import extract_dia_features_multiproc
-# from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
-
+#Python Calls to LipidIMEA
 
 
 
@@ -98,34 +56,13 @@ def main():
     params = inputs_and_params['params']
     options = inputs_and_params['options']
     
-    print("input_output :", input_output)
-    print("params :", params)
-    print("options :", options)
-    
-        
-    # if input_output['lipid_class_scdb_config']:
-    #     params["annotation"]["ann_sum_comp"]["ann_sc_lipid_class_params"] = input_output['annotation_file']
-
-    print("\n new params :", params)
-    
-    # db_pick: getSelectedDatabaseOption(),
-    # db_name: document.getElementById("experiment-name"),
-    # save_loc: document.getElementById("selected-directory")
-    
     
     params = convert_nest(params)
     
-    
-    print("check here before:",input_output)
+
     #assign False if 'results_db' not present.
     if input_output.get('results_db') is None:
         input_output['results_db'] = None
-        
-    print("check here after:",input_output)
-    # create lipid IDs database, returns the filename
-    
-    
-
         
         
     #If database is present, append.
@@ -162,18 +99,16 @@ def main():
             consolidate_dda_features(input_output['results_db'],
                                  params,
                                  debug_flag='text')
+        print("\n\nDDA Extraction Complete\n\n")
 
     # DIA analysis
     if params['misc']['do_dia_processing']:
         extract_dia_features_multiproc(input_output['dia_data_files'],
                                        input_output['results_db'], 
-                                       params, 
-                                       4, 
+                                       params,
+                                       4,
                                        debug_flag='text_pid')
-    
-
-
-    print("\n\nExtraction Complete\n\n")
+        print("\n\nDIA Extraction Complete\n\n")
 
 
     #  Annotation
@@ -185,15 +120,13 @@ def main():
         #  input_output['lipid_class_rt_ranges'] doesn't exist yet.
         filter_annotations_by_rt_range(input_output['results_db'],
                                        input_output['lipid_class_rt_ranges'],
-                                       params, 
+                                       params,
                                        debug_flag='text')
-
-
-
-    print("\n\Annotation Complete\n\n")
+        print("\n\nAnnotation Complete\n\n")
 
 
 if __name__ == '__main__':
+    print("Starting up Experiment...")
     multiprocessing.freeze_support()
     multiprocessing.set_start_method('spawn')
     main()
