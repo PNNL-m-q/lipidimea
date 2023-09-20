@@ -6,6 +6,9 @@ const fs = require('fs');
 const sqlite3 = require('sqlite3');
 const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
+// python version 3.9.6 (default, Oct 18 2022, 12:41:40) 
+// [Clang 14.0.0 (clang-1400.0.29.202)]
+
 
 // This variable will hold the path to the sql database in Results. 
 // It is globally defined because it is called frequently.
@@ -139,24 +142,52 @@ ipcMain.on('open-directory-dialog', (event) => {
 
 
 // Run python script to save params to file.
+// ipcMain.on('run-python-yamlwriter', (event, options) => {
+//   const inputNumber = options.args;
+//   console.log('yamlwriter input values:', inputNumber);
+//   let pythonExecutable = path.join(__dirname, 'embeddedPythonMac', 'python3.11');
+//   const pyshell = new PythonShell(path.join(__dirname, 'yamlwriter.py'), {
+//     pythonPath: pythonExecutable,
+//     args: [JSON.stringify(inputNumber), options.path], // Include the path
+// });
+
+// //   const pyshell = new PythonShell(path.join(__dirname, 'yamlwriter.py'), {
+// //     pythonPath: 'python3',
+// //     args: [JSON.stringify(inputNumber), options.path], // Include the path
+// // });
+
+//   pyshell.on('message', (result) => {
+//     console.log('Python script result:', result);
+//     event.reply('python-result-yamlwriter', result);
+//   });
+
+//   pyshell.end((err) => {
+//     if (err) throw err;
+//   });
+// });
+
+// pyinstaller version
 ipcMain.on('run-python-yamlwriter', (event, options) => {
   const inputNumber = options.args;
   console.log('yamlwriter input values:', inputNumber);
 
-  const pyshell = new PythonShell(path.join(__dirname, 'yamlwriter.py'), {
-    pythonPath: 'python3',
-    args: [JSON.stringify(inputNumber), options.path], // Include the path
-});
+  // Point to the standalone executable produced by PyInstaller
+  let pythonExecutable = path.join(__dirname, 'dist', 'yamlwriter');
 
-  pyshell.on('message', (result) => {
-    console.log('Python script result:', result);
-    event.reply('python-result-yamlwriter', result);
+  const spawn = require('child_process').spawn;
+  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), options.path]);
+
+  pythonProcess.stdout.on('data', (data) => {
+    console.log(`Python script result: ${data}`);
+    event.reply('python-result-yamlwriter', data.toString());
   });
 
-  pyshell.end((err) => {
-    if (err) throw err;
+  pythonProcess.stderr.on('data', (data) => {
+    console.error(`Python Error: ${data}`);
   });
 });
+
+
 
 // Generic function for opening dialog to select a file
 ipcMain.on('open-file-dialog', (event, options) => {
@@ -209,24 +240,47 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
 
 
 // Run python script to run the Lipidimea workflow
+// ipcMain.on('run-python-experiment', (event, options) => {
+//   const inputNumber = options.args;
+//   console.log('Experiment input values:', inputNumber);
+
+//   let pythonExecutable = path.join(__dirname, 'embeddedPythonMac', 'python3.11');
+//   const pyshell = new PythonShell(path.join(__dirname, 'experiment.py'), {
+//     pythonPath: pythonExecutable,
+//     args: [JSON.stringify(inputNumber)], 
+//   });
+
+//   pyshell.on('message', (result) => {
+//     console.log('Python script result:', result);
+//     event.reply('python-result-experiment', result);
+//   });
+
+//   pyshell.end((err) => {
+//     if (err) throw err;
+//   });
+// });
+
+
+// pyinstaller version
 ipcMain.on('run-python-experiment', (event, options) => {
   const inputNumber = options.args;
   console.log('Experiment input values:', inputNumber);
 
-  const pyshell = new PythonShell(path.join(__dirname, 'experiment.py'), {
-    pythonPath: 'python3',
-    args: [JSON.stringify(inputNumber)], 
+  // Point to the standalone executable produced by PyInstaller
+  let pythonExecutable = path.join(__dirname, 'dist', 'experiment');
+
+  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber)]);
+
+  pythonProcess.stdout.on('data', (data) => {
+    console.log(`Python script result: ${data}`);
+    event.reply('python-result-experiment', data.toString());
   });
 
-  pyshell.on('message', (result) => {
-    console.log('Python script result:', result);
-    event.reply('python-result-experiment', result);
-  });
-
-  pyshell.end((err) => {
-    if (err) throw err;
+  pythonProcess.stderr.on('data', (data) => {
+    console.error(`Python Error: ${data}`);
   });
 });
+
 
 
 

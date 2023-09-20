@@ -6,10 +6,17 @@
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
+    "package": "npm run package-x64 && npm run package-arm64",
+    "make": "npm run make-x64 && npm run make-arm64",
+    "make-x64": "arch -x86_64 electron-forge make --arch=x64 --platform=darwin --out-dir=out/x64",
+    "make-arm64": "arch -arm64 electron-forge make --arch=arm64 --platform=darwin --out-dir=out/arm64",    
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "rebuild": "npm run rebuild-x64 && npm run rebuild-arm64",
+    "rebuild-x64": "electron-rebuild -w sqlite3 --arch=x64",
+    "rebuild-arm64": "electron-rebuild -w sqlite3 --arch=arm64",
+    "package-x64": "electron-forge package --arch=x64 --platform=darwin",
+    "package-arm64": "electron-forge package --arch=arm64 --platform=darwin"
   },
   "keywords": [],
   "author": {
@@ -21,18 +28,51 @@
     "forge": {
       "packagerConfig": {
         "asar": false,
-        "extraResource": ["../LipidIMEA"]
+        "platform": "darwin",
+        "extraResource": [
+          "../LipidIMEA"
+        ]
       },
       "makers": [
         {
-          "name": "@electron-forge/maker-squirrel",
+          "name": "@electron-forge/maker-dmg",
           "config": {
-            "name": "dia_dda_application"
-          }
+            "outDir": "./out/make/x64"
+          },
+          "platforms": [
+            "darwin"
+          ],
+          "arch": "x64"
+        },
+        {
+          "name": "@electron-forge/maker-dmg",
+          "config": {
+            "outDir": "./out/make/arm64"
+          },
+          "platforms": [
+            "darwin"
+          ],
+          "arch": "arm64"
         },
         {
           "name": "@electron-forge/maker-zip",
-          "platforms": ["darwin"]
+          "config": {
+            "outDir": "./out/make/x64"
+          },
+          "platforms": [
+            "darwin"
+          ],
+          "arch": "x64"
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "config": {
+            "outDir": "./out/make/arm64"
+          },
+          "platforms": [
+            "darwin"
+          ],
+          "arch": "arm64"
         },
         {
           "name": "@electron-forge/maker-deb",
@@ -47,13 +87,12 @@
   },
   "dependencies": {
     "chart.js": "^4.3.3",
-    "electron-builder": "^24.6.3",
     "electron-ipc-bridge-factory": "^0.0.0-beta.3",
+    "electron-prompt": "^1.7.0",
     "electron-squirrel-startup": "^1.0.0",
     "fs": "^0.0.1-security",
     "js-yaml": "^4.1.0",
     "knex": "^2.5.0",
-    "mysql": "^2.18.1",
     "plotly.js-dist": "^2.25.1",
     "python-shell": "^5.0.0",
     "sqlite3": "^5.1.6"
@@ -61,11 +100,10 @@
   "devDependencies": {
     "@electron-forge/cli": "^6.1.1",
     "@electron-forge/maker-deb": "^6.1.1",
+    "@electron-forge/maker-dmg": "^6.4.2",
     "@electron-forge/maker-rpm": "^6.1.1",
     "@electron-forge/maker-squirrel": "^6.1.1",
     "@electron-forge/maker-zip": "^6.1.1",
-    "electron": "^24.3.1",
-    "electron-rebuild": "^3.2.9"
+    "electron": "^24.3.1"
   }
 }
-
