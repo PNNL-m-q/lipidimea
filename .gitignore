@@ -35,8 +35,9 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-# exception for experiment.spec
+# exception for experiment.spec and yamlwrite.spec
 !experiment.spec
+!yamlwriter.spec
 
 # Installer logs
 pip-log.txt

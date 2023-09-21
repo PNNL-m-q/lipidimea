@@ -701,7 +701,7 @@ function UpdateDatabaseOptions() {
 // Receive Python Experiment Results to display
 window.api.receive('python-result-experiment', (result) => {
   console.log('Received result:', result);
-  outputBox.innerText += result + '\n'; // Append the result to the output box
+  outputBox.innerText += result; // Append the result to the output box
   scrollToBottom(outputBox);
 });
 

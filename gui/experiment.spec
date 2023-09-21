@@ -1,32 +1,23 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
-hiddenimports = ['./LipidIMEA']
-hiddenimports += collect_submodules('./LipidIMEA')
+hiddenimports = ['../LipidIMEA']
+hiddenimports += collect_submodules('../LipidIMEA')
 
 
 block_cipher = None
 
 
 a = Analysis(
-    ['experiment.py'],
-    pathex=['./LipidIMEA'],
+    ['src/experiment/experiment.py'],
+    pathex=['../LipidIMEA'],
     binaries=[],
     datas=[
-    ('LipidIMEA/_include/default_params.yml', 'LipidIMEA/_include/'),
-    ('LipidIMEA/_include/results.sql', 'LipidIMEA/_include/'),
-    ('LipidIMEA/_include/rt_ranges/default_HILIC.yml', 'LipidIMEA/_include/rt_ranges/'),
-    ('LipidIMEA/_include/rules/Cer.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/rules/PC.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/rules/PE.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/rules/PG.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/rules/PS.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/rules/SM.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/rules/TG.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/rules/any.yml', 'LipidIMEA/_include/rules/'),
-    ('LipidIMEA/_include/scdb_params/default_neg.yml', 'LipidIMEA/_include/scdb_params/'),
-    ('LipidIMEA/_include/scdb_params/default_pos.yml', 'LipidIMEA/_include/scdb_params/')
-    ],
+        ('../LipidIMEA/_include/*', 'LipidIMEA/_include/'),
+        ('../LipidIMEA/_include/rt_ranges/*', 'LipidIMEA/_include/rt_ranges/'),
+        ('../LipidIMEA/_include/rules/*', 'LipidIMEA/_include/rules/'),
+        ('../LipidIMEA/_include/scdb_params/*', 'LipidIMEA/_include/scdb_params/'),
+    ] + collect_data_files('hdf5plugin'),
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},

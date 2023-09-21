@@ -105,7 +105,7 @@ ipcMain.on('request-filename-and-directory', (event) => {
   prompt({
       title: 'Parameter File Name',
       label: 'Enter the desired filename to save parameters under:',
-      value: 'saved_lipidmea_params.yaml',
+      value: 'saved_lipidmea_params.yml',
       type: 'input'
   }).then((fileName) => {
       if (fileName !== null) {
@@ -144,7 +144,7 @@ ipcMain.on('run-python-yamlwriter', (event, options) => {
   let savePath;
   if (options.location && options.name) {
       // If location and name are provided, construct the save path
-      savePath = path.join(options.location, options.name + ".yaml");
+      savePath = path.join(options.location, options.name + ".yml");
   } else {
       // Otherwise, use the path directly from options
       savePath = options.path;
@@ -152,7 +152,7 @@ ipcMain.on('run-python-yamlwriter', (event, options) => {
   console.log('yamlwriter input values:', inputNumber);
 
   // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, 'dist', 'yamlwriter');
+  let pythonExecutable = path.join(__dirname, '../dist', 'yamlwriter');
 
   const spawn = require('child_process').spawn;
   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), savePath]);
@@ -247,7 +247,7 @@ ipcMain.on('run-python-experiment', (event, options) => {
   console.log('Experiment input values:', inputNumber);
 
   // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, 'dist', 'experiment');
+  let pythonExecutable = path.join(__dirname, '../dist', 'experiment');
 
   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber)]);
 

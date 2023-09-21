@@ -1,20 +1,27 @@
 # Makefile for building GUI executable
 
+default:
+	@echo "NO DEFAULT MAKE TARGET"
+
 # build the GUI app for macos on Intel
 app_darwin_x64: dist/experiment dist/yamlwriter
 	npm run make-x64
 
-# get the devDependencies for the GUI app
+# build the GUI app for macos on ARM
+app_darwin_arm64: dist/experiment dist/yamlwriter
+	npm run make-arm64
+
+# get the dependencies and devDependencies for the GUI app
 deps:
 	npm install
 
 # use pyinstaller to build dist/experiment EXE, use specfile
 dist/experiment:
-	pyinstaller experiment.spec
+	pyinstaller --clean experiment.spec
 
-# use pyinstaller to build dist/yamlwriter EXE, no need for specfile
+# use pyinstaller to build dist/yamlwriter EXE, use specfile
 dist/yamlwriter:
-	pyinstaller src/experiment/yamlwriter.py
+	pyinstaller --clean yamlwriter.spec
 
 # clean up generated files in dist and out
 clean:
