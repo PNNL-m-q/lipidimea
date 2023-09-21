@@ -7,16 +7,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Stylesheet Link -->
-    <link href="style.css" rel="stylesheet">
+    <link href="../style.css" rel="stylesheet">
 </head>
 
 <body>
     <!-- Navbar -->
     <div>
-        <nav class="menu" style="z-index:10;">
-            <a href="./index.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">Instructions</a>
-            <a href="#./experiment.html" class="menu-item">Experiment</a>
-            <a href="./results.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">Results</a>
+        <nav class="menu" style="z-index:1000;">
+            <a href="../intro/intro.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">Instructions</a>
+            <a href="#../experiment/experiment.html" class="menu-item">Experiment</a>
+            <a href="../results/results.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">Results</a>
         </nav>
     </div>
 
@@ -226,13 +226,13 @@
                 </div>
 
                 <!-- Experiment Details Section -->
-                <div class="section-container" id="new-db-name-container" style="display: none;">
-                    <label class="section-label">Experiment Name:</label>
-                    <input type="text" id="experiment-name" placeholder="Enter new database name">
+                <div class="section-container" id="new-db-name-container">
+                    <label class="section-label">Results Name Prefix:</label>
+                    <input type="text" id="experiment-name" placeholder="Enter Experiment Name">
                 </div>
 
                 <!-- Save Directory Section -->
-                <div class="section-container" id="selected-directory-container" style="display: none;">
+                <div class="section-container" id="selected-directory-container">
                     <label class="section-label">Results Save Location:</label>
                     <input type="text" id="selected-directory" readonly placeholder="No directory selected">
                     <button class="dir-btn" onclick="selectSaveDirectory()">Select Directory</button>
@@ -241,7 +241,7 @@
 
                 <!-- Run Experiment Button -->
                 <div class="section-container">
-                    <button class="btn run-btn" onclick="RunExperiment()">Run Experiment</button>
+                    <button class="btn" id ="run-btn" onclick="RunExperiment(); disableButton()">Run Experiment</button>
                 </div>
 
 
