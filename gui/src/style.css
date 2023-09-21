@@ -170,6 +170,13 @@ body {
         padding: 1%;
         border-style: solid;
         border-color: black;
+        text-align: left;
+        min-height: 350px;
+        width: 95%;
+    }
+
+    .table-header-and-button {
+      margin-right: 20px;
     }
 
     .output-box {
@@ -192,11 +199,11 @@ body {
     font-size: large;
 
 }
-.results-body {
+/* .results-body {
   font-family: Arial, sans-serif;
   text-align: center;
   margin-top: 100px;
-}
+} */
 
 
 .instruction-page-background {

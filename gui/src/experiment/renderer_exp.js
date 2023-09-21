@@ -40,6 +40,8 @@ const inputsColumnAdvanced = document.getElementById("duo-inputs-column-both-adv
 const ParamEmptyGeneral = document.getElementById("param-empty-gen");
 const ParamEmptyAdvanced= document.getElementById("param-empty-adv");
 const databaseOptions = document.getElementById('db-options');
+const saveParamsOptions = document.getElementById('save-params');
+
 
 
 //  Files Section
@@ -131,6 +133,7 @@ if (fileInputAnnotation) {
 }
 
 databaseOptions.addEventListener("change", UpdateExpName);
+saveParamsOptions.addEventListener("change", UpdateExpName);
 
 // Call the synchronizeCheckboxes function when the page is loaded
 document.addEventListener('DOMContentLoaded', synchronizeCheckboxes);
@@ -308,14 +311,13 @@ function createInput(type, value, id, parentNode, otherTab) {
 
 
 // Write User Updated Parameter Values to file
-function WriteToYaml(i) {
+function WriteToYaml(i,name,location) {
   const inputValues = {};
   const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
   const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
 
   let currentHeader = null;
   let currentSubheader = null;
-
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
     let input2 = inputs2[i];
@@ -345,11 +347,11 @@ function WriteToYaml(i) {
     }
   }
 
+  if (location === undefined || name === undefined){
   const options = {
     pythonPath: 'python3',
     args: inputValues,
   };
-
   window.api.send('request-filename-and-directory');
 
   window.api.receive('selected-param-save-directory', (savePath) => {
@@ -360,6 +362,17 @@ function WriteToYaml(i) {
     };
     window.api.send('run-python-yamlwriter', options);
   });
+}
+else {
+  const options = {
+    pythonPath: 'python3',
+    args: inputValues,
+    name: name,
+    location: location
+};
+  window.api.send('run-python-yamlwriter', options);
+
+}
 
 }
 
@@ -645,8 +658,9 @@ window.api.receive('directory-selected', (path) => {
 
 // Database New Name for Experiment
 function UpdateExpName() {
-  const TF = document.getElementById("create-new-option").checked
-  if (TF === true) {
+  const TFnew = document.getElementById("create-new-option").checked
+  const TFsave = document.getElementById("save-params").checked
+  if (TFnew === true || TFsave === true) {
     document.getElementById("new-db-name-container").style.display = "flex"
     document.getElementById("selected-directory-container").style.display = "flex"
   }
@@ -718,6 +732,49 @@ function RunExperiment() {
   const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
   const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
   const isBehaviorDefault = document.getElementById("behavior-custom").checked;
+  const TFsave = document.getElementById("save-params").checked
+  const TFnew = document.getElementById("create-new-option").checked
+  const TFoverwrite = document.getElementById("overwrite-option").checked
+  const TFappend = document.getElementById("append-option").checked
+
+  // Check if run options that the user selected make sense
+  if ((TFsave === true || TFnew === true) && (selectedDatabaseName === '' || selectedSaveLocation === '')) {
+    alert("Please enter an experiment name and save location. ");
+    return;  // Return early to stop further execution
+  }
+
+  if (checkboxes.advanced.dda.checked && filesDDA.length === 0) {
+      alert("DDA processing is selected but no DDA files are provided. ");
+      return;
+  }
+
+  if (checkboxes.advanced.dia.checked && filesDIA.length === 0) {
+      alert("DIA processing is selected but no DIA files are provided. ");
+      return;
+  }
+
+  if ((TFappend || TFoverwrite) && filesDatabase.length === 0) {
+      alert("Append/Overwrite Database option is selected but no Database files are provided. ");
+      return;
+  }
+
+  if (!checkboxes.advanced.dda.checked && !checkboxes.advanced.dia.checked && !checkboxes.advanced.annotate.checked) {
+      alert("None of the DDA processing, DIA processing, or Annotation options are selected. ");
+      return;
+  }
+
+
+
+  // If save parameters is selected, save them.
+  if (TFsave === true ) {
+    if (selectedDatabaseName !== '' && selectedSaveLocation !== '') {
+    WriteToYaml('duo-inputs-column-both-advanced',selectedDatabaseName, selectedSaveLocation)
+    }
+    else {
+      WriteToYaml('duo-inputs-column-both-advanced')
+    }
+  }
+
 
   const parameters = {
       dda: {},
@@ -815,5 +872,18 @@ function RunExperiment() {
     }
   };
 
+  outputBox.innerText += "Experiment Starting. Please give it one minute to begin. " + '\n';
   window.api.send('run-python-experiment', options);
+  disableButton()
 } 
+
+
+// This should prevent users from clicking run experiment twice in a row.
+function disableButton() {
+  const button = document.getElementById('run-btn');
+  button.disabled = true;
+  // Set a timeout for 5 seconds (5000 milliseconds) to re-enable the button
+  setTimeout(() => {
+      button.disabled = false;
+  }, 5000);
+}

@@ -6,9 +6,6 @@ const fs = require('fs');
 const sqlite3 = require('sqlite3');
 const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
-// python version 3.9.6 (default, Oct 18 2022, 12:41:40) 
-// [Clang 14.0.0 (clang-1400.0.29.202)]
-
 
 // This variable will hold the path to the sql database in Results. 
 // It is globally defined because it is called frequently.
@@ -36,8 +33,8 @@ const createWindow = () => {
   });
 
 
-  // and load the index.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  // and load the intro.html of the app.
+  mainWindow.loadFile(path.join(__dirname, 'intro/intro.html'));
 
 
   // Open the DevTools.
@@ -106,8 +103,8 @@ ipcMain.on('getDefaults', (event) => {
 // Open dialog to enter file name and search for save directory.
 ipcMain.on('request-filename-and-directory', (event) => {
   prompt({
-      title: 'New file name',
-      label: 'Enter the filename:',
+      title: 'Parameter File Name',
+      label: 'Enter the desired filename to save parameters under:',
       value: 'saved_lipidmea_params.yaml',
       type: 'input'
   }).then((fileName) => {
@@ -141,41 +138,24 @@ ipcMain.on('open-directory-dialog', (event) => {
 });
 
 
-// Run python script to save params to file.
-// ipcMain.on('run-python-yamlwriter', (event, options) => {
-//   const inputNumber = options.args;
-//   console.log('yamlwriter input values:', inputNumber);
-//   let pythonExecutable = path.join(__dirname, 'embeddedPythonMac', 'python3.11');
-//   const pyshell = new PythonShell(path.join(__dirname, 'yamlwriter.py'), {
-//     pythonPath: pythonExecutable,
-//     args: [JSON.stringify(inputNumber), options.path], // Include the path
-// });
-
-// //   const pyshell = new PythonShell(path.join(__dirname, 'yamlwriter.py'), {
-// //     pythonPath: 'python3',
-// //     args: [JSON.stringify(inputNumber), options.path], // Include the path
-// // });
-
-//   pyshell.on('message', (result) => {
-//     console.log('Python script result:', result);
-//     event.reply('python-result-yamlwriter', result);
-//   });
-
-//   pyshell.end((err) => {
-//     if (err) throw err;
-//   });
-// });
-
 // pyinstaller version
 ipcMain.on('run-python-yamlwriter', (event, options) => {
   const inputNumber = options.args;
+  let savePath;
+  if (options.location && options.name) {
+      // If location and name are provided, construct the save path
+      savePath = path.join(options.location, options.name + ".yaml");
+  } else {
+      // Otherwise, use the path directly from options
+      savePath = options.path;
+  }
   console.log('yamlwriter input values:', inputNumber);
 
   // Point to the standalone executable produced by PyInstaller
   let pythonExecutable = path.join(__dirname, 'dist', 'yamlwriter');
 
   const spawn = require('child_process').spawn;
-  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), options.path]);
+  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), savePath]);
 
   pythonProcess.stdout.on('data', (data) => {
     console.log(`Python script result: ${data}`);
