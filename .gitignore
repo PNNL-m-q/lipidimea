@@ -154,3 +154,5 @@ gui/*.seed
 # do not track static HTML in gui/src/docs/
 # those are generated with Sphinx (in docs/ dir) then copied there
 gui/src/docs/*
+# do track this README, it makes sure that the gui/src/docs/ directory actually gets tracked as well
+!gui/src/docs/README.txt
