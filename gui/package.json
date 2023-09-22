@@ -1,7 +1,7 @@
 {
   "name": "dia_dda_application",
   "productName": "dia_dda_application",
-  "version": "0.7.11",
+  "version": "0.7.12",
   "description": "My Electron application description",
   "main": "src/index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "package": "npm run package-x64 && npm run package-arm64",
     "make": "npm run make-x64 && npm run make-arm64",
     "make-x64": "arch -x86_64 electron-forge make --arch=x64 --platform=darwin --out-dir=out/x64",
-    "make-arm64": "arch -arm64 electron-forge make --arch=arm64 --platform=darwin --out-dir=out/arm64",    
+    "make-arm64": "arch -arm64 electron-forge make --arch=arm64 --platform=darwin --out-dir=out/arm64",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\"",
     "rebuild": "npm run rebuild-x64 && npm run rebuild-arm64",
