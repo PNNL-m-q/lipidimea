@@ -21,8 +21,8 @@ let mainWindow;
 const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 800,
     webPreferences: {
       // nodeIntegration: false,
       contextIsolation: true,
@@ -38,7 +38,7 @@ const createWindow = () => {
 
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   // Store the current session data when switching tabs
   mainWindow.on('blur', () => {

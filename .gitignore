@@ -149,3 +149,8 @@ gui/logs/
 gui/*.log
 gui/*.pid
 gui/*.seed
+
+
+# do not track static HTML in gui/src/docs/
+# those are generated with Sphinx (in docs/ dir) then copied there
+gui/src/docs/*
