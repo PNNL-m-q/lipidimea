@@ -54,8 +54,8 @@ ul{
     background-color: black;
     justify-content: left;
     position: fixed;
-    margin-left: -10px;
     top: 0px;
+    margin-left: -10px;
   }
 .menu-item:hover{
     background-color: #408EC5;
@@ -84,30 +84,50 @@ a:active { text-decoration: none; background-color: black; color: white; font-si
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-column-gap: 0px;
-  background-color: lightgray;
-  border-style: solid;
-  border-color: black;
-  border-style: solid solid none solid;
+  background-color: white;
+  border-style: none;
   overflow: hidden;
-  border-top-color: black;
 }
         
 .tablinks {
   position: relative;
   z-index: 1;
   font-size: 20px;
-  border-radius: 10px;
   overflow: hidden;
   height: 50px;
   line-height: 50px;
   float: right;
   text-align: center;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 25px 25px;
-  margin-left: -25px;
   overflow: hidden;
   border-top-color: black;
-  padding: 5px 20px;
+  border-bottom-color: black;
+  padding: 5px 10px;
+  background-color: #666;
+}
+
+.tablinks:hover {
+  background-color: #408EC5;
+}
+
+.tablinks:target {
+  background-color: lightgray;
+}
+
+.tablinks-sel {
+  position: relative;
+  z-index: 1;
+  font-size: 20px;
+  overflow: hidden;
+  height: 50px;
+  line-height: 50px;
+  float: right;
+  text-align: center;
+  margin-left: 0px;
+  overflow: hidden;
+  border-top-color: black;
+  border-bottom: lightgray;
+  padding: 5px 10px;
+  background-color: lightgray;
 }
 
 .centercontent {
@@ -171,8 +191,8 @@ body {
         border-style: solid;
         border-color: black;
         text-align: left;
-        min-height: 350px;
         width: 95%;
+        min-height: 400px;
     }
 
     .table-header-and-button {
@@ -227,7 +247,7 @@ body {
 hr {
   border: none;
   height: 2px;
-  background-color: #ddd; /
+  background-color: #ddd;
   margin: 20px 0; 
 }
 
