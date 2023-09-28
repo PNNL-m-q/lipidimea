@@ -32,7 +32,7 @@ def create_results_db(f, overwrite=False):
         if overwrite:
             os.remove(f)
         else:
-            msg = '_create_dda_ids_db: results database file ({}) already exists'
+            msg = 'create_results_db: results database file ({}) already exists'
             raise RuntimeError(msg.format(f))
     # initial connection creates the DB
     con = connect(f)  
