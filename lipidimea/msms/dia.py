@@ -224,6 +224,11 @@ def _single_target_analysis(n, i, rdr, results_db_cursor, f, dda_fid, dda_mz, dd
     # extract the XIC, fit 
     rt_bounds = (dda_rt - rtt, dda_rt + rtt)
     pre_xic = rdr.collect_xic_arrays_by_mz(dda_mz - mzt, dda_mz + mzt, rt_bounds=rt_bounds)
+    # handle case where XIC is empty 
+    # (tight enough bounds and high enough threshold can do that)
+    if len(pre_xic[0]) < 2:
+        debug_handler(debug_flag, debug_cb, msg +  'empty XIC', pid)
+        return
     pre_pkrts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_xic, *xic_fit_params, True)
     # determine the closest XIC peak (if any)
     target_rt = dda_rt + target_rt_shift
@@ -235,6 +240,11 @@ def _single_target_analysis(n, i, rdr, results_db_cursor, f, dda_fid, dda_mz, dd
         # extract the ATD, fit
         rt_min, rt_max = xic_rt - xic_wt, xic_rt + xic_wt
         pre_atd = rdr.collect_atd_arrays_by_rt_mz(dda_mz - mzt, dda_mz + mzt, rt_min, rt_max)
+        # handle case where ATD is empty 
+        # (tight enough bounds and high enough threshold can do that)
+        if len(pre_atd[0]) < 2:
+            debug_handler(debug_flag, debug_cb, msg +  'empty ATD', pid)
+            return
         pre_pkdts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_atd, *atd_fit_params, True)
         # consider each ATD peak as separate features
         for atd_dt, atd_ht, atd_wt in zip(pre_pkdts, pre_pkhts, pre_pkwts):
