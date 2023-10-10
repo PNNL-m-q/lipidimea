@@ -1,0 +1,23 @@
+# these default RT ranges correspond to our usual RP gradient for lipidomics 
+# on this platform (Agilent LC-DTIMS-MS)
+# key is the lm_id_prefix (reflects lipid category, class, and sub-class)
+# value is [rt_min, rt_max] for the class
+LMFA0707: [0, 10]  # CAR
+LMGL0301: [28, 35]  # TG
+LMGL0201: [24, 29]  # DG
+LMSP0301: [16, 28]  # SM
+LMSP0201: [20, 30]  # Cer
+LMGP0101: [18, 26]  # PC
+LMGP0102: [21, 28]  # PC (O-)
+LMGP0103: [21, 28]  # PC (P-)
+LMGP0105: [5, 15]  # PC (lyso)
+LMGP0106: [5, 15]  # PC (lyso, O-)
+LMGP0107: [5, 15]  # PC (lyso, P-)
+LMGP0201: [23, 26]  # PE
+LMGP0202: [23, 26]  # PE (O-)
+LMGP0203: [23, 26]  # PE (P-)
+LMGP0205: [5, 15]  # PE (lyso)
+LMGP0206: [5, 15]  # PE (lyso, O-)
+LMGP0207: [5, 15]  # PE (lyso, P-)
+LMST0102: [30, 35]  # CE
+

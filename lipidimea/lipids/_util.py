@@ -250,17 +250,3 @@ def get_c_u_combos(lipid, min_c, max_c, odd_c):
     for c, u in fas:
         yield c, u
 
-
-def _create_sum_comp_db(file, iteration_params):
-    """
-    Creates a SQLite database with lipid ids at the level of sum composition
-    uses enumeration over lipid class, FA composition, and MS adduct to produce database
-    
-    Parameters
-    ----------
-    file : ``str``
-        filename to save the database under
-    iteration_params : ``dict(...)``
-        parameters for iterating over lipid classes, map lipid class name to list of adducts and FA compositions
-    """
-

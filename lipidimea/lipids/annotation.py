@@ -15,8 +15,10 @@ from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
 import yaml
 
-from LipidIMEA.lipids import Lipid
+from LipidIMEA.lipids import Lipid, parse_lipid_name
 from LipidIMEA.util import debug_handler
+from LipidIMEA.lipids._fragmentation_rules import load_rules
+from LipidIMEA.lipids._util import get_c_u_combos
 
 
 class SumCompLipidDB():
@@ -317,7 +319,7 @@ def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params,
     params = params['annotation']['ann_rt_range']
     # ann_rtr_only_keep_defined_classes
     # load RT ranges
-    rtr_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/rt_ranges/default_HILIC.yml')
+    rtr_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/rt_ranges/default_RP.yml')
     lipid_class_rt_ranges = rtr_path if lipid_class_rt_ranges is None else lipid_class_rt_ranges
     with open(lipid_class_rt_ranges, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
@@ -344,3 +346,70 @@ def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params,
     con.commit()
     con.close()
     debug_handler(debug_flag, debug_cb, 'FILTERED: {} / {} annotations based on lipid class RT ranges'.format(len(anns_to_del), n_anns))
+
+
+def update_lipid_ids_with_frag_rules(results_db,
+                                     debug_flag=None, debug_cb=None):
+    """
+    update lipid annotations
+
+    Parameters
+    ----------
+    results_db : ``srt``
+        path to DDA-DIA analysis results database
+    debug_flag : ``str``, optional
+        specifies how to dispatch debugging messages, None to do nothing
+    debug_cb : ``func``, optional
+        callback function that takes the debugging message as an argument, can be None if
+        debug_flag is not set to 'textcb' or 'textcb_pid'
+    """
+    debug_handler(debug_flag, debug_cb, 'UPDATING LIPID ANNOTATIONS USING FRAGMENTATION RULES ...')
+    # connect to  results database
+    con = connect(results_db) 
+    cur = con.cursor()
+    n_anns = cur.execute('SELECT COUNT(*) FROM Lipids;').fetchall()[0][0]
+    # iterate through annotations, see if there are annotatable fragments
+    # only select out the annotations that have NULL fragments
+    qry_sel1 = ('SELECT ann_id, lmaps_id_prefix, lipid, mz, dia_feat_id FROM Lipids '
+                'JOIN _DIAFeatures USING(dia_feat_id) JOIN DDAFeatures USING(dda_feat_id) '
+                'WHERE fragments IS NULL;')
+    n_updt = 0
+    qry_upd = 'UPDATE Lipids SET fragments=? WHERE ann_id=?;'
+    for ann_id, lmid_prefix, lipid_name, pmz, dia_feat_id in cur.execute(qry_sel1).fetchall():
+        print(ann_id, lmid_prefix, lipid_name, dia_feat_id)
+        # get fragment m/zs
+        qry_sel2 = 'SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags USING(decon_frag_id) WHERE dia_feat_id=?'
+        res = cur.execute(qry_sel2, (dia_feat_id,)).fetchall()
+        fmzs = []
+        if res is not None:
+            fmzs = [_[0] for _ in res]
+        for fmz in fmzs:
+            print('\tfragment:', fmz)
+        if fmzs != []:
+            fragments_str = ''
+            new_names = set()
+            # load fragmentation rules
+            lipid = parse_lipid_name(lipid_name)
+            rules = load_rules(lipid.lipid_class_abbrev, 'POS')
+            c_u_combos = [_ for _ in get_c_u_combos(lipid, 12, 24, False)]
+            for rule in rules:
+                if rule.static:
+                    print('\trule:', rule.label(), rule.mz(pmz))
+                    rmz = rule.mz(pmz)
+                    for fmz in fmzs:
+                        if abs(rmz - fmz) <= 0.025:
+                            fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
+                else:
+                    for c, u in sorted(c_u_combos):
+                        print('\trule:', rule.label(c, u), rule.mz(pmz, c, u))
+                        rmz = rule.mz(pmz, c, u)
+                        for fmz in fmzs:
+                            if abs(rmz - fmz) <= 0.025:
+                                fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
+                                # TODO (Dylan Ross): need some logic here to figure out new names
+            if fragments_str != '':
+                cur.execute(qry_upd, (fragments_str, ann_id))
+    # clean up
+    con.commit()
+    con.close()
+    debug_handler(debug_flag, debug_cb, 'UPDATED: {} / {} annotations using fragmentation rules'.format(n_updt, n_anns))

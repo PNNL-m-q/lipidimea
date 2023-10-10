@@ -2,33 +2,33 @@
 CAR: 
   fa_mod: [null]
   n_chains: [1]
-  adducts: ["[M+H]+", "[M+Na]+"]
+  adducts: ["[M+H]+"]
 PC:
   fa_mod: [null, P-, O-]
   n_chains: [1, 2]
-  adducts: ["[M+H]+", "[M+Na]+"]
+  adducts: ["[M+H]+"]
 PE:
   fa_mod: [null, P-, O-]
   n_chains: [1, 2]
-  adducts: ["[M+H]+", "[M+Na]+"]
+  adducts: ["[M+H]+"]
 DG:
   fa_mod: [null]
   n_chains: [2]
-  adducts: ["[M+Na]+", "[M+NH4]+"]
+  adducts: ["[M+NH4]+"]
 TG:
   fa_mod: [null]
   n_chains: [3]
-  adducts: ["[M+Na]+", "[M+NH4]+"]
+  adducts: ["[M+NH4]+"]
 Cer:
   fa_mod: [d]
   n_chains: [2]
-  adducts: ["[M+H]+", "[M+Na]+"]
+  adducts: ["[M+H-H2O]+"]
 SM:
   fa_mod: [d]
   n_chains: [2]
-  adducts: ["[M+H]+", "[M+Na]+"]
+  adducts: ["[M+H]+"]
 CE:
   fa_mod: [null]
   n_chains: [1]
-  adducts: ["[M+Na]+", "[M+NH4]+"]
+  adducts: ["[M+NH4]+"]
   
