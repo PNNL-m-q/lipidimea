@@ -1,0 +1,15 @@
+classification:
+    - Glycerophospholipids
+    - Glycerophosphocholines
+    - Monoalkylglycerophosphocholines
+class_abbrev: PC
+fa_mod: O-
+formula:
+    C: c + 8
+    H: 2 * (c + 10 - u)
+    O: 6
+    N: 1
+    P: 1
+n_chains: 1
+n_chains_full: 2
+other_props: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

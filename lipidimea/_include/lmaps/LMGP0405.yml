@@ -1,0 +1,14 @@
+classification:
+    - Glycerophospholipids
+    - Glycerophosphoglycerols
+    - Monoacylglycerophosphoglycerols
+class_abbrev: PG
+fa_mod: NULL
+formula:
+    C: c + 6
+    H: 2 * c + 13 - 2 * u
+    O: 9
+    P: 1
+n_chains: 1
+n_chains_full: 2
+other_props: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

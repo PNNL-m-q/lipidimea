@@ -16,7 +16,7 @@ from mzapy.isotopes import monoiso_mass
 # lipid classes with fragmentation rules defined
 _FRAG_RULE_CLASSES = [
     'CE', 
-    'Cer', 'GlcCer', 'LacCer' 
+    'Cer', 'GlcCer', 'LacCer',
     'PC', 'PE', 'PG', 'PS', 
     'SM', 
     'TG'

@@ -1,0 +1,15 @@
+classification:
+    - Glycerophospholipids
+    - Glycerophosphoserines
+    - Monoalkylglycerophosphoserines
+class_abbrev: PS
+fa_mod: O-
+formula:
+    C: c + 6
+    H: 2 * (c + 7 - u)
+    O: 8
+    N: 1
+    P: 1
+n_chains: 1
+n_chains_full: 2
+other_props: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

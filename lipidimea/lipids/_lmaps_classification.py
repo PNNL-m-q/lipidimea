@@ -435,7 +435,7 @@ LMAPS_CLASSIFICATION = {
                     'C': lambda c: c + 6,
                     'H': lambda c, u: 2 * (c + 6 - u),
                     'N': 1,
-                    'O': 8,
+                    'O': 9,
                     'S': 0,
                     'P': 1,
                 },
@@ -467,7 +467,7 @@ LMAPS_CLASSIFICATION = {
                     'C': lambda c: c + 6,
                     'H': lambda c, u: 2 * (c + 5 - u),
                     'N': 1,
-                    'O': 9,
+                    'O': 8,
                     'S': 0,
                     'P': 1,
                 },
@@ -905,7 +905,7 @@ LMAPS_CLASSIFICATION = {
         'Neutral Glycosphingolipids': {
             'Simple Glc Series (HexCer)': {
                 'lm_id_prefix': 'LMSP0501AA',
-                'class_abbrev': 'GlcCer',
+                'class_abbrev': 'HexCer',
                 'fa_mod': 'd',
                 'formula' : {
                     'C': lambda c: c + 6,
@@ -921,7 +921,7 @@ LMAPS_CLASSIFICATION = {
             },
             'Simple Glc Series (Hex2Cer)': {
                 'lm_id_prefix': 'LMSP0501AB',
-                'class_abbrev': 'LacCer',
+                'class_abbrev': 'Hex2Cer',
                 'fa_mod': 'd',
                 'formula' : {
                     'C': lambda c: c + 12,

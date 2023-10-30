@@ -1,0 +1,13 @@
+classification:
+    - Sterol Lipids
+    - Sterols
+    - Sterol esters
+class_abbrev: CE
+fa_mod: NULL
+formula:
+    C: c + 27
+    H: 2 * c + 44 - 2 * u
+    O: 2
+n_chains: 1
+n_chains_full: 1
+other_props: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

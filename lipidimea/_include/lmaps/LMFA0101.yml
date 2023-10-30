@@ -1,0 +1,13 @@
+classification:
+    - Fatty Acyls
+    - Fatty Acids and Conjugates
+    - Straight chain fatty acids
+class_abbrev: FA
+fa_mod: NULL
+formula:
+    C: c
+    H: 2 * c
+    O: 2
+n_chains: 1
+n_chains_full: 1
+other_props: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
