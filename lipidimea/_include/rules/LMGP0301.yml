@@ -1,0 +1,68 @@
+# fragmentation rules for PS lipid class
+POS:
+    -
+        label: M-C3H8NO6P
+        diagnostic: true
+        neutral_loss: true
+        rule:
+            C: 3
+            H: 8
+            O: 6
+            N: 1
+            P: 1
+    - 
+        label: LPA({c}:{u})-H
+        static: false
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 6
+            O: 7
+            P: 1
+    - 
+        label: LPA({c}:{u})-H2O-H
+        static: false
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 4
+            O: 6
+            P: 1
+NEG:
+    - 
+        label: M-C3H5O2N
+        diagnostic: true
+        neutral_loss: true
+        rule:
+            C: 3
+            H: 5
+            O: 2
+            N: 1
+    -
+        label: C3H6O5P
+        rule: 
+            C: 3
+            H: 6
+            O: 5
+            P: 1
+    -
+        label: C3H8O6P
+        rule:
+            C: 3
+            H: 8
+            O: 6
+            P: 1
+    - 
+        label: LPA({c}:{u})-H
+        static: false
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 6
+            O: 7
+            P: 1
+    - 
+        label: LPA({c}:{u})-H2O-H
+        static: false
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 4
+            O: 6
+            P: 1

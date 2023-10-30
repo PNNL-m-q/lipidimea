@@ -1,77 +1,75 @@
 # fragmentation rules applicable to any lipid class
-lipid_class: any
-ionization:
-    POS:
-        -
-            label: M-H2O
-            neutral_loss: true
-            rule:
-                H: 2
-                O: 1
-        -
-            label: FA({c}:{u})
-            static: false
-            rule:
-                C: c
-                H: 2 * c - 2 * u - 1
-                O: 1
-        -
-            label: RCOO+58({c}:{u})
-            static: false
-            rule:
-                C: c + 3
-                H: 2 * c - 2 * u + 5
-                O: 3
-        -
-            label: RCOO+58-H2O({c}:{u})
-            static: false
-            rule:
-                C: c + 3
-                H: 2 * c - 2 * u + 3
-                O: 2
-        -
-            label: M-ketene({c}:{u})
-            neutral_loss: true
-            static: false
-            rule:
-                C: c 
-                H: 2 * c - 2 * u - 2
-                O: 1
-        -
-            label: M-FA({c}:{u})
-            neutral_loss: true
-            static: false
-            rule:
-                C: c 
-                H: 2 * c - 2 * u - 2
-                O: 2
-    NEG: 
-        - 
-            label: FA({c}:{u})
-            static: false
-            rule:
-                C: c
-                H: 2 * c - 2 * u - 1
-                O: 2
-        - 
-            label: FA-CO2({c}:{u})
-            static: false
-            rule:
-                C: c - 1
-                H: 2 * c - 2 * u - 1
-        -
-            label: M-ketene({c}:{u})
-            neutral_loss: true
-            static: false
-            rule:
-                C: c 
-                H: 2 * c - 2 * u - 2
-                O: 1
-        -
-            label: M-FA({c}:{u})
-            neutral_loss: true
-            static: false
-            rule:
-                C: c 
-                H: 2 * c - 2 * u - 2
-                O: 2
+POS:
+    -
+        label: M-H2O
+        neutral_loss: true
+        rule:
+            H: 2
+            O: 1
+    -
+        label: FA({c}:{u})
+        static: false
+        rule:
+            C: c
+            H: 2 * c - 2 * u - 1
+            O: 1
+    -
+        label: RCOO+58({c}:{u})
+        static: false
+        rule:
+            C: c + 3
+            H: 2 * c - 2 * u + 5
+            O: 3
+    -
+        label: RCOO+58-H2O({c}:{u})
+        static: false
+        rule:
+            C: c + 3
+            H: 2 * c - 2 * u + 3
+            O: 2
+    -
+        label: M-ketene({c}:{u})
+        neutral_loss: true
+        static: false
+        rule:
+            C: c 
+            H: 2 * c - 2 * u - 2
+            O: 1
+    -
+        label: M-FA({c}:{u})
+        neutral_loss: true
+        static: false
+        rule:
+            C: c 
+            H: 2 * c - 2 * u - 2
+            O: 2
+NEG: 
+    - 
+        label: FA({c}:{u})
+        static: false
+        rule:
+            C: c
+            H: 2 * c - 2 * u - 1
+            O: 2
+    - 
+        label: FA-CO2({c}:{u})
+        static: false
+        rule:
+            C: c - 1
+            H: 2 * c - 2 * u - 1
+    -
+        label: M-ketene({c}:{u})
+        neutral_loss: true
+        static: false
+        rule:
+            C: c 
+            H: 2 * c - 2 * u - 2
+            O: 1
+    -
+        label: M-FA({c}:{u})
+        neutral_loss: true
+        static: false
+        rule:
+            C: c 
+            H: 2 * c - 2 * u - 2
+            O: 2
