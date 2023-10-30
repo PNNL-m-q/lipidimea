@@ -1,0 +1,11 @@
+# fragmentation rules for CE lipid class
+lipid_class: CE
+ionization:
+    POS:
+        -
+            label: C27H45
+            diagnostic: true
+            rule:
+                C: 27
+                H: 45
+                

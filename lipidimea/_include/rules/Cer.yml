@@ -1,4 +1,4 @@
-# fragmentation rules for PE lipid class
+# fragmentation rules for Cer lipid class
 lipid_class: Cer
 ionization:
     POS:

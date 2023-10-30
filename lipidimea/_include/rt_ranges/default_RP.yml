@@ -7,6 +7,8 @@ LMGL0301: [28, 35]  # TG
 LMGL0201: [24, 29]  # DG
 LMSP0301: [16, 28]  # SM
 LMSP0201: [20, 30]  # Cer
+LMSP0501AA: [19, 29]  # GlcCer
+LMSP0501AB: [20, 27]  # LacCer
 LMGP0101: [18, 26]  # PC
 LMGP0102: [21, 28]  # PC (O-)
 LMGP0103: [21, 28]  # PC (P-)

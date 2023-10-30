@@ -904,7 +904,7 @@ LMAPS_CLASSIFICATION = {
         },
         'Neutral Glycosphingolipids': {
             'Simple Glc Series (HexCer)': {
-                'lm_id_prefix': 'LMSP0501',
+                'lm_id_prefix': 'LMSP0501AA',
                 'class_abbrev': 'GlcCer',
                 'fa_mod': 'd',
                 'formula' : {
@@ -920,7 +920,7 @@ LMAPS_CLASSIFICATION = {
                 'other_props': [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
             },
             'Simple Glc Series (Hex2Cer)': {
-                'lm_id_prefix': 'LMSP0501',
+                'lm_id_prefix': 'LMSP0501AB',
                 'class_abbrev': 'LacCer',
                 'fa_mod': 'd',
                 'formula' : {
