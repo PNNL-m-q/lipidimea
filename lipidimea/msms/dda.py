@@ -50,7 +50,7 @@ class _MSMSReaderDDA():
         minimum/maximum retention time
     """
 
-    def __init__(self, mza_file):
+    def __init__(self, mza_file, drop_scans):
         """
         initialize the reader
     
@@ -58,6 +58,8 @@ class _MSMSReaderDDA():
         ----------
         mza_file : ``str``
             path to MZA file
+        drop_scans : ``list(int)``
+            list of scans to drop from the file, can be None if there are not any to drop
         """
         self.h5 = h5py.File(mza_file, 'r')
         self.f = mza_file
@@ -66,6 +68,11 @@ class _MSMSReaderDDA():
         self.arrays_mz.index = self.arrays_mz.index.astype('int64')
         self.arrays_i = pd.DataFrame(self.h5['Arrays_intensity'].items(), columns=['Scan', 'Data']).set_index('Scan')
         self.arrays_i.index = self.arrays_i.index.astype('int64')
+        if drop_scans is not None:
+            print('dropping scans:', drop_scans)
+            self.metadata.drop(drop_scans, inplace=True)
+            self.arrays_mz.drop(drop_scans, inplace=True)
+            self.arrays_i.drop(drop_scans, inplace=True)
         self.ms1_scans = self.metadata[self.metadata['PrecursorScan'] == 0].index.to_numpy()
         self.ms2_scans = self.metadata[self.metadata['PrecursorScan'] != 0].index.to_numpy()
         rt = self.metadata[self.metadata['PrecursorScan'] == 0].loc[:, 'RetentionTime'].to_numpy()
@@ -191,7 +198,7 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
     This takes up too much memory when there are multiple processes...
     """
 
-    def __init__(self, mza_file):
+    def __init__(self, mza_file, drop_scans):
         """
         initialize the reader
     
@@ -199,8 +206,10 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
         ----------
         mza_file : ``str``
             path to MZA file
+        drop_scans : ``list(int)``
+            list of scans to drop from the file, can be None if there are not any to drop
         """
-        super().__init__(mza_file)
+        super().__init__(mza_file, drop_scans)
         self.arrays_mz_cached = {}
         self.arrays_i_cached = {}
         for scan in self.ms1_scans:
@@ -438,7 +447,7 @@ def _add_features_to_db(cur, qdata, debug_flag, debug_cb):
 
 
 def extract_dda_features(dda_data_file, results_db, params, 
-                         cache_ms1=True, debug_flag=None, debug_cb=None):
+                         cache_ms1=True, debug_flag=None, debug_cb=None, drop_scans=None):
     """
     Extract features from a raw DDA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
 
@@ -468,7 +477,7 @@ def extract_dda_features(dda_data_file, results_db, params,
     debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
     debug_handler(debug_flag, debug_cb, 'file: {}'.format(dda_data_file), pid)
     # initialize the MSMS reader
-    rdr = _MSMSReaderDDA_Cached(dda_data_file) if cache_ms1 else _MSMSReaderDDA(dda_data_file)
+    rdr = _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 else _MSMSReaderDDA(dda_data_file, drop_scans)
     # get the list of precursor m/zs
     pre_mzs = rdr.get_pre_mzs()
     debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
