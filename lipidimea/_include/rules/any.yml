@@ -9,6 +9,7 @@ POS:
     -
         label: FA({c}:{u})
         static: false
+        n_chains: 1
         rule:
             C: c
             H: 2 * c - 2 * u - 1
@@ -16,6 +17,7 @@ POS:
     -
         label: RCOO({c}:{u})+58
         static: false
+        n_chains: 1
         rule:
             C: c + 3
             H: 2 * c - 2 * u + 5
@@ -23,6 +25,7 @@ POS:
     -
         label: RCOO({c}:{u})+58-H2O
         static: false
+        n_chains: 1
         rule:
             C: c + 3
             H: 2 * c - 2 * u + 3
@@ -31,6 +34,7 @@ POS:
         label: M-ketene({c}:{u})
         neutral_loss: true
         static: false
+        n_chains: 1
         rule:
             C: c 
             H: 2 * c - 2 * u - 2
@@ -39,6 +43,7 @@ POS:
         label: M-FA({c}:{u})
         neutral_loss: true
         static: false
+        n_chains: 1
         rule:
             C: c 
             H: 2 * c - 2 * u - 2
@@ -47,6 +52,7 @@ NEG:
     - 
         label: FA({c}:{u})
         static: false
+        n_chains: 1
         rule:
             C: c
             H: 2 * c - 2 * u - 1
@@ -54,6 +60,7 @@ NEG:
     - 
         label: FA({c}:{u})-CO2
         static: false
+        n_chains: 1
         rule:
             C: c - 1
             H: 2 * c - 2 * u - 1
@@ -61,6 +68,7 @@ NEG:
         label: M-ketene({c}:{u})
         neutral_loss: true
         static: false
+        n_chains: 1
         rule:
             C: c 
             H: 2 * c - 2 * u - 2
@@ -69,6 +77,7 @@ NEG:
         label: M-FA({c}:{u})
         neutral_loss: true
         static: false
+        n_chains: 1
         rule:
             C: c 
             H: 2 * c - 2 * u - 2

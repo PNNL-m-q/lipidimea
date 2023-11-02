@@ -39,6 +39,7 @@ POS:
     -
         label: FA({c}:{u})_long
         static: false
+        n_chains: 1
         rule:
             C: c + 2
             H: 2 * c - 2 * u + 2
@@ -47,6 +48,7 @@ POS:
     -
         label: FA({c}:{u})_short
         static: false
+        n_chains: 1
         rule:
             C: c 
             H: 2 * c - 2 * u + 2

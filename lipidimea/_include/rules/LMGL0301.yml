@@ -17,6 +17,7 @@ POS:
         label: M-RCOOH-NH3({c}:{u})
         neutral_loss: true
         static: false
+        n_chains: 1
         rule:
             C: c
             H: 2 * c - 2 * u + 3

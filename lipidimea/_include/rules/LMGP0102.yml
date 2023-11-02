@@ -72,6 +72,7 @@ POS:
     - 
         label: LPA(O-{c}:{u})
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 8
@@ -80,6 +81,7 @@ POS:
     - 
         label: LPA(O-{c}:{u})-H2O
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 6
@@ -88,6 +90,7 @@ POS:
     - 
         label: LPC(O-{c}:{u})
         static: false
+        n_chains: 1
         rule: 
             C: c + 8
             H: 2 * c - 2 * u + 21
@@ -97,6 +100,7 @@ POS:
     - 
         label: LPC(O-{c}:{u})-H2O
         static: false
+        n_chains: 1
         rule: 
             C: c + 8
             H: 2 * c - 2 * u + 9
@@ -131,6 +135,7 @@ POS:
     -
         label: RCO({c}:{u})+58
         static: false
+        n_chains: 1
         rule:
             C: c + 3
             H: 2 * c - 2 * u + 7
@@ -138,6 +143,7 @@ POS:
     -
         label: RCO({c}:{u})+58-H2O
         static: false
+        n_chains: 1
         rule:
             C: c + 3
             H: 2 * c - 2 * u + 5
@@ -145,6 +151,7 @@ POS:
     -
         label: RCO({c}:{u})+58-O
         static: false
+        n_chains: 1
         rule:
             C: c + 3
             H: 2 * c - 2 * u + 7
@@ -152,6 +159,7 @@ POS:
     -
         label: RCO({c}:{u})-2H
         static: false
+        n_chains: 1
         rule:
             C: c 
             H: 2 * c - 2 * u + 1
@@ -159,6 +167,7 @@ POS:
     -
         label: RCO({c}:{u})-H2O
         static: false
+        n_chains: 1
         rule:
             C: c 
             H: 2 * c - 2 * u + 1
@@ -166,6 +175,7 @@ POS:
         label: M-ketene({c}:{u})-59
         neutral_loss: true
         static: false
+        n_chains: 1
         rule:
             C: c + 5
             H: 2 * (c - u + 6)
@@ -175,6 +185,7 @@ POS:
         label: M-ether({c}:{u})-59
         neutral_loss: true
         static: false
+        n_chains: 1
         rule:
             C: c + 5
             H: 2 * (c - u + 5)

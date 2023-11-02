@@ -72,6 +72,7 @@ POS:
     - 
         label: LPA({c}:{u})-H
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 6
@@ -80,6 +81,7 @@ POS:
     - 
         label: LPA({c}:{u})-H2O-H
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 4

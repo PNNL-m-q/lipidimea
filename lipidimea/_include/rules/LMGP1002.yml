@@ -28,6 +28,7 @@ NEG:
     - 
         label: LPA(O-{c}:{u})
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 8
@@ -36,6 +37,7 @@ NEG:
     - 
         label: LPA(O-{c}:{u})-H2O
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 6

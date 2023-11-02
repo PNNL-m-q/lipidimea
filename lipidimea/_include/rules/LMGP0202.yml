@@ -13,6 +13,7 @@ POS:
     - 
         label: LPA(O-{c}:{u})
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 8
@@ -21,6 +22,7 @@ POS:
     - 
         label: LPA(O-{c}:{u})-H2O
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 6
@@ -29,6 +31,7 @@ POS:
     -
         label: ether({c}:{u})
         static: false
+        n_chains: 1
         rule:
             C: c + 2
             H: 2 * c - 2 * u + 9
@@ -38,6 +41,7 @@ POS:
     -
         label: ether({c}:{u})-H2O
         static: false
+        n_chains: 1
         rule:
             C: c + 2
             H: 2 * c - 2 * u + 7
@@ -88,6 +92,7 @@ NEG:
     - 
         label: LPA(O-{c}:{u})
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 8
@@ -96,6 +101,7 @@ NEG:
     - 
         label: LPA(O-{c}:{u})-H2O
         static: false
+        n_chains: 1
         rule: 
             C: c + 3
             H: 2 * c - 2 * u + 6
@@ -104,6 +110,7 @@ NEG:
     - 
         label: LPE(O-{c}:{u})
         static: false
+        n_chains: 1
         rule: 
             C: c + 5
             H: 2 * c - 2 * u + 13
@@ -113,6 +120,7 @@ NEG:
     - 
         label: LPE(O-{c}:{u})-H2O
         static: false
+        n_chains: 1
         rule: 
             C: c + 5
             H: 2 * c - 2 * u + 11
