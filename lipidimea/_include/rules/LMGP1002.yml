@@ -1,0 +1,43 @@
+# fragmentation rules for PA(O-) lipid class
+NEG:
+    -
+        label: C3H6O5P
+        rule:
+            C: 3
+            H: 6
+            O: 5
+            P: 1
+    -
+        label: PO4H2
+        rule:
+            H: 2
+            O: 4
+            P: 1
+    -
+        label: PO3
+        rule:
+            O: 3
+            P: 1
+    - 
+        label: C3H8O6P
+        rule:
+            C: 3
+            H: 8
+            O: 6
+            P: 1
+    - 
+        label: LPA(O-{c}:{u})
+        static: false
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 8
+            O: 6
+            P: 1
+    - 
+        label: LPA(O-{c}:{u})-H2O
+        static: false
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 6
+            O: 5
+            P: 1

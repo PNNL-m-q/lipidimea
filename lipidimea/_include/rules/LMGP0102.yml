@@ -99,7 +99,7 @@ POS:
         static: false
         rule: 
             C: c + 8
-            H: 2 * c - 2 * u + `9
+            H: 2 * c - 2 * u + 9
             O: 5
             N: 1
             P: 1
