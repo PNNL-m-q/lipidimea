@@ -1,0 +1,13 @@
+classification:
+    - Glycerolipids
+    - Triradylglycerols
+    - Triacylglycerols
+class_abbrev: TG
+fa_mod: O-
+formula:
+    C: c + 3
+    H: 2 * (c + 2 - u)
+    O: 5
+n_chains: 3
+n_chains_full: 3
+other_props: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

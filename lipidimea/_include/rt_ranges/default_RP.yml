@@ -4,6 +4,7 @@
 # value is [rt_min, rt_max] for the class
 LMFA0707: [0, 10]  # CAR
 LMGL0301: [28, 35]  # TG
+LMGL0302: [28, 35]  # TG (O-)
 LMGL0201: [24, 29]  # DG
 LMSP0301: [16, 28]  # SM
 LMSP0201: [20, 30]  # Cer

@@ -14,14 +14,14 @@ POS:
             H: 2 * c - 2 * u - 1
             O: 1
     -
-        label: RCOO+58({c}:{u})
+        label: RCOO({c}:{u})+58
         static: false
         rule:
             C: c + 3
             H: 2 * c - 2 * u + 5
             O: 3
     -
-        label: RCOO+58-H2O({c}:{u})
+        label: RCOO({c}:{u})+58-H2O
         static: false
         rule:
             C: c + 3
@@ -52,7 +52,7 @@ NEG:
             H: 2 * c - 2 * u - 1
             O: 2
     - 
-        label: FA-CO2({c}:{u})
+        label: FA({c}:{u})-CO2
         static: false
         rule:
             C: c - 1

@@ -1,4 +1,4 @@
-# fragmentation rules for PC(O-) lipid class 
+# fragmentation rules for PC(P-) lipid class 
 POS:
     -
         label: C5H15O4NP
@@ -70,36 +70,36 @@ POS:
             P: 1
             K: 1
     - 
-        label: LPA(O-{c}:{u})
+        label: LPA(P-{c}:{u})
         static: false
         rule: 
             C: c + 3
-            H: 2 * c - 2 * u + 8
+            H: 2 * (c - u + 3)
             O: 6
             P: 1
     - 
-        label: LPA(O-{c}:{u})-H2O
+        label: LPA(P-{c}:{u})-H2O
         static: false
         rule: 
             C: c + 3
-            H: 2 * c - 2 * u + 6
+            H: 2 * (c - u + 2)
             O: 5
             P: 1
     - 
-        label: LPC(O-{c}:{u})
+        label: LPC(P-{c}:{u})
         static: false
         rule: 
             C: c + 8
-            H: 2 * c - 2 * u + 21
+            H: 2 * (c - u + 9)
             O: 6
             N: 1
             P: 1
     - 
-        label: LPC(O-{c}:{u})-H2O
+        label: LPC(P-{c}:{u})-H2O
         static: false
         rule: 
             C: c + 8
-            H: 2 * c - 2 * u + `9
+            H: 2 * (c - u + 8)
             O: 5
             N: 1
             P: 1
@@ -129,40 +129,6 @@ POS:
             H: 9
             N: 1
     -
-        label: RCO({c}:{u})+58
-        static: false
-        rule:
-            C: c + 3
-            H: 2 * c - 2 * u + 7
-            O: 2
-    -
-        label: RCO({c}:{u})+58-H2O
-        static: false
-        rule:
-            C: c + 3
-            H: 2 * c - 2 * u + 5
-            O: 1
-    -
-        label: RCO({c}:{u})+58-O
-        static: false
-        rule:
-            C: c + 3
-            H: 2 * c - 2 * u + 7
-            O: 1
-    -
-        label: RCO({c}:{u})-2H
-        static: false
-        rule:
-            C: c 
-            H: 2 * c - 2 * u + 1
-            O: 1
-    -
-        label: RCO({c}:{u})-H2O
-        static: false
-        rule:
-            C: c 
-            H: 2 * c - 2 * u + 1
-    -
         label: M-ketene({c}:{u})-59
         neutral_loss: true
         static: false
@@ -172,11 +138,19 @@ POS:
             O: 6
             P: 1
     -
-        label: M-ether({c}:{u})-59
+        label: M-ether({c}:{u})
         neutral_loss: true
         static: false
         rule:
-            C: c + 5
-            H: 2 * (c - u + 5)
-            O: 5
-            P: 1
+            C: c 
+            H: 2 * c - 2 * u
+            O: 1
+    -
+        label: M-ether({c}:{u})-C3H9N
+        neutral_loss: true
+        static: false
+        rule:
+            C: c + 3
+            H: 2 * c - 2 * u + 9
+            O: 1
+            N: 1
