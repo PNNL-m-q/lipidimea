@@ -10,4 +10,3 @@ formula:
     O: 10
 n_chains: 2
 n_chains_full: 2
-other_props: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

@@ -11,4 +11,3 @@ formula:
     P: 2
 n_chains: 4
 n_chains_full: 4
-other_props: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
