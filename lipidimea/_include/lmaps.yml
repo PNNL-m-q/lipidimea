@@ -47,6 +47,7 @@ LMGL0101:
         H: 2 * (c + 3 - u)
         O: 4
     n_chains: 1
+    n_chains_full: 3
 LMGL0201:
     classification:
         - Glycerolipids
@@ -59,6 +60,7 @@ LMGL0201:
         H: 2 * (c + 2 - u)
         O: 5
     n_chains: 2
+    n_chains_full: 3
 LMGL0301:
     classification:
         - Glycerolipids
@@ -163,6 +165,7 @@ LMGP0105:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0106:
     classification:
         - Glycerophospholipids
@@ -177,6 +180,7 @@ LMGP0106:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0107:
     classification:
         - Glycerophospholipids
@@ -191,6 +195,7 @@ LMGP0107:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0201:
     classification:
         - Glycerophospholipids
@@ -247,6 +252,7 @@ LMGP0205:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0206:
     classification:
         - Glycerophospholipids
@@ -261,6 +267,7 @@ LMGP0206:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0207:
     classification:
         - Glycerophospholipids
@@ -275,6 +282,7 @@ LMGP0207:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0301:
     classification:
         - Glycerophospholipids
@@ -331,6 +339,7 @@ LMGP0305:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0306:
     classification:
         - Glycerophospholipids
@@ -345,6 +354,7 @@ LMGP0306:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0307:
     classification:
         - Glycerophospholipids
@@ -359,6 +369,7 @@ LMGP0307:
         N: 1
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0401:
     classification:
         - Glycerophospholipids
@@ -411,6 +422,7 @@ LMGP0405:
         O: 9
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0406:
     classification:
         - Glycerophospholipids
@@ -424,6 +436,7 @@ LMGP0406:
         O: 8
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0407:
     classification:
         - Glycerophospholipids
@@ -437,6 +450,7 @@ LMGP0407:
         O: 8
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0601:
     classification:
         - Glycerophospholipids
@@ -489,6 +503,7 @@ LMGP0605:
         O: 12
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0606:
     classification:
         - Glycerophospholipids
@@ -502,6 +517,7 @@ LMGP0606:
         O: 11
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0607:
     classification:
         - Glycerophospholipids
@@ -515,6 +531,7 @@ LMGP0607:
         O: 11
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP0701:
     classification:
         - Glycerophospholipids
@@ -541,6 +558,7 @@ LMGP0705:
         O: 15
         P: 2
     n_chains: 1
+    n_chains_full: 2
 LMGP0801:
     classification:
         - Glycerophospholipids
@@ -619,6 +637,7 @@ LMGP1005:
         O: 7
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP1006:
     classification:
         - Glycerophospholipids
@@ -632,6 +651,7 @@ LMGP1006:
         O: 6
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP1007:
     classification:
         - Glycerophospholipids
@@ -645,6 +665,7 @@ LMGP1007:
         O: 6
         P: 1
     n_chains: 1
+    n_chains_full: 2
 LMGP1201:
     classification:
         - Glycerophospholipids

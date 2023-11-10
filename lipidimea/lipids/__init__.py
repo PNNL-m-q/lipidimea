@@ -8,11 +8,29 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import re
+from os import path as op
 
 from mzapy.isotopes import monoiso_mass
+import yaml
 
-from LipidIMEA.lipids._util import LIPID_NAME_REGEX, AcylChain
-from LipidIMEA.lipids._lmaps_classification import iterate_all_lipid_classifications
+from LipidIMEA.lipids._util import LIPID_NAME_REGEX
+
+
+# load the classifications from YAML file
+with open(op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/lmaps.yml'), 'r') as _yf:
+    LMAPS = yaml.safe_load(_yf)
+
+
+def _get_lmid_prefix(lipid_class_abbrev, fa_mod, n_chains):
+    """
+    fetch specific lipid class info (using LMAPS ID prefix) based on
+    lipid class abbreviation, fatty acid modifier, and number of chains
+    """
+    for lmid_prefix, data in LMAPS.items():
+        if data['class_abbrev'] == lipid_class_abbrev and data['fa_mod'] == fa_mod and data['n_chains'] == n_chains:
+            return lmid_prefix
+    msg = '_get_lmid_prefix: cannot find lmid prefix for lipid class abbrev: {}, fa_mod: {}, n_chains: {}'
+    raise ValueError(msg.format(lipid_class_abbrev, fa_mod, n_chains))
 
 
 def parse_lipid_name(name):
@@ -39,20 +57,21 @@ def parse_lipid_name(name):
     parsed = mat.groupdict()
     # pull the info out
     lipid_class_abbrev = parsed['lcl']
-    fa_mod = parsed['fam'] if parsed['fam'] is not None else ''
+    fa_mod = parsed['fam']  # if parsed['fam'] is not None else ''
     if parsed['sn'] is None:
         # only one composition element was provided, could by monoacyl species or sum composition
         fa_carbon = int(parsed['fac_1']) 
         fa_unsat = int(parsed['fau_1'])
-        # check for LPC, LPE... change to PC, PE, ... with 0:0 chain
-        if lipid_class_abbrev in ['LPC', 'LPE', 'LPS', 'LPG', 'LPI', 'LPIP', 'LPA']:
-            lipid_class_abbrev = lipid_class_abbrev[1:]
-            return LipidWithChains(lipid_class_abbrev, (fa_carbon, 0), (fa_unsat, 0), fa_mod=fa_mod)
-        # check for monoacyl lipids (not lyso- lipids) which can be upgraded to LipidWithChains
-        lpd = Lipid(lipid_class_abbrev, fa_carbon, fa_unsat, fa_mod=fa_mod)
-        if lpd.n_chains == 1:
+        # determine the most likely number of chains just based on FA carbon number
+        # 1-24 = 1, 25-48 = 2, 49-72 = 3, 73+ = 4
+        # which is just (c - 1) // 24 + 1
+        n_chains_guess = (fa_carbon - 1) // 24 + 1
+        lmid_prefix = _get_lmid_prefix(lipid_class_abbrev, parsed['fam'], n_chains_guess)
+        lpd = Lipid(lmid_prefix, fa_carbon, fa_unsat)
+        # check for monoacyl lipids which can be upgraded to LipidWithChains
+        if lpd.n_chains == 1 and lpd.n_chains_full == 1:
             # check for db positions/stereo
-            return LipidWithChains(lipid_class_abbrev, (fa_carbon,), (fa_unsat,), fa_mod=fa_mod)
+            return LipidWithChains(lmid_prefix, (fa_carbon,), (fa_unsat,))
         else:
             # FA1 is the sum composition, use Lipid
             return lpd
@@ -71,9 +90,11 @@ def parse_lipid_name(name):
             else:
                 pos_and_stereo.append('')
         if not pos_specified:
+            n_chains = len([_ for _ in fa_carbon_chains if _ > 0])
+            lmid_prefix = _get_lmid_prefix(lipid_class_abbrev, parsed['fam'], n_chains)
             # no positions or sterochem specified
-            return LipidWithChains(lipid_class_abbrev, fa_carbon_chains, fa_unsat_chains, 
-                                   fa_mod=fa_mod, sn_pos_is_known=sn_is_known)
+            return LipidWithChains(lmid_prefix, fa_carbon_chains, fa_unsat_chains, sn_pos_is_known=sn_is_known)
+        raise RuntimeError('not ready to handle double bond positions or stereochem yet')
         stereo_specified = False
         fa_unsat_pos, fa_unsat_stereo = [], []
         for ps in pos_and_stereo:
@@ -128,51 +149,24 @@ class Lipid():
         acyl/alkyl chain count
     n_chains_full : ``int``
         count of total available acyl/alkyl chain positions available, useful to discern lyso- lipids
-    ionization : ``str``
-        ionization mode(s) this lipid would be expected to be detected in ('pos', 'neg', or 'both')
-    contains_ether : ``bool``
-        lipid contains ether
-    contains_diether : ``bool``
-        lipid contains diether
-    contains_plasmalogen : ``bool``
-        lipid is a plasmalogen (1Z-alkenyl)
-    contains_lcb : ``bool``
-        contains LCB
-    contains_lcbpoh : ``bool``
-        contains LCB + OH
-    contains_lcbmoh : ``bool``
-        contains LCB - OH
-    is_oxo_cho : ``bool``
-        is Oxo CHO
-    is_oxo_cooh : ``bool``
-        is Oxo COOH
-    num_oh : ``int``
-        number of OH groups
-    contains_ooh : ``bool``
-        contains OOH (hydroperoxyl)
-    contains_f2isop : ``bool``
-        contains F2IsoP
     """
 
-    def __init__(self, lipid_class_abbrev, fa_carbon, fa_unsat, fa_mod='', n_chains=None):
+    def __init__(self, lmid_prefix, fa_carbon, fa_unsat):
         """
-        inits a new instance of a Lipid object using lipid class, sum composition, and fatty acid modifier (if any)
+        inits a new instance of a Lipid object using LipidMAPS prefix (to specify lipid class)
+        and sum composition
 
         Parameters
         ----------
-        lipid_class_abbrev : ``str``
-            lipid class standard abbreviation from Lipid MAPS (e.g., PC, TG, ...)
+        lmid_prefix : ``str``
+            Lipid MAPS ID prefix denoting lipid classification
         fa_carbon : ``int``
             fatty acid carbon count (all acyl chains)
         fa_unsat : ``int``
             fatty acid unsaturation count (all acyl chains)
-        fa_mod : ``str``, default=''
-            fatty acid modifier, if any (indicates things like ether/plasmenyl lipids: O-, P-, d), '' otherwise
-        n_chains : ``int``, optional
-            if provided, specifies the number of acyl chains, used to identify lyso- lipids
-
         """
-        self.lipid_class_abbrev = lipid_class_abbrev
+        lipid_info = LMAPS[lmid_prefix]
+        self.lipid_class_abbrev = lipid_info['class_abbrev']
         # carbon count must be > 0 
         if fa_carbon <= 0 :
             msg = 'Lipid: __init__: fa_carbon must be > 0 (was: {})'
@@ -184,92 +178,21 @@ class Lipid():
             raise ValueError(msg.format(max_unsat, fa_unsat))
         self.fa_carbon = fa_carbon
         self.fa_unsat = fa_unsat
-        self.fa_mod = fa_mod
+        self.fa_mod = lipid_info['fa_mod'] if lipid_info['fa_mod'] is not None else ''
         # fetch classification information using lipid class abbrev and fa modifier
-        class_info, lipid_info = self._fetch_classification_info(n_chains)
-        self.lmaps_category, self.lmaps_class, self.lmaps_subclass = class_info
-        self.lmaps_id_prefix = lipid_info['lm_id_prefix']
+        self.lmaps_category, self.lmaps_class, self.lmaps_subclass = lipid_info['classification']
+        self.lmaps_id_prefix = lmid_prefix
         # construct the molecular formula using FA composition and rules lipid_info
-        self.formula = self._construct_formula_from_rules(lipid_info)
+        self.formula = {}
+        for element, count in lipid_info['formula'].items():
+            if type(count) is int:
+                self.formula[element] = count
+            elif type(count) is str:
+                self.formula[element] = eval('lambda c, u: ' + count)(self.fa_carbon, self.fa_unsat)
         # get number of acyl chains and ionization
-        self.n_chains, self.n_chains_full, self.ionization = lipid_info['n_chains'], lipid_info['n_chains_full'], lipid_info['ionization']
-        # get "other_props"
-        self._unpack_other_props(lipid_info['other_props'])
-
-    def _fetch_classification_info(self, n_chains):
-        """
-        fetches LMAPS classification info corresponding to lipid class abbreviation and FA modifier
-
-        Parameters
-        ----------
-        n_chains : ``int``, optional
-            if provided, specifies the number of acyl chains, used to identify lyso- lipids
-
-        Returns
-        -------
-        class_info : ``tuple(str)``
-            LMAPS lipid classification info (category, class, subclass)
-        lipid_info : ``dict(...)``
-            lipid information (formula, ionization, acyl chain count)
-        """
-        # iterate through all of the classifications defined in LipidIMEA/_lmaps_classification.py
-        for class_info, lipid_info in iterate_all_lipid_classifications():
-            if self.lipid_class_abbrev == lipid_info['class_abbrev']:
-                if self.fa_mod == lipid_info['fa_mod']:
-                    if n_chains is None:
-                        return class_info, lipid_info
-                    elif n_chains == lipid_info['n_chains']:
-                        # account for difference between sat/unsat FAs
-                        return class_info, lipid_info
-        # if we reach this point no classification was found
-        msg = 'Lipid: _fetch_classification_info: LMAPS classification for lipid class "{}" with FA modifier "{}" not found'
-        raise ValueError(msg.format(self.lipid_class_abbrev, self.fa_mod))
-
-    def _construct_formula_from_rules(self, lipid_info):
-        """
-        uses the rules from lipid_info to construct a molecular formula using the FA composition
-
-        Parameters
-        ----------
-        lipid_info : ``dict(...)``
-            lipid information (formula, ionization, acyl chain count)
-
-        Returns
-        -------
-        formula : ``dict(str:int)``
-            molecular formula as a dictionary mapping elements (str) to their counts (int)
-        """
-        formula = {}
-        formula['C'] = int(lipid_info['formula']['C'](self.fa_carbon))
-        formula['H'] = int(lipid_info['formula']['H'](self.fa_carbon, self.fa_unsat))
-        formula['N'] = int(lipid_info['formula']['N'])
-        formula['O'] = int(lipid_info['formula']['O'])
-        formula['S'] = int(lipid_info['formula']['S'])
-        formula['P'] = int(lipid_info['formula']['P'])
-        return formula
-
-    def _unpack_other_props(self, other_props):
-        """
-        unpacks the "other_props" attribute of lipid_info into individual structural descriptors:
-            ContainsEther, ContainsDiether, ContainsPlasmalogen, ContainsLCB, ContainsLCB+OH, ContainsLCB-OH, IsOxoCHO, 
-            IsOxoCOOH, NumOH, ContainsOOH, ContainsF2IsoP
-        
-        Parameters
-        ----------
-        other_props : ``list(int)``
-            array of properties describing structural features
-        """
-        self.contains_ether = bool(other_props[0])
-        self.contains_diether = bool(other_props[1])
-        self.contains_plasmalogen = bool(other_props[2])
-        self.contains_lcb = bool(other_props[3])
-        self.contains_lcbpoh = bool(other_props[4])
-        self.contains_lcbmoh = bool(other_props[5])
-        self.is_oxo_cho = bool(other_props[6])
-        self.is_oxo_cooh = bool(other_props[7])
-        self.num_oh = other_props[8]
-        self.contains_ooh = bool(other_props[9])
-        self.contains_f2isop = bool(other_props[10])
+        self.n_chains = lipid_info['n_chains']
+        # n_chains_full is present in some lipid classes to indicate lyso- species
+        self.n_chains_full = lipid_info.get('n_chains_full', self.n_chains)
 
     def __repr__(self):
         s = '{}(lipid_class_abbrev="{}", fa_carbon={}, fa_unsat={}, fa_mod="{}", lmid_prefix="{}")'
@@ -301,8 +224,8 @@ class LipidWithChains(Lipid):
         indicates whether the sn position of the chains is known or ambiguous
     """
 
-    def __init__(self, lipid_class_abbrev, fa_carbon_chains, fa_unsat_chains, 
-                 fa_mod='', fa_unsat_pos=None, fa_unsat_stereo=None, sn_pos_is_known=False):
+    def __init__(self, lmid_prefix, fa_carbon_chains, fa_unsat_chains, 
+                 fa_unsat_pos=None, fa_unsat_stereo=None, sn_pos_is_known=False):
         """
         inits a new instance of a LipidWithChains object using lipid class, fatty acid composition (split by FA chain), 
         fatty acid modifier (if any), and double bond positions/stereochemistry (if known)
@@ -326,8 +249,7 @@ class LipidWithChains(Lipid):
             indicates whether the sn position of the chains is known or ambiguous
         """
         # init superclass using sum FA composion
-        super().__init__(lipid_class_abbrev, sum(fa_carbon_chains), sum(fa_unsat_chains), 
-                         fa_mod=fa_mod, n_chains=len([_ for _ in fa_carbon_chains if _ > 0]))
+        super().__init__(lmid_prefix, sum(fa_carbon_chains), sum(fa_unsat_chains))
         # validate the fatty acid composition
         self._validate_composition(fa_carbon_chains, fa_unsat_chains, fa_unsat_pos, fa_unsat_stereo)
         # store the chain-specific fatty acid compositions
@@ -336,8 +258,6 @@ class LipidWithChains(Lipid):
         self.fa_unsat_pos = fa_unsat_pos
         self.fa_unsat_stereo = fa_unsat_stereo
         self.sn_pos_is_known = sn_pos_is_known
-        # init _AcylChain instances for each fa
-        self._init_acyl_chains()
         
 
     def _validate_composition(self, fa_carbon_chains, fa_unsat_chains, fa_unsat_pos, fa_unsat_stereo):
@@ -399,34 +319,6 @@ class LipidWithChains(Lipid):
                     msg = ('LipidWithChains: _validate_composition: specified double bond stereochemistry '
                            '{} do no match number of double bonds for this chain: {}')
                     raise ValueError(msg.format(ster, unsat))
-
-    def _init_acyl_chains(self):
-        """
-        initialize instances of _AcylChain for each acyl chain in this lipid, stored in the instance variable 
-        self._acyl_chains which is a list of _AcylChain instances, in order of sn- position. These are used for MS/MS
-        calculations
-
-        TODO (Dylan Ross): account for acyl chain types other than 'Standard', 'Ether', and 'Plasmalogen'
-        """
-        self._acyl_chains = []
-        for i, (fac, fau) in enumerate(zip(self.fa_carbon_chains, self.fa_unsat_chains)):
-            if fac > 0:
-                # skip 0 carbon acyl chains in the case of the lyso lipids
-                if self.fa_mod in ['O-', 'P-']:
-                    # if sn- position is known only the first acyl chain is ether/plasmalogen and other is standard
-                    # if sn- position is not known, then just assign both as ether/plasmalogen
-                    acyl_type = 'Ether' if self.fa_mod == 'O-' else 'Plasmalogen' 
-                    if self.sn_pos_is_known:
-                        if i == 0:
-                            self._acyl_chains.append(AcylChain(fac, fau, acyl_type))
-                        else:
-                            self._acyl_chains.append(AcylChain(fac, fau, 'Standard'))
-                    else:
-                        self._acyl_chains.append(AcylChain(fac, fau, acyl_type))
-
-                else:
-                    # in all other cases, treat the acyl chain type as 'Standard'
-                    self._acyl_chains.append(AcylChain(fac, fau, 'Standard'))
 
     def __str__(self):
         s = '{}({}'.format(self.lipid_class_abbrev, self.fa_mod)

@@ -15,7 +15,7 @@ from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
 import yaml
 
-from LipidIMEA.lipids import Lipid, parse_lipid_name
+from LipidIMEA.lipids import LMAPS, Lipid, LipidWithChains
 from LipidIMEA.util import debug_handler
 from LipidIMEA.lipids._fragmentation_rules import load_rules
 from LipidIMEA.lipids._util import get_c_u_combos
@@ -32,9 +32,6 @@ class SumCompLipidDB():
         create_qry = """
         CREATE TABLE SumCompLipids (
             lmid_prefix TEXT, 
-            lclass TEXT,
-            fa_mod TEXT,
-            n_chains INT,
             sum_c INT,
             sum_u INT, 
             name TEXT,
@@ -134,18 +131,13 @@ class SumCompLipidDB():
 
         .. code-block:: yaml
 
-            PC:
-                fa_mod: [null, P-, O-]
-                n_chains: [1, 2]
-                adducts: ["[M+H]+", "[M+Na]+"]
-            PE:
-                fa_mod: [null, P-, O-]
-                n_chains: [1, 2]
-                adducts: ["[M+H]+", "[M+Na]+"]
-            DG:
-                fa_mod: [null]
-                n_chains: [2]
-                adducts: ["[M+Na]+", "[M+NH4]+"]
+            LMFA0707: ['[M+H]+']
+            LMGP0101: ['[M+H]+']
+            LMGP0102: ['[M+H]+']
+            LMGP0103: ['[M+H]+']
+            LMGP0105: ['[M+H]+']
+            LMGP0106: ['[M+H]+']
+            LMGP0107: ['[M+H]+']
 
         where the top-level keys are lipid class names (abbreviated) which map to three lists of parameters 
         with keys "fa_mod", "n_chains" and "adducts". All permutations of defined lipid class, fatty acid modifier, 
@@ -165,21 +157,18 @@ class SumCompLipidDB():
             cnf = yaml.safe_load(yf)
         # iterate over the lipid classes specified in the config and generate m/zs
         # then add to db
-        insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?,?,?);'
-        for lclass, lcinfo in cnf.items():
-            for fa_mod in lcinfo['fa_mod']:
-                for n_chains in lcinfo['n_chains']:
-                    # adjust min unsaturation level for sphingolipids
-                    min_u = 1 if lclass in ['SM', 'Cer'] else 0
-                    for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, min_u):
-                        lpd = Lipid(lclass, sumc, sumu, 
-                                    fa_mod=fa_mod if fa_mod is not None else '', 
-                                    n_chains=n_chains)
-                        for adduct in lcinfo['adducts']:
-                            mz = ms_adduct_mz(lpd.formula, adduct)
-                            qdata = (lpd.lmaps_id_prefix, lclass, fa_mod, n_chains, sumc, sumu, str(lpd), adduct, mz)
-                            self._cur.execute(insert_qry, qdata)
-
+        insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?);'
+        for lmaps_prefix, adducts in cnf.items():
+            # adjust min unsaturation level for sphingolipids
+            min_u = 1 if lmaps_prefix[:4] == 'LMSP' else 0
+            n_chains = LMAPS[lmaps_prefix]['n_chains']
+            for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, min_u):
+                lpd = Lipid(lmaps_prefix, sumc, sumu)
+                for adduct in adducts:
+                    mz = ms_adduct_mz(lpd.formula, adduct)
+                    qdata = (lpd.lmaps_id_prefix, sumc, sumu, str(lpd), adduct, mz)
+                    self._cur.execute(insert_qry, qdata)
+            
     def get_sum_comp_lipid_ids(self, mz, mz_tol):
         """
         searches the sum composition lipid ids database using a feature m/z 
