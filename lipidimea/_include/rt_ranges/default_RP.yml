@@ -22,4 +22,4 @@ LMGP0203: [23, 26]  # PE (P-)
 LMGP0205: [5, 15]  # PE (lyso)
 LMGP0206: [5, 15]  # PE (lyso, O-)
 LMGP0207: [5, 15]  # PE (lyso, P-)
-LMST0102: [30, 35]  # CE
+LMST0102: [25, 35]  # CE

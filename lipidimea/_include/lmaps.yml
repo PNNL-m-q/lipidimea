@@ -4,7 +4,6 @@ LMFA0101:
         - Fatty Acids and Conjugates
         - Straight chain fatty acids
     class_abbrev: FA
-    fa_mod: NULL
     formula:
         C: c
         H: 2 * c
@@ -16,7 +15,6 @@ LMFA0103:
         - Fatty Acids and Conjugates
         - Unsaturated fatty acids
     class_abbrev: FA
-    fa_mod: NULL
     formula:
         C: c
         H: 2 * (c - u)
@@ -28,7 +26,6 @@ LMFA0707:
         - Fatty esters
         - Fatty acyl carnitines
     class_abbrev: CAR
-    fa_mod: NULL
     formula:
         C: c + 7
         H: 2 * c + 13 - 2 * u
@@ -41,7 +38,6 @@ LMGL0101:
         - Monoradylglycerols
         - Monoacylglycerols
     class_abbrev: MG
-    fa_mod: NULL
     formula:
         C: c + 3
         H: 2 * (c + 3 - u)
@@ -54,7 +50,6 @@ LMGL0201:
         - Diradylglycerols
         - Diacylglycerols
     class_abbrev: DG
-    fa_mod: NULL
     formula:
         C: c + 3
         H: 2 * (c + 2 - u)
@@ -67,7 +62,6 @@ LMGL0301:
         - Triradylglycerols
         - Triacylglycerols
     class_abbrev: TG
-    fa_mod: NULL
     formula:
         C: c + 3
         H: 2 * (c + 1 - u)
@@ -91,7 +85,6 @@ LMGL0501AA:
         - Glycosyldiradylglycerols
         - Glycosyldiacylglycerols
     class_abbrev: MGDG
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * (c + 7 - u)
@@ -103,7 +96,6 @@ LMGL0501AD:
         - Glycosyldiradylglycerols
         - Glycosyldiacylglycerols
     class_abbrev: DGDG
-    fa_mod: NULL
     formula:
         C: c + 15
         H: 2 * (c + 12 - u)
@@ -115,7 +107,6 @@ LMGP0101:
         - Glycerophosphocholines
         - Diacylglycerophosphocholines
     class_abbrev: PC
-    fa_mod: NULL
     formula:
         C: c + 8
         H: 2 * (c + 8 - u)
@@ -157,7 +148,6 @@ LMGP0105:
         - Glycerophosphocholines
         - Monoacylglycerophosphocholines
     class_abbrev: PC
-    fa_mod: NULL
     formula:
         C: c + 8
         H: 2 * (c + 9 - u)
@@ -202,7 +192,6 @@ LMGP0201:
         - Glycerophosphoethanolamines
         - Diacylglycerophosphoethanolamines
     class_abbrev: PE
-    fa_mod: NULL
     formula:
         C: c + 5
         H: 2 * (c + 5 - u)
@@ -244,7 +233,6 @@ LMGP0205:
         - Glycerophosphoethanolamines
         - Monoacylglycerophosphoethanolamines
     class_abbrev: PE
-    fa_mod: NULL
     formula:
         C: c + 5
         H: 2 * (c + 6 - u)
@@ -289,7 +277,6 @@ LMGP0301:
         - Glycerophosphoserines
         - Diacylglycerophosphoserines
     class_abbrev: PS
-    fa_mod: NULL
     formula:
         C: c + 6
         H: 2 * (c + 5 - u)
@@ -331,7 +318,6 @@ LMGP0305:
         - Glycerophosphoserines
         - Monoacylglycerophosphoserines
     class_abbrev: PS
-    fa_mod: NULL
     formula:
         C: c + 6
         H: 2 * (c + 6 - u)
@@ -376,7 +362,6 @@ LMGP0401:
         - Glycerophosphoglycerols
         - Diacylglycerophosphoglycerols
     class_abbrev: PG
-    fa_mod: NULL
     formula:
         C: c + 6
         H: 2 * c + 11 - 2 * u
@@ -415,7 +400,6 @@ LMGP0405:
         - Glycerophosphoglycerols
         - Monoacylglycerophosphoglycerols
     class_abbrev: PG
-    fa_mod: NULL
     formula:
         C: c + 6
         H: 2 * c + 13 - 2 * u
@@ -457,7 +441,6 @@ LMGP0601:
         - Glycerophosphoinositols
         - Diacylglycerophosphoinositols
     class_abbrev: PI
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * c + 15 - 2 * u
@@ -496,7 +479,6 @@ LMGP0605:
         - Glycerophosphoinositols
         - Monoacylglycerophosphoinositols
     class_abbrev: PI
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * c + 17 - 2 * u
@@ -538,7 +520,6 @@ LMGP0701:
         - Glycerophosphoinositol monophosphates
         - Diacylglycerophosphoinositol monophosphates
     class_abbrev: PIP
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * (c + 8 - u)
@@ -551,7 +532,6 @@ LMGP0705:
         - Glycerophosphoinositol monophosphates
         - Monoacylglycerophosphoinositol monophosphates
     class_abbrev: PIP
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * (c + 9 - u)
@@ -565,7 +545,6 @@ LMGP0801:
         - Glycerophosphoinositol bisphosphates
         - Diacylglycerophosphoinositol bisphosphates
     class_abbrev: PIP2
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * c + 17 - 2 * u
@@ -578,7 +557,6 @@ LMGP0901:
         - Glycerophosphoinositol trisphosphates
         - Diacylglycerophosphoinositol trisphosphates
     class_abbrev: PIP3
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * c + 18 - 2 * u
@@ -591,7 +569,6 @@ LMGP1001:
         - Glycerophosphates
         - Diacylglycerophosphates
     class_abbrev: PA
-    fa_mod: NULL
     formula:
         C: c + 3
         H: 2 * c + 5 - 2 * u
@@ -630,7 +607,6 @@ LMGP1005:
         - Glycerophosphates
         - Monoacylglycerophosphates
     class_abbrev: PA
-    fa_mod: NULL
     formula:
         C: c + 3
         H: 2 * c + 7 - 2 * u
@@ -672,7 +648,6 @@ LMGP1201:
         - Glycerophosphoglycerophosphoglycerols
         - Diacylglycerophosphoglycerophosphodiradylglycerols
     class_abbrev: CL
-    fa_mod: NULL
     formula:
         C: c + 9
         H: 2 * (c + 7 - u)
@@ -685,7 +660,7 @@ LMSP0201:
         - Ceramides
         - N-acylsphingosines (ceramides)
     class_abbrev: Cer
-    fa_mod: d
+    oxy_suffix: O2
     formula:
         C: c
         H: 2 * c + 1 - 2 * u
@@ -698,7 +673,7 @@ LMSP0301:
         - Phosphosphingolipids
         - Ceramide phosphocholines (sphingomyelins)
     class_abbrev: SM
-    fa_mod: d
+    oxy_suffix: O2
     formula:
         C: c + 5
         H: 2 * c + 13 - 2 * u
@@ -712,7 +687,7 @@ LMSP0501AA:
         - Neutral Glycosphingolipids
         - Simple Glc Series (HexCer)
     class_abbrev: HexCer
-    fa_mod: d
+    oxy_suffix: O2
     formula:
         C: c + 6
         H: 2 * c + 11 - 2 * u
@@ -725,7 +700,7 @@ LMSP0501AB:
         - Neutral Glycosphingolipids
         - Simple Glc Series (Hex2Cer)
     class_abbrev: Hex2Cer
-    fa_mod: d
+    oxy_suffix: O2
     formula:
         C: c + 12
         H: 2 * c + 21 - 2 * u
@@ -738,7 +713,6 @@ LMST0102:
         - Sterols
         - Sterol esters
     class_abbrev: CE
-    fa_mod: NULL
     formula:
         C: c + 27
         H: 2 * c + 44 - 2 * u
