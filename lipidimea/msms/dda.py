@@ -77,7 +77,7 @@ class _MSMSReaderDDA():
         """
         self.h5.close()
         
-    def get_chrom(self, mz, mz_tol):
+    def get_chrom(self, mz, mz_tol, rt_bounds=None):
         """
         Select a chromatogram (MS1 only) for a target m/z with specified tolerance
 
@@ -87,6 +87,8 @@ class _MSMSReaderDDA():
             target m/z
         mz_tol : ``float``
             m/z tolerance
+        rt_bounds : ``tuple(float)``, optional
+            min, max RT range to extract chromatogram
 
         Returns
         -------
@@ -97,9 +99,10 @@ class _MSMSReaderDDA():
         rts, ins = [], []
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
         for scan, rt in zip(self.ms1_scans, self.metadata.loc[self.ms1_scans, 'RetentionTime']):
-            smz, sin = np.array([self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']])
-            rts.append(rt)
-            ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
+            if rt_bounds is None or (rt >= rt_bounds[0] and rt <= rt_bounds[1]):  # optionally filter to only include specified RT range
+                smz, sin = np.array([self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']])
+                rts.append(rt)
+                ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
         return np.array([rts, ins])
 
     def get_msms_spectrum(self, mz, mz_tol, rt_min, rt_max, mz_bin_min, mz_bin_max, mz_bin_size):

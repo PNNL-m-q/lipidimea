@@ -71,7 +71,7 @@ LMGL0302:
     classification:
         - Glycerolipids
         - Triradylglycerols
-        - Triacylglycerols
+        - Alkyldiacylglycerols
     class_abbrev: TG
     fa_mod: O-
     formula:
@@ -147,7 +147,7 @@ LMGP0105:
         - Glycerophospholipids
         - Glycerophosphocholines
         - Monoacylglycerophosphocholines
-    class_abbrev: PC
+    class_abbrev: LPC
     formula:
         C: c + 8
         H: 2 * (c + 9 - u)
@@ -161,7 +161,7 @@ LMGP0106:
         - Glycerophospholipids
         - Glycerophosphocholines
         - Monoalkylglycerophosphocholines
-    class_abbrev: PC
+    class_abbrev: LPC
     fa_mod: O-
     formula:
         C: c + 8
@@ -176,7 +176,7 @@ LMGP0107:
         - Glycerophospholipids
         - Glycerophosphocholines
         - 1Z-alkenylglycerophosphocholines
-    class_abbrev: PC
+    class_abbrev: LPC
     fa_mod: P-
     formula:
         C: c + 8
@@ -232,7 +232,7 @@ LMGP0205:
         - Glycerophospholipids
         - Glycerophosphoethanolamines
         - Monoacylglycerophosphoethanolamines
-    class_abbrev: PE
+    class_abbrev: LPE
     formula:
         C: c + 5
         H: 2 * (c + 6 - u)
@@ -246,7 +246,7 @@ LMGP0206:
         - Glycerophospholipids
         - Glycerophosphoethanolamines
         - Monoalkylglycerophosphoethanolamines
-    class_abbrev: PE
+    class_abbrev: LPE
     fa_mod: O-
     formula:
         C: c + 5
@@ -261,7 +261,7 @@ LMGP0207:
         - Glycerophospholipids
         - Glycerophosphoethanolamines
         - 1Z-alkenylglycerophosphoethanolamines
-    class_abbrev: PE
+    class_abbrev: LPE
     fa_mod: P-
     formula:
         C: c + 5
@@ -317,7 +317,7 @@ LMGP0305:
         - Glycerophospholipids
         - Glycerophosphoserines
         - Monoacylglycerophosphoserines
-    class_abbrev: PS
+    class_abbrev: LPS
     formula:
         C: c + 6
         H: 2 * (c + 6 - u)
@@ -331,7 +331,7 @@ LMGP0306:
         - Glycerophospholipids
         - Glycerophosphoserines
         - Monoalkylglycerophosphoserines
-    class_abbrev: PS
+    class_abbrev: LPS
     fa_mod: O-
     formula:
         C: c + 6
@@ -346,7 +346,7 @@ LMGP0307:
         - Glycerophospholipids
         - Glycerophosphoserines
         - 1Z-alkenylglycerophosphoserines
-    class_abbrev: PS
+    class_abbrev: LPS
     fa_mod: P-
     formula:
         C: c + 6
@@ -399,7 +399,7 @@ LMGP0405:
         - Glycerophospholipids
         - Glycerophosphoglycerols
         - Monoacylglycerophosphoglycerols
-    class_abbrev: PG
+    class_abbrev: LPG
     formula:
         C: c + 6
         H: 2 * c + 13 - 2 * u
@@ -412,7 +412,7 @@ LMGP0406:
         - Glycerophospholipids
         - Glycerophosphoglycerols
         - Monoalkylglycerophosphoglycerols
-    class_abbrev: PG
+    class_abbrev: LPG
     fa_mod: O-
     formula:
         C: c + 6
@@ -426,7 +426,7 @@ LMGP0407:
         - Glycerophospholipids
         - Glycerophosphoglycerols
         - 1Z-alkenylglycerophosphoglycerols
-    class_abbrev: PG
+    class_abbrev: LPG
     fa_mod: P-
     formula:
         C: c + 6
@@ -478,7 +478,7 @@ LMGP0605:
         - Glycerophospholipids
         - Glycerophosphoinositols
         - Monoacylglycerophosphoinositols
-    class_abbrev: PI
+    class_abbrev: LPI
     formula:
         C: c + 9
         H: 2 * c + 17 - 2 * u
@@ -491,7 +491,7 @@ LMGP0606:
         - Glycerophospholipids
         - Glycerophosphoinositols
         - Monoalkylglycerophosphoinositols
-    class_abbrev: PI
+    class_abbrev: LPI
     fa_mod: O-
     formula:
         C: c + 9
@@ -505,7 +505,7 @@ LMGP0607:
         - Glycerophospholipids
         - Glycerophosphoinositols
         - 1Z-alkenylglycerophosphoinositols
-    class_abbrev: PI
+    class_abbrev: LPI
     fa_mod: P-
     formula:
         C: c + 9
@@ -606,7 +606,7 @@ LMGP1005:
         - Glycerophospholipids
         - Glycerophosphates
         - Monoacylglycerophosphates
-    class_abbrev: PA
+    class_abbrev: LPA
     formula:
         C: c + 3
         H: 2 * c + 7 - 2 * u
@@ -619,7 +619,7 @@ LMGP1006:
         - Glycerophospholipids
         - Glycerophosphates
         - Monoalkylglycerophosphates
-    class_abbrev: PA
+    class_abbrev: LPA
     fa_mod: O-
     formula:
         C: c + 3
@@ -633,7 +633,7 @@ LMGP1007:
         - Glycerophospholipids
         - Glycerophosphates
         - 1Z-alkenylglycerophosphates
-    class_abbrev: PA
+    class_abbrev: LPA
     fa_mod: P-
     formula:
         C: c + 3

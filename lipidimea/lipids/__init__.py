@@ -241,12 +241,9 @@ class Lipid():
         return s.format(self.__class__.__name__, self.lipid_class_abbrev, self.fa_carbon, self.fa_unsat, self.fa_mod, self.lmaps_id_prefix)
 
     def __str__(self):
-        s = '{} {}{}:{}{}{}'
-        # this extra chains thing helps to identify lyso- lipids, only works if there is one chain though
-        # otherwise it introduces ambiguity
-        extra_chains = '_0:0' * (self.n_chains_full - self.n_chains) if self.n_chains == 1 else ''
+        s = '{} {}{}:{}{}'
         oxy_suffix = ';' + self.oxy_suffix if self.oxy_suffix != '' else ''
-        return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat, extra_chains, oxy_suffix)
+        return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat, oxy_suffix)
 
 
 class LipidWithChains(Lipid):

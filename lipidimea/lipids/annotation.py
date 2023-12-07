@@ -48,7 +48,7 @@ class SumCompLipidDB():
     def max_u(c):
         """
         Maximum number of unsaturations as a function of carbon count for a single carbon chain. By default up 
-        to 16 C = 2 max U, 17-18 C = 3 max U, 19-21 C = 5 max U, 22+ C = 6 max U
+        to 15 C = 2 max U, 16+ C = 6 max U
 
         override this static method to change how this is calculated (input: ``int`` number of carbons in chain, 
         output: ``int`` max number of unsaturations)
@@ -63,16 +63,12 @@ class SumCompLipidDB():
         u : ``int``
             max number of unsaturations in chain
         """
-        if c <= 16:
+        if c < 16:
             return 2
-        elif c <= 18:
-            return 3
-        elif c <= 20:
-            return 5
         else:
             return 6
 
-    def gen_sum_compositions(self, n_chains, min_c, max_c, odd_c, min_u):
+    def gen_sum_compositions(self, n_chains, min_c, max_c, odd_c, max_u=None):
         """ 
         yields all unique sum compositions from combinations of fatty acids that are iterated over
         using some rules:
@@ -80,8 +76,8 @@ class SumCompLipidDB():
         * specify minimum number of carbons in a FA chain
         * specify maximum number of carbons in a FA chain
         * specify whether to include odd # of carbons for FA chains
-        * max number of unsaturations is determined by FA chain length (by default: up to 16 C = 2 max U, 17-18 C = 3 max U,
-          19-21 C = 5 max U, 22+ C = 6 max U... override ``SumCompLipidDB.max_u()`` static method to change)
+        * max number of unsaturations is determined by FA chain length (by default: up to 15 C = 2 max 
+            U, 16+ C = 6 max U... override ``SumCompLipidDB.max_u()`` static method to change)
 
         Parameters
         ----------
@@ -91,8 +87,8 @@ class SumCompLipidDB():
             min/max number of carbons in an acyl chain
         odd_c : ``bool``
             whether to include odd # C for FAs
-        min_u : ``int``
-            minimum number of unsaturations (in sum composition, not individual FAs)
+        max_u : ``int``, optional
+            restrict maximum number of unsaturations (in sum composition, not individual FAs)
 
         Yields
         ------
@@ -102,6 +98,7 @@ class SumCompLipidDB():
         fas = []
         for n_c in range(min_c, max_c + 1):
             if odd_c or n_c % 2 == 0:
+                max_u = self.max_u(n_c) if max_u is None else min(max_u, self.max_u(n_c))
                 for n_u in range(0, self.max_u(n_c) + 1):
                     fas.append((n_c, n_u))
         # permute over acyl chains
@@ -111,8 +108,7 @@ class SumCompLipidDB():
             for fac, fau in combo:
                 c += fac
                 u += fau
-            if u >= min_u:
-                sum_comp.add((c, u))
+            sum_comp.add((c, u))
         # yield the unique sum compositions
         for comp in sum_comp:
             yield comp
@@ -160,9 +156,9 @@ class SumCompLipidDB():
         insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?);'
         for lmaps_prefix, adducts in cnf.items():
             # adjust min unsaturation level for sphingolipids
-            min_u = 1 if lmaps_prefix[:4] == 'LMSP' else 0
+            max_u = 2 if lmaps_prefix[:4] == 'LMSP' else None
             n_chains = LMAPS[lmaps_prefix]['n_chains']
-            for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, min_u):
+            for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, max_u=max_u):
                 lpd = Lipid(lmaps_prefix, sumc, sumu)
                 for adduct in adducts:
                     mz = ms_adduct_mz(lpd.formula, adduct)
