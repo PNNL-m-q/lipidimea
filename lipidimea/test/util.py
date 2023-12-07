@@ -11,7 +11,9 @@ from unittest import TestCase
 from tempfile import TemporaryDirectory
 import os
 
-from LipidIMEA.util import create_results_db, load_default_params
+from LipidIMEA.util import (
+    create_results_db, load_default_params, load_params, save_params
+)
 
 
 class TestCreateResultsDb(TestCase):
@@ -73,3 +75,51 @@ class TestLoadDefaultParams(TestCase):
                           msg="top level section '{}' should have been in default params".format(top_lvl_section))
             self.assertNotEqual(params[top_lvl_section], {},
                                 msg="top level section '{}' should not have been empty".format(top_lvl_section))
+            
+
+class TestLoadParams(TestCase):
+    """ tests for load_params function """
+
+    def test_load_params_no_errs(self):
+        """ run load_params and there should be no errors """
+        with TemporaryDirectory() as tmp_dir:
+            yf = os.path.join(tmp_dir, "params.yml")
+            # create params.yml file and write to it
+            # give it the "input_output" and "params" sections it expects
+            s = (
+                "input_output:\n"
+                "    subsection: none\n"
+                "params:\n"
+                "    subsection: none\n"
+            )
+            with open(yf, "w") as f:
+                f.write(s)
+            input_output, params = load_params(yf)
+
+
+class TestSaveParams(TestCase):
+    """ tests for save_params function """
+
+    def test_param_file_creation(self):
+        """ makes sure a new params file is created """
+        with TemporaryDirectory() as tmp_dir:
+            pf = os.path.join(tmp_dir, "params.yml")
+            self.assertFalse(os.path.isfile(pf), 
+                             msg="params file should not exist before")
+            save_params({"junk": "data"}, {"more": "junk"}, pf)
+            self.assertTrue(os.path.isfile(pf), 
+                            msg="params file should exist after")
+    
+    def test_param_file_overwrite(self):
+        """ make sure saving params to exsiting file overwrites it """
+        with TemporaryDirectory() as tmp_dir:
+            pf = os.path.join(tmp_dir, "params.yml")
+            # create db file and write to it
+            with open(pf, "w") as f:
+                f.write("test")
+            s = os.stat(pf)  # check file size
+            save_params({"junk": "data"}, {"more": "junk"}, pf)
+            # make sure file size changed
+            with open(pf, "r") as f:
+                self.assertNotEqual(s, os.stat(pf), 
+                                    msg="existing params file contents should have been overwritten")

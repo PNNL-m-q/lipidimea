@@ -10,7 +10,9 @@ Dylan Ross (dylan.ross@pnnl.gov)
 import unittest
 
 # tests for LipidIMEA/util.py
-from LipidIMEA.test.util import TestCreateResultsDb, TestLoadDefaultParams
+from LipidIMEA.test.util import (
+    TestCreateResultsDb, TestLoadDefaultParams, TestLoadParams, TestSaveParams
+)
 
 
 if __name__ == '__main__':
