@@ -9,7 +9,8 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 import unittest
 
-#from mzapy.test.module import TestCase
+# tests for LipidIMEA/util.py
+from LipidIMEA.test.util import TestCreateResultsDb, TestLoadDefaultParams
 
 
 if __name__ == '__main__':
