@@ -3,7 +3,7 @@ LipidIMEA/test/util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for LipidIMEA/util.py
+    tests for LipidIMEA/util.py module
 """
 
 
@@ -123,3 +123,11 @@ class TestSaveParams(TestCase):
             with open(pf, "r") as f:
                 self.assertNotEqual(s, os.stat(pf), 
                                     msg="existing params file contents should have been overwritten")
+                
+
+class TestDebugHandler(TestCase):
+    """ tests for the debug_handler function """
+
+    def test_NO_TESTS_IMPLEMENTED_YET(self):
+        """ placeholder, remove this function and implement tests """
+        raise NotImplementedError("no tests implemented yet")
