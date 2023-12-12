@@ -1,5 +1,5 @@
 """
-LipidIMEA/msms/dia.py
+lipidimea/msms/dia.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -18,8 +18,8 @@ from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from LipidIMEA.msms._util import str_to_ms2, ms2_to_str, apply_args_and_kwargs
-from LipidIMEA.util import debug_handler
+from lipidimea.msms._util import str_to_ms2, ms2_to_str, apply_args_and_kwargs
+from lipidimea.util import debug_handler
 
 
 def _select_xic_peak(target_rt, target_rt_tol, pkrts, pkhts, pkwts):
@@ -295,7 +295,7 @@ def _single_target_analysis(n, i, rdr, results_db_cursor, f, dda_fid, dda_mz, dd
 def extract_dia_features(dia_data_file, results_db, params, 
                          debug_flag=None, debug_cb=None):
     """
-    Extract features from a raw DIA data file, store them in a database (initialized using ``LipidIMEA.util.create_results_db`` function)
+    Extract features from a raw DIA data file, store them in a database (initialized using ``lipidimea.util.create_results_db`` function)
 
     Parameters
     ----------

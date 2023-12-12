@@ -1,18 +1,18 @@
 """
-LipidIMEA/test/lipids/_util.py
+lipidimea/test/lipids/_util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for the LipidIMEA/lipids/_util.py module
+    tests for the lipidimea/lipids/_util.py module
 """
 
 
 from unittest import TestCase
 
-from LipidIMEA.lipids._util import (
+from lipidimea.lipids._util import (
     get_c_u_combos
 )
-from LipidIMEA.lipids import Lipid
+from lipidimea.lipids import Lipid
 
 
 class TestGetCUCombos(TestCase):

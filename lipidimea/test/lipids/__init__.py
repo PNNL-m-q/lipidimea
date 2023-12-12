@@ -1,17 +1,17 @@
 """
-LipidIMEA/test/lipids/__init__.py
+lipidimea/test/lipids/__init__.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    subpackage with tests for LipidIMEA/lipids subpackage,
+    subpackage with tests for lipidimea/lipids subpackage,
     also this module has tests for anything defined in the 
-    LipidIMEA/lipids/__init__.py module
+    lipidimea/lipids/__init__.py module
 """
 
 
 from unittest import TestCase
 
-from LipidIMEA.lipids import (
+from lipidimea.lipids import (
     Lipid, LipidWithChains
 )
 

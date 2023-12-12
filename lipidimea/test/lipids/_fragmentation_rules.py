@@ -1,15 +1,15 @@
 """
-LipidIMEA/test/lipids/_fragmentation_rules.py
+lipidimea/test/lipids/_fragmentation_rules.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for the LipidIMEA/lipids/_fragmentation_rules.py module
+    tests for the lipidimea/lipids/_fragmentation_rules.py module
 """
 
 
 from unittest import TestCase
 
-from LipidIMEA.lipids._fragmentation_rules import (
+from lipidimea.lipids._fragmentation_rules import (
     _FragRule, _FragRuleStatic, _FragRuleDynamic, load_rules
 )
 

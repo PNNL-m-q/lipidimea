@@ -7,13 +7,13 @@ import subprocess
 import os
 import shutil
 
-from LipidIMEA.util import create_results_db, load_params
-from LipidIMEA.msms.dda import extract_dda_features, consolidate_dda_features
-from LipidIMEA.msms.dia import extract_dia_features_multiproc
-from LipidIMEA.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
+from lipidimea.util import create_results_db, load_params
+from lipidimea.msms.dda import extract_dda_features, consolidate_dda_features
+from lipidimea.msms.dia import extract_dia_features_multiproc
+from lipidimea.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
 
 
-#Python Calls to LipidIMEA
+#Python Calls to lipidimea
 
 
 
@@ -48,7 +48,7 @@ def generate_new_db_name(directory, db_name):
 def main():
     """
     Read in Inputs from GUI.
-    Make calls to LipidIMEA.
+    Make calls to lipidimea.
     """
  
     inputs_and_params = dict(json.loads(sys.argv[1]))

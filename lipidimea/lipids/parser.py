@@ -1,5 +1,5 @@
 """
-LipidIMEA/lipids/parser.py
+lipidimea/lipids/parser.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -10,7 +10,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 import re
 
 
-from LipidIMEA.lipids import LMAPS, Lipid, LipidWithChains
+from lipidimea.lipids import LMAPS, Lipid, LipidWithChains
 
 
 # regex for parsing lipid information from a lipid name in standard abbreviated format
@@ -182,7 +182,7 @@ def parse_lipid_name(name):
 
     Returns
     -------
-    lipid : ``LipidIMEA.lipids.Lipid`` or subclass
+    lipid : ``lipidimea.lipids.Lipid`` or subclass
         instance of Lipid (or subclass), or ``None`` if unable to parse
     """
     # strip out the whitespace from the lipid name regex but put the space back in in the one

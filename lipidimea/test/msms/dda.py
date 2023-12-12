@@ -1,15 +1,15 @@
 """
-LipidIMEA/test/msms/dda.py
+lipidimea/test/msms/dda.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for the LipidIMEA/msms/dda.py module
+    tests for the lipidimea/msms/dda.py module
 """
 
 
 from unittest import TestCase
 
-from LipidIMEA.msms.dda import (
+from lipidimea.msms.dda import (
     _MSMSReaderDDA, _MSMSReaderDDA_Cached, _extract_and_fit_chroms, _consolidate_chrom_feats,
     _extract_and_fit_ms2_spectra, _add_features_to_db, extract_dda_features, 
     extract_dda_features_multiproc, consolidate_dda_features

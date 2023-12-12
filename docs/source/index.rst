@@ -1,8 +1,8 @@
-LipidIMEA |LipidIMEA_version|
+lipidimea |lipidimea_version|
 =======================================
 desc
 
-Source code is available at https://github.com/PNNL-m-q/LipidIMEA
+Source code is available at https://github.com/PNNL-m-q/lipidimea
 
 
 .. toctree::

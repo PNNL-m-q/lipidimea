@@ -1,9 +1,9 @@
 """
-LipidIMEA/test/util.py
+lipidimea/test/util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for LipidIMEA/util.py module
+    tests for lipidimea/util.py module
 """
 
 
@@ -11,7 +11,7 @@ from unittest import TestCase
 from tempfile import TemporaryDirectory
 import os
 
-from LipidIMEA.util import (
+from lipidimea.util import (
     create_results_db, load_default_params, load_params, save_params
 )
 

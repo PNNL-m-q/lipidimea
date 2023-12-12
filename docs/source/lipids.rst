@@ -1,4 +1,4 @@
-``LipidIMEA.lipids``
+``lipidimea.lipids``
 =======================================
 This subpackage defines the ``Lipid`` class and subclass(es) that are used to represent individual lipid 
 species. The lipid classification system defined and used by LIPID MAPS is used in this package:
@@ -17,20 +17,20 @@ Utility
 ``parse_lipid_name``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.lipids.parse_lipid_name
+.. autofunction:: lipidimea.lipids.parse_lipid_name
 
 ``Lipid`` and ``LipidWithChains``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: LipidIMEA.lipids.Lipid
+.. autoclass:: lipidimea.lipids.Lipid
 
-.. autofunction:: LipidIMEA.lipids.Lipid.__init__
+.. autofunction:: lipidimea.lipids.Lipid.__init__
 
-.. autoclass:: LipidIMEA.lipids.LipidWithChains
+.. autoclass:: lipidimea.lipids.LipidWithChains
 
-.. autofunction:: LipidIMEA.lipids.LipidWithChains.__init__
+.. autofunction:: lipidimea.lipids.LipidWithChains.__init__
 
-.. autofunction:: LipidIMEA.lipids.LipidWithChains.add_db_positions
+.. autofunction:: lipidimea.lipids.LipidWithChains.add_db_positions
 
 
 Annotation
@@ -39,31 +39,31 @@ Annotation
 ``SumCompLipidDB``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: LipidIMEA.lipids.annotation.SumCompLipidDB
+.. autoclass:: lipidimea.lipids.annotation.SumCompLipidDB
 
-.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.__init__
+.. autofunction:: lipidimea.lipids.annotation.SumCompLipidDB.__init__
 
-.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.fill_db_from_config
+.. autofunction:: lipidimea.lipids.annotation.SumCompLipidDB.fill_db_from_config
 
-.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.get_sum_comp_lipid_ids
+.. autofunction:: lipidimea.lipids.annotation.SumCompLipidDB.get_sum_comp_lipid_ids
 
-.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.gen_sum_compositions
+.. autofunction:: lipidimea.lipids.annotation.SumCompLipidDB.gen_sum_compositions
 
-.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.max_u
+.. autofunction:: lipidimea.lipids.annotation.SumCompLipidDB.max_u
 
-.. autofunction:: LipidIMEA.lipids.annotation.SumCompLipidDB.close
+.. autofunction:: lipidimea.lipids.annotation.SumCompLipidDB.close
 
 ``remove_lipid_annotations``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.lipids.annotation.remove_lipid_annotations
+.. autofunction:: lipidimea.lipids.annotation.remove_lipid_annotations
 
 ``annotate_lipid_sum_composition``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.lipids.annotation.annotate_lipids_sum_composition
+.. autofunction:: lipidimea.lipids.annotation.annotate_lipids_sum_composition
 
 ``filter_annotations_by_rt_range``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.lipids.annotation.filter_annotations_by_rt_range
+.. autofunction:: lipidimea.lipids.annotation.filter_annotations_by_rt_range

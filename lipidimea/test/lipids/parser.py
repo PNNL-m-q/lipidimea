@@ -1,16 +1,16 @@
 """
-LipidIMEA/test/lipids/parser.py
+lipidimea/test/lipids/parser.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for LipidIMEA/lipids/parser.py module
+    tests for lipidimea/lipids/parser.py module
 """
 
 
 from unittest import TestCase
 
 
-from LipidIMEA.lipids.parser import (
+from lipidimea.lipids.parser import (
     _get_lmid_prefix, _oxy_suffix_from_oxy_suffix_chains, parse_lipid_name
 )
 

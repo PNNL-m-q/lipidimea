@@ -1,5 +1,5 @@
 """
-LipidIMEA/lipids/_util.py
+lipidimea/lipids/_util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 

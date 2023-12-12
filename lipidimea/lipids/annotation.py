@@ -1,5 +1,5 @@
 """
-LipidIMEA/lipids/annotation.py
+lipidimea/lipids/annotation.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -15,10 +15,10 @@ from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
 import yaml
 
-from LipidIMEA.lipids import LMAPS, Lipid, LipidWithChains
-from LipidIMEA.util import debug_handler
-from LipidIMEA.lipids._fragmentation_rules import load_rules
-from LipidIMEA.lipids._util import get_c_u_combos
+from lipidimea.lipids import LMAPS, Lipid, LipidWithChains
+from lipidimea.util import debug_handler
+from lipidimea.lipids._fragmentation_rules import load_rules
+from lipidimea.lipids._util import get_c_u_combos
 
 
 class SumCompLipidDB():

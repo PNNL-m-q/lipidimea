@@ -1,4 +1,4 @@
-``LipidIMEA.util``
+``lipidimea.util``
 =======================================
 Module with general utilities for DDA-DIA data analysis.
 
@@ -11,7 +11,7 @@ Results Database
 ``create_results_db``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.util.create_results_db
+.. autofunction:: lipidimea.util.create_results_db
 
 Analysis Parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -19,17 +19,17 @@ Analysis Parameters
 ``load_default_params``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.util.load_default_params
+.. autofunction:: lipidimea.util.load_default_params
 
 ``load_params``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.util.load_params
+.. autofunction:: lipidimea.util.load_params
 
 ``save_params``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.util.save_params
+.. autofunction:: lipidimea.util.save_params
 
 Debug Handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,5 +37,5 @@ Debug Handler
 ``debug_handler``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: LipidIMEA.util.debug_handler
+.. autofunction:: lipidimea.util.debug_handler
 

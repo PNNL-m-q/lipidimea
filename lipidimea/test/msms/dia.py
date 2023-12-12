@@ -1,15 +1,15 @@
 """
-LipidIMEA/test/msms/dia.py
+lipidimea/test/msms/dia.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for the LipidIMEA/msms/dia.py module
+    tests for the lipidimea/msms/dia.py module
 """
 
 
 from unittest import TestCase
 
-from LipidIMEA.msms.dia import (
+from lipidimea.msms.dia import (
     _select_xic_peak, _lerp_together, _decon_distance, _deconvolute_ms2_peaks,
     _add_single_target_results_to_db, _ms2_peaks_to_str, _single_target_analysis,
     extract_dia_features, extract_dia_features_multiproc, add_calibrated_ccs_to_dia_features

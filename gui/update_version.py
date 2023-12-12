@@ -1,13 +1,13 @@
 """
-    update package.json with the version from LipidIMEA/__init__.py
+    update package.json with the version from lipidimea/__init__.py
 
-    ! requires LipidIMEA to be in PYTHONPATH !
+    ! requires lipidimea to be in PYTHONPATH !
 """
 
 
 import json
 
-from LipidIMEA import __version__ as ver
+from lipidimea import __version__ as ver
 
 
 def main():

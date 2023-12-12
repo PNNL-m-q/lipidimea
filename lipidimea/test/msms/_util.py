@@ -1,15 +1,15 @@
 """
-LipidIMEA/test/msms/_util.py
+lipidimea/test/msms/_util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for the LipidIMEA/msms/_util.py module
+    tests for the lipidimea/msms/_util.py module
 """
 
 
 from unittest import TestCase
 
-from LipidIMEA.msms._util import (
+from lipidimea.msms._util import (
     ms2_to_str, str_to_ms2, apply_args_and_kwargs
 )
 
