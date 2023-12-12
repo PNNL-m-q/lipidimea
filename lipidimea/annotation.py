@@ -15,7 +15,8 @@ from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
 import yaml
 
-from lipidlib.lipids import LMAPS, get_c_u_combos, Lipid, LipidWithChains
+from lipidlib.lipids import LMAPS, get_c_u_combos, Lipid
+from lipidlib.parser import parse_lipid_name
 from lipidlib._fragmentation_rules import load_rules
 
 from lipidimea.util import debug_handler
