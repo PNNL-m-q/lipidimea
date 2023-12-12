@@ -1,15 +1,15 @@
 """
-lipidimea/test/lipids/annotation.py
+lipidimea/test/annotation.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    tests for the lipidimea/lipids/annotation.py module
+    tests for the lipidimea/annotation.py module
 """
 
 
 from unittest import TestCase
 
-from lipidimea.lipids.annotation import (
+from lipidimea.annotation import (
     SumCompLipidDB, remove_lipid_annotations, annotate_lipids_sum_composition, 
     filter_annotations_by_rt_range, update_lipid_ids_with_frag_rules
 )

@@ -11,22 +11,6 @@ Dylan Ross (dylan.ross@pnnl.gov)
 import unittest
 
 
-from lipidimea.test.lipids import (
-    TestLipid, TestLipidWithChains
-)
-from lipidimea.test.lipids._fragmentation_rules import (
-    Test_FragRule, Test_FragRuleStatic, Test_FragRuleDynamic, TestLoadRules
-)
-from lipidimea.test.lipids._util import (
-    TestGetCUCombos
-)
-from lipidimea.test.lipids.annotation import (
-    TestSumCompLipidDB, TestRemoveLipidAnnotations, TestAnnotateLipidsSumComposition, 
-    TestFilterAnnotationsByRTRange, TestUpdateLipidIDsWithFragRules
-)
-from lipidimea.test.lipids.parser import (
-    Test_GetLmidPrefix, Test_OxySuffixFromOxySuffixChains, TestParseLipidName
-)
 from lipidimea.test.msms._util import (
     TestMS2ToStr, TestStrToMS2, TestApplyArgsAndKwargs
 )
@@ -39,6 +23,10 @@ from lipidimea.test.msms.dia import (
     Test_SelectXicPeak, Test_LerpTogether, Test_DeconDistance, Test_DeconvoluteMs2Peaks,
     Test_AddSingleTargetResultsToDb, Test_Ms2PeaksToStr, Test_SingleTargetAnalysis, 
     TestExtractDiaFeatures, TestExtractDiaFeaturesMultiproc, TestAddCalibratedCcsToDiaFeatures
+)
+from lipidimea.test.annotation import (
+    TestSumCompLipidDB, TestRemoveLipidAnnotations, TestAnnotateLipidsSumComposition, 
+    TestFilterAnnotationsByRTRange, TestUpdateLipidIDsWithFragRules
 )
 from lipidimea.test.util import (
     TestCreateResultsDb, TestLoadDefaultParams, TestLoadParams, TestSaveParams, TestDebugHandler
