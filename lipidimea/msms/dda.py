@@ -215,6 +215,14 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
             self.arrays_mz_cached[scan] = a_mz
             self.arrays_i_cached[scan] = a_i
 
+    def close(self):
+        """
+        free up memory from cached data then close connection to the MZA file
+        """
+        del self.arrays_mz_cached
+        del self.arrays_i_cached
+        super().close()
+
     def get_chrom(self, mz, mz_tol):
         """
         Select a chromatogram (MS1 only) for a target m/z with specified tolerance
@@ -481,15 +489,17 @@ def extract_dda_features(dda_data_file, results_db, params,
     chrom_feats_consolidated = _consolidate_chrom_feats(chrom_feats, params, debug_flag, debug_cb)
     # extract MS2 spectra
     qdata = _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_flag, debug_cb)
+    # do not need the reader anymore
+    rdr.close()
     # initialize connection to DDA ids database
     con = connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # add features to database
     _add_features_to_db(cur, qdata, debug_flag, debug_cb)
-    # clean up
+    # close database connection
     con.commit()
     con.close()
-    rdr.close()
+    
 
 
 def extract_dda_features_multiproc(dda_data_files, results_db, params, n_proc,
