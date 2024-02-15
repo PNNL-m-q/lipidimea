@@ -1,5 +1,5 @@
 """
-LipidIMEA/msms/dda.py
+lipidimea/msms/dda.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -20,8 +20,8 @@ import numpy as np
 import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from LipidIMEA.msms._util import ms2_to_str, apply_args_and_kwargs
-from LipidIMEA.util import debug_handler
+from lipidimea.msms._util import ms2_to_str, apply_args_and_kwargs
+from lipidimea.util import debug_handler
 
 
 class _MSMSReaderDDA():
@@ -84,7 +84,7 @@ class _MSMSReaderDDA():
         """
         self.h5.close()
         
-    def get_chrom(self, mz, mz_tol):
+    def get_chrom(self, mz, mz_tol, rt_bounds=None):
         """
         Select a chromatogram (MS1 only) for a target m/z with specified tolerance
 
@@ -94,6 +94,8 @@ class _MSMSReaderDDA():
             target m/z
         mz_tol : ``float``
             m/z tolerance
+        rt_bounds : ``tuple(float)``, optional
+            min, max RT range to extract chromatogram
 
         Returns
         -------
@@ -104,9 +106,10 @@ class _MSMSReaderDDA():
         rts, ins = [], []
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
         for scan, rt in zip(self.ms1_scans, self.metadata.loc[self.ms1_scans, 'RetentionTime']):
-            smz, sin = np.array([self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']])
-            rts.append(rt)
-            ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
+            if rt_bounds is None or (rt >= rt_bounds[0] and rt <= rt_bounds[1]):  # optionally filter to only include specified RT range
+                smz, sin = np.array([self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']])
+                rts.append(rt)
+                ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
         return np.array([rts, ins])
 
     def get_msms_spectrum(self, mz, mz_tol, rt_min, rt_max, mz_bin_min, mz_bin_max, mz_bin_size):
@@ -220,6 +223,14 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
             scan_i.read_direct(a_i)
             self.arrays_mz_cached[scan] = a_mz
             self.arrays_i_cached[scan] = a_i
+
+    def close(self):
+        """
+        free up memory from cached data then close connection to the MZA file
+        """
+        del self.arrays_mz_cached
+        del self.arrays_i_cached
+        super().close()
 
     def get_chrom(self, mz, mz_tol):
         """
@@ -487,15 +498,17 @@ def extract_dda_features(dda_data_file, results_db, params,
     chrom_feats_consolidated = _consolidate_chrom_feats(chrom_feats, params, debug_flag, debug_cb)
     # extract MS2 spectra
     qdata = _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_flag, debug_cb)
+    # do not need the reader anymore
+    rdr.close()
     # initialize connection to DDA ids database
     con = connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # add features to database
     _add_features_to_db(cur, qdata, debug_flag, debug_cb)
-    # clean up
+    # close database connection
     con.commit()
     con.close()
-    rdr.close()
+    
 
 
 def extract_dda_features_multiproc(dda_data_files, results_db, params, n_proc,

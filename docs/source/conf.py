@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'LipidIMEA'
+project = 'lipidimea'
 copyright = '2023, Battelle Memorial Institute'
 author = 'Dylan Ross'
 
@@ -69,7 +69,7 @@ html_static_path = ['_static']
 
 # -- Get the version number for this module ----------------------------------
 
-from LipidIMEA import __version__ as LipidIMEA_version
+from lipidimea import __version__ as lipidimea_version
 rst_epilog = """
-.. |LipidIMEA_version| replace:: {a}
-""".format(a=LipidIMEA_version)
+.. |lipidimea_version| replace:: {a}
+""".format(a=lipidimea_version)

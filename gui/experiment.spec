@@ -1,8 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
-hiddenimports = ['../LipidIMEA']
-hiddenimports += collect_submodules('../LipidIMEA')
+hiddenimports = ['../lipidimea']
+hiddenimports += collect_submodules('../lipidimea')
 
 
 block_cipher = None
@@ -10,13 +10,13 @@ block_cipher = None
 
 a = Analysis(
     ['src/experiment/experiment.py'],
-    pathex=['../LipidIMEA'],
+    pathex=['../lipidimea'],
     binaries=[],
     datas=[
-        ('../LipidIMEA/_include/*', 'LipidIMEA/_include/'),
-        ('../LipidIMEA/_include/rt_ranges/*', 'LipidIMEA/_include/rt_ranges/'),
-        ('../LipidIMEA/_include/rules/*', 'LipidIMEA/_include/rules/'),
-        ('../LipidIMEA/_include/scdb_params/*', 'LipidIMEA/_include/scdb_params/'),
+        ('../lipidimea/_include/*', 'lipidimea/_include/'),
+        ('../lipidimea/_include/rt_ranges/*', 'lipidimea/_include/rt_ranges/'),
+        ('../lipidimea/_include/rules/*', 'lipidimea/_include/rules/'),
+        ('../lipidimea/_include/scdb_params/*', 'lipidimea/_include/scdb_params/'),
     ] + collect_data_files('hdf5plugin'),
     hiddenimports=hiddenimports,
     hookspath=[],

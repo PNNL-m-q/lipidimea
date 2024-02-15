@@ -1,5 +1,5 @@
 """
-LipidIMEA/msms/_util.py
+lipidimea/msms/_util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
