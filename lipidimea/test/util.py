@@ -7,19 +7,25 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from unittest import TestCase
+import unittest
 from tempfile import TemporaryDirectory
 import os
+import io
+import contextlib
 
 from lipidimea.util import (
-    create_results_db, load_default_params, load_params, save_params
+    create_results_db,
+    load_default_params, 
+    load_params, 
+    save_params, 
+    debug_handler
 )
 
 
-class TestCreateResultsDb(TestCase):
+class TestCreateResultsDb(unittest.TestCase):
     """ tests for create_results_db function """
 
-    def test_db_file_creation(self):
+    def test_CRD_db_file_creation(self):
         """ makes sure the db file is created """
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
@@ -29,7 +35,7 @@ class TestCreateResultsDb(TestCase):
             self.assertTrue(os.path.isfile(dbf), 
                             msg="db file should exist after")
     
-    def test_db_file_already_exists(self):
+    def test_CRD_db_file_already_exists(self):
         """ make sure an exception is raised when trying to create the db file but it already exists and overwrite kwarg was not set to True """
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
@@ -45,7 +51,7 @@ class TestCreateResultsDb(TestCase):
                 self.assertEqual(f.read().strip(), "test", 
                                  msg="existing db file contents should not have been modified")
     
-    def test_db_file_already_exists_overwrite(self):
+    def test_CRD_db_file_already_exists_overwrite(self):
         """ make sure when trying to create the db file but it already exists and overwrite kwarg was set to True that the file does get changed """
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
@@ -60,14 +66,14 @@ class TestCreateResultsDb(TestCase):
                                     msg="existing db file contents should have been overwritten")
 
 
-class TestLoadDefaultParams(TestCase):
+class TestLoadDefaultParams(unittest.TestCase):
     """ tests for load_default_params function """
 
-    def test_load_default_params_no_errs(self):
+    def test_LDP_no_errs(self):
         """ run load_default_params and there should be no errors """
         params = load_default_params()
 
-    def test_default_params_top_level_sections(self):
+    def test_LDP_default_params_top_level_sections(self):
         """ load default parameters and make sure top level sections are present and not empty """
         params = load_default_params()
         for top_lvl_section in ['dda', 'dia', 'annotation', 'misc']:
@@ -77,10 +83,10 @@ class TestLoadDefaultParams(TestCase):
                                 msg="top level section '{}' should not have been empty".format(top_lvl_section))
             
 
-class TestLoadParams(TestCase):
+class TestLoadParams(unittest.TestCase):
     """ tests for load_params function """
 
-    def test_load_params_no_errs(self):
+    def test_LP_load_params_no_errs(self):
         """ run load_params and there should be no errors """
         with TemporaryDirectory() as tmp_dir:
             yf = os.path.join(tmp_dir, "params.yml")
@@ -97,10 +103,10 @@ class TestLoadParams(TestCase):
             input_output, params = load_params(yf)
 
 
-class TestSaveParams(TestCase):
+class TestSaveParams(unittest.TestCase):
     """ tests for save_params function """
 
-    def test_param_file_creation(self):
+    def test_SP_param_file_creation(self):
         """ makes sure a new params file is created """
         with TemporaryDirectory() as tmp_dir:
             pf = os.path.join(tmp_dir, "params.yml")
@@ -110,7 +116,7 @@ class TestSaveParams(TestCase):
             self.assertTrue(os.path.isfile(pf), 
                             msg="params file should exist after")
     
-    def test_param_file_overwrite(self):
+    def test_SP_param_file_overwrite(self):
         """ make sure saving params to exsiting file overwrites it """
         with TemporaryDirectory() as tmp_dir:
             pf = os.path.join(tmp_dir, "params.yml")
@@ -125,9 +131,72 @@ class TestSaveParams(TestCase):
                                     msg="existing params file contents should have been overwritten")
                 
 
-class TestDebugHandler(TestCase):
+class TestDebugHandler(unittest.TestCase):
     """ tests for the debug_handler function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_DH_textcb_with_no_cb(self):
+        """ calling the debug handler with 'textcb' or 'textcb_pid' without providing a callback should cause a ValueError """
+        with self.assertRaises(ValueError,
+                               msg="should have gotten a ValueError for not providing a callback"):
+            debug_handler("textcb", None, "this should cause a ValueError")
+        with self.assertRaises(ValueError,
+                               msg="should have gotten a ValueError for not providing a callback"):
+            debug_handler("textcb_pid", None, "this should cause a ValueError")
+
+    def test_DH_text_expected_output(self):
+        """ call the debug handler with 'text' and make sure the captured output is correct """
+        sio = io.StringIO()
+        with contextlib.redirect_stdout(sio):
+            # do something
+            debug_handler("text", None, "expected message")
+        output = sio.getvalue()
+        self.assertEqual(output, "DEBUG: expected message\n",
+                         msg="captured text incorrect")
+
+    def test_DH_text_pid_expected_output(self):
+        """ call the debug handler with 'text_pid' and make sure the captured output is correct """
+        sio = io.StringIO()
+        with contextlib.redirect_stdout(sio):
+            # do something
+            debug_handler("text_pid", None, "expected message", pid=420)
+        output = sio.getvalue()
+        self.assertEqual(output, "<pid: 420> DEBUG: expected message\n",
+                         msg="captured text incorrect")
+
+    def _helper_cb(self, msg):
+        """ helper method simulating a debug callback, stores messages in a list in self.__msgs """
+        self.__msgs.append(msg)
+
+    def test_DH_textcb_expected_output(self):
+        """ simulate using a debug callback and make sure the generated messages are correct """
+        expected = [
+            "DEBUG: message 1",
+            "DEBUG: message 2",
+            "DEBUG: message 3"
+        ]
+        self.__msgs = []
+        debug_handler("textcb", self._helper_cb, "message 1")
+        debug_handler("textcb", self._helper_cb, "message 2", pid=420)  # PID should be ignored with "textcb" flag
+        debug_handler("textcb", self._helper_cb, "message 3")
+        self.assertListEqual(self.__msgs, expected,
+                             msg="incorrect outputs produced")
+
+    def test_DH_textcb_pid_expected_output(self):
+        """ simulate using a debug callback with PID and make sure the generated messages are correct """
+        expected = [
+            "<pid: 420> DEBUG: message 1",
+            "<pid: 420> DEBUG: message 2",
+            "<pid: 420> DEBUG: message 3"
+        ]
+        self.__msgs = []
+        debug_handler("textcb_pid", self._helper_cb, "message 1", pid=420)
+        debug_handler("textcb_pid", self._helper_cb, "message 2", pid=420)
+        debug_handler("textcb_pid", self._helper_cb, "message 3", pid=420)
+        self.assertListEqual(self.__msgs, expected,
+                             msg="incorrect outputs produced")
+
+
+if __name__ == "__main__":
+    # run the tests for this module if invoked directly
+    unittest.main(verbosity=2)
+

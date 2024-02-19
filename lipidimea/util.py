@@ -8,12 +8,15 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import os
+from typing import Optional, Callable, Tuple, Dict, Any
 from sqlite3 import connect
 
 import yaml
 
 
-def create_results_db(f, overwrite=False):
+def create_results_db(f: str, 
+                      overwrite: bool = False
+                      ) -> None:
     """
     creates a sqlite database for results from DDA/DDA data analysis
 
@@ -45,7 +48,8 @@ def create_results_db(f, overwrite=False):
     con.close()
 
 
-def load_default_params():
+def load_default_params(
+                        ) -> Dict[Any, Any]:
     """
     load the default parameters (only the analysis parameters component, not the complete parameters 
     with input/output component)
@@ -64,7 +68,8 @@ def load_default_params():
     return params
 
 
-def load_params(params_file):
+def load_params(params_file: str
+                ) -> Tuple[Dict[Any, Any], Dict[Any, Any]]:
     """
     load parameters from a YAML file, returns a dict with the params
     
@@ -85,7 +90,8 @@ def load_params(params_file):
     return params['input_output'], params['params']
 
 
-def save_params(input_output, params, params_file):
+def save_params(input_output: Dict[Any, Any], params: Dict[Any, Any], params_file: str
+                ) -> None:
     """
     save analysis parameters along with input/output info
 
@@ -102,7 +108,9 @@ def save_params(input_output, params, params_file):
         yaml.dump({'input_output': input_output, 'params': params}, out, default_flow_style=False)
 
 
-def debug_handler(debug_flag, debug_cb, msg, pid=None):
+def debug_handler(debug_flag: str, debug_cb: Optional[Callable], msg: str, 
+                  pid: Optional[int] = None
+                  ) -> None :
     """
     deal with different debugging states automatically 
     
@@ -122,7 +130,7 @@ def debug_handler(debug_flag, debug_cb, msg, pid=None):
         specifies how to dispatch the message, `None` to do nothing
     debug_cb : ``func``
         callback function that takes the debugging message as an argument, can be None if
-        debug_flag is not set to 'textcb'
+        debug_flag is not set to 'textcb' or 'textcb_pid'
     msg : ``str``
         debugging message (automatically prepended with "DEBUG: ")
     pid : ``int``, optional
