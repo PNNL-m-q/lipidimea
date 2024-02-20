@@ -386,7 +386,17 @@ def _consolidate_chrom_feats(feats: List[Tuple[float, float, float, float, float
     return features_consolidated
 
 
-def _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_flag, debug_cb):
+def _extract_and_fit_ms2_spectra(rdr: _MSMSReaderDDA, 
+                                 chrom_feats_consolidated: List[Tuple[float, float, float, float, float]], 
+                                 pre_mz_ppm: float,
+                                 mz_bin_min: float,
+                                 mz_bin_size: float,
+                                 min_rel_height: float,
+                                 min_abs_height: float,
+                                 fwhm_min: float, fwhm_max: float,
+                                 peak_min_dist: float,
+                                 debug_flag: str, debug_cb: Optional[Callable] 
+                                 ) -> List[Tuple[Any]] :
     """
     extracts MS2 spectra for consolidated chromatographic features, tries to fit spectra peaks,
     returns query data for adding features to database
@@ -395,12 +405,23 @@ def _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_fl
     ----------
     rdr : ``_MSMSReaderDDA``
         object for accessing DDA MSMS data from MZA
-    cur : ``sqlite3.Cursor``
-        cursor for making queries into the lipid ids database
     chrom_feats_consolidated : ``list(tuple(...))``
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
-    params : ``dict(...)``
-        analysis parameters dict
+    pre_mz_ppm : ``float``
+        precursor m/z tolerance (in ppm) for MS2 spectrum extraction
+    mz_bin_min : ``float``
+        min m/z for binning
+    mz_bin_size : ``float``
+        size of m/z bins
+    min_rel_height : ``float``
+        minimum spectrum peak height relative to most intense peak
+    min_abs_height : ``float``
+        minimum absolute spectrum peak height
+    fwhm_min : ``float``
+    fwhm_max : ``float``
+        min/max spectrum peak FWHM bounds
+    peak_min_dist : ````
+        minimum distance between consecutive spectrum peaks
     debug_flag : ``str``
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``
@@ -413,41 +434,32 @@ def _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_fl
         list of query data for all of the features
     """
     pid = os.getpid()
-    # unpack parameters
-    ms2_pre_mz_tol = params['dda']['dda_ms2_ext_fit']['dda_mxf_pre_mz_tol']
-    ms2_mz_bin_min = params['dda']['dda_ms2_ext_fit']['dda_mxf_mz_bin_min']
-    ms2_mz_bin_size = params['dda']['dda_ms2_ext_fit']['dda_mxf_mz_bin_size']
-    ms2_min_rel_height = params['dda']['dda_ms2_ext_fit']['dda_mxf_min_rel_height']
-    ms2_min_abs_height = params['dda']['dda_ms2_ext_fit']['dda_mxf_min_abs_height']
-    ms2_fwhm_min = params['dda']['dda_ms2_ext_fit']['dda_mxf_fwhm_min']
-    ms2_fwhm_max = params['dda']['dda_ms2_ext_fit']['dda_mxf_fwhm_max']
-    ms2_min_dist = params['dda']['dda_ms2_ext_fit']['dda_mxf_min_dist']
-    # extract and fit MS2 spectra, then add info to the database
+    # extract and fit MS2 spectra, return query data
     debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING MS2 SPECTRA', pid)
     t0 = time()
     qdata = []
     n = len(chrom_feats_consolidated)
     for i, (fmz, frt, fht, fwt, fsnr) in enumerate(chrom_feats_consolidated):
-        msg = '({}/{}) m/z: {:.4f} RT: {:.2f} +/- {:.2f} min ({:.1e}, {:.1f}) -> '.format(i + 1, n, fmz, frt, fwt, fht, fsnr)
+        msg = f"({i + 1}/{n}) m/z: {fmz:.4f} RT: {frt:.2f} +/- {fwt:.2f} min ({fht:.1e}, {fsnr:.1f}) -> "
         rt_min, rt_max = frt - fwt, frt + fwt  # RT range is peak RT +/- peak FWHM
-        ms2_mz_bin_max = fmz + 5  # only extract MS2 spectrum up to precursor m/z + 5 Da
+        mz_bin_max = fmz + 5  # only extract MS2 spectrum up to precursor m/z + 5 Da
         # (try to) extract MS2 spectrum
-        ms2 = rdr.get_msms_spectrum(fmz, ms2_pre_mz_tol, rt_min, rt_max, 
-                                    ms2_mz_bin_min, ms2_mz_bin_max, ms2_mz_bin_size)
+        ms2 = rdr.get_msms_spectrum(fmz, tol_from_ppm(fmz, pre_mz_ppm), rt_min, rt_max, 
+                                    mz_bin_min, mz_bin_max, mz_bin_size)
         mz_bins, i_bins, n_scan_pre_mzs, scan_pre_mzs = ms2
-        msg += '# MS2 scans: {}'.format(n_scan_pre_mzs)
+        msg += '# MS2 scans: {} '.format(n_scan_pre_mzs)
         if n_scan_pre_mzs > 0:
             # find peaks
             pkmzs, pkhts, pkwts = find_peaks_1d_localmax(mz_bins, i_bins,
-                                                        ms2_min_rel_height, ms2_min_abs_height, 
-                                                        ms2_fwhm_min, ms2_fwhm_max, 
-                                                        ms2_min_dist)
+                                                        min_rel_height, min_abs_height, 
+                                                        fwhm_min, fwhm_max, 
+                                                        peak_min_dist)
             if len(pkmzs) > 0:
                 ms2_str = ms2_to_str(pkmzs, pkhts)
                 qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, len(pkmzs), ms2_str))
             else:
                 qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, 0, None))
-            debug_handler(debug_flag, debug_cb, msg + " -> # MS2 peaks: {}".format(len(pkmzs)), pid)
+            debug_handler(debug_flag, debug_cb, msg + "-> # MS2 peaks: {}".format(len(pkmzs)), pid)
         else:
             qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, None, None))
             debug_handler(debug_flag, debug_cb, msg, pid)

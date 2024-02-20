@@ -24,6 +24,7 @@ from lipidimea.msms.dda import (
     _extract_and_fit_ms2_spectra, _add_features_to_db, extract_dda_features, 
     extract_dda_features_multiproc, consolidate_dda_features
 )
+from lipidimea.msms._util import ms2_to_str, str_to_ms2
 
 
 # Multiple tests cover functions that use the debug handler so instead of 
@@ -168,9 +169,88 @@ class Test_ConsolidateChromFeats(unittest.TestCase):
 class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
     """ tests for the _extract_and_fit_ms2_spectra function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_EAFMS2_spectrum_no_peaks(self):
+        """ test extracting and fitting spectrum from noisy signal with no peaks in it """
+        # make a fake XIC with no peaks
+        np.random.seed(420)
+        ms2_mzs = np.arange(50, 800, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=ms2_mzs.shape)
+        ms2_iis = 1000 * noise1 
+        # consolidated features
+        cons_feats = [
+            (789.0123, 10.03, 1e5, 0.25, 10),
+        ]
+        # mock a _MSMSReaderDDA instance with get_msms_spectrum method that returns the fake spectrum
+        with patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
+            rdr = MockReader.return_value
+            rdr.f = "<filename>"
+            rdr.get_msms_spectrum.return_value = (ms2_mzs, ms2_iis, 3, [789.0123, 789.0123, 789.0123])
+            # use a helper callback function to store instead of printing debugging messages
+            global _DEBUG_MSGS
+            _DEBUG_MSGS = []
+            # test the function
+            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, 40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1, 
+                                                 debug_flag="textcb", debug_cb=_debug_cb)
+            # there should be no features found in this spectrum, it is just flat noise
+            # but there will still be qdata with the chromatographic feature
+            self.assertListEqual(qdata, [(None, '<filename>', 789.0123, 10.03, 0.25, 100000.0, 10, 3, 0, None)],
+                                 msg="incorrect qdata returned")
+            # make sure that the correct number of debugging messages were generated
+            self.assertEqual(len(_DEBUG_MSGS), 3)
+            # check for debug message showing no peaks found
+            self.assertIn("# MS2 peaks: 0", _DEBUG_MSGS[1])
+
+    def test_EAFM2S_spectrum_with_peaks(self):
+        """ test extracting and fitting MS2 spectrum with peaks in it """
+        # make a fake spectrum with peaks
+        np.random.seed(420)
+        ms2_mzs = np.arange(50, 800, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=ms2_mzs.shape)
+        ms2_iis = 1000 * noise1 
+        noise2 = np.random.normal(1, 0.1, size=ms2_mzs.shape)
+        pkmzs = np.arange(100, 800, 25)
+        for pkmz in pkmzs:
+            ms2_iis += _gauss(ms2_mzs, pkmz, 1e5, 0.1) * noise2 
+        # expected query data generated from extracting and fitting MS2 spectrum
+        expected_qdata = (
+            None, "<filename>", 789.0123, 10.03, 0.25, 1e5, 10, 3, 28, ms2_to_str(pkmzs, np.repeat(1e5, len(pkmzs)))
+        )
+        # consolidated features
+        cons_feats = [
+            (789.0123, 10.03, 1e5, 0.25, 10),
+        ]
+        # mock a _MSMSReaderDDA instance with get_msms_spectrum method that returns the fake spectrum
+        with patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
+            rdr = MockReader.return_value
+            rdr.f = "<filename>"
+            rdr.get_msms_spectrum.return_value = (ms2_mzs, ms2_iis, 3, [789.0123, 789.0123, 789.0123])
+            # use a helper callback function to store instead of printing debugging messages
+            global _DEBUG_MSGS
+            _DEBUG_MSGS = []
+            # test the function
+            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, 40, 50, 0.05, 0.3, 1e3, 0.025, 0.25, 0.1, 
+                                                 debug_flag="textcb", debug_cb=_debug_cb)
+            # check the returned qdata values
+            qid, qf, qmz, qrt, qwt, qht, qsnr, qnscans, qmzpeaks, qspecstr = qdata[0]
+            eid, ef, emz, ert, ewt, eht, esnr, enscans, emzpeaks, especstr = expected_qdata
+            self.assertEqual(qid, eid)
+            self.assertEqual(qf, ef)
+            self.assertAlmostEqual(qmz, emz, places=4)
+            self.assertAlmostEqual(qrt, ert, places=2)
+            self.assertAlmostEqual(qwt, ewt, places=2)
+            self.assertLess(abs(qht - eht) / eht, 0.1)
+            self.assertAlmostEqual(qsnr, esnr, places=0)
+            self.assertEqual(qnscans, enscans)
+            self.assertEqual(qmzpeaks, emzpeaks)
+            qpeak_arrays = str_to_ms2(qspecstr)
+            epeak_arrays = str_to_ms2(especstr)
+            for qpmz, qpi, epmz, epi in zip(*qpeak_arrays, *epeak_arrays):
+                self.assertAlmostEqual(qpmz, epmz, places=1)
+                self.assertLess(abs(qpi - epi) / epi, 0.3)
+            # make sure that the correct number of debugging messages were generated
+            self.assertEqual(len(_DEBUG_MSGS), 3)
+            # check for debug message with number of MS2 peaks found
+            self.assertIn("# MS2 peaks: 28", _DEBUG_MSGS[1])
 
 
 class Test_AddFeaturesToDb(unittest.TestCase):
