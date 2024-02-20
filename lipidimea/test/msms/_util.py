@@ -15,6 +15,7 @@ from lipidimea.msms._util import (
     ms2_to_str, 
     str_to_ms2, 
     apply_args_and_kwargs,
+    ppm_from_delta_mz,
     tol_from_ppm
 )
 
@@ -189,8 +190,28 @@ class TestApplyArgsAndKwargs(unittest.TestCase):
                          msg="did not get correct return value from wrapped function")
 
 
+class TestPPMFromDeltaMz(unittest.TestCase):
+    """ tests for the ppm function """
+    
+    def test_PFDM_correct_ppms(self):
+        """ ensure correct ppms get calculated """
+        expected = [
+            # (mz, expected ppm, delta_mz)
+            (500, 5, 0.0025),
+            (500, 10, 0.0050),
+            (500, 50, 0.0250),
+            (1000, 5, 0.0050),
+            (1000, 10, 0.0100),
+            (1000, 50, 0.0500),
+        ]
+        for mz, exp_ppm, delta_mz in expected:
+            ppm = ppm_from_delta_mz(delta_mz, mz)
+            self.assertAlmostEqual(ppm, exp_ppm, places=3,
+                                   msg=f"with delta_mz: {delta_mz} mz: {mz}, expected ppm: {exp_ppm} (got ppm: {ppm})")
+
+
 class TestTolFromPPM(unittest.TestCase):
-    """ tests for the tol_from_ppm """
+    """ tests for the tol_from_ppm function """
 
     def test_TFP_correct_tolerances(self):
         """ ensure that tolerances are calculated correctly """

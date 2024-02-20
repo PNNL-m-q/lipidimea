@@ -85,6 +85,23 @@ def apply_args_and_kwargs(fn: Callable, args: List[Any], kwargs: Dict[Any, Any]
     return fn(*args, **kwargs)
 
 
+def ppm_from_delta_mz(delta_mz: float, mz: float
+                      ) -> float:
+    """
+    compute ppm from delta mz and mz
+
+    Parameters
+    ----------
+    delta_mz : ``float``
+    mz : ``float``
+
+    Returns
+    -------
+    ppm : ``float``
+    """
+    return 1e6 * delta_mz / mz
+
+
 def tol_from_ppm(mz: float, ppm: float
                  ) -> float :
     """ 

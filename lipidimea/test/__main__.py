@@ -12,7 +12,7 @@ import unittest
 
 
 from lipidimea.test.msms._util import (
-    TestMS2ToStr, TestStrToMS2, TestApplyArgsAndKwargs, TestTolFromPPM
+    TestMS2ToStr, TestStrToMS2, TestApplyArgsAndKwargs, TestPPMFromDeltaMz, TestTolFromPPM
 )
 from lipidimea.test.msms.dda import (
     Test_MSMSReaderDDA, Test_MSMSReaderDDACached, Test_ExtractAndFitChroms, 

@@ -21,7 +21,9 @@ import numpy as np
 import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from lipidimea.msms._util import ms2_to_str, apply_args_and_kwargs, tol_from_ppm
+from lipidimea.msms._util import (
+    ms2_to_str, apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
+)
 from lipidimea.util import debug_handler
 
 
@@ -337,7 +339,11 @@ def _extract_and_fit_chroms(rdr: _MSMSReaderDDA,
     return features
 
 
-def _consolidate_chrom_feats(feats, params, debug_flag, debug_cb):
+def _consolidate_chrom_feats(feats: List[Tuple[float, float, float, float, float]], 
+                             fc_mz_ppm: float, 
+                             fc_rt_tol: float, 
+                             debug_flag: str, debug_cb: Optional[Callable] 
+                             ) -> List[Tuple[float, float, float, float, float]] :
     """
     consolidate chromatographic features that have very similar m/z and RT
     only keep highest intensity features
@@ -346,8 +352,10 @@ def _consolidate_chrom_feats(feats, params, debug_flag, debug_cb):
     ----------
     feats : ``list(tuple(...))``
         list of chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
-    params : ``dict(...)``
-        analysis parameters dict
+    fc_mz_ppm : ``float``
+        m/z tolerance in ppm for consolidation of features
+    fc_rt_tol : ``float``
+        rt tolerance for consolidation of features
     debug_flag : ``str``
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``
@@ -360,22 +368,21 @@ def _consolidate_chrom_feats(feats, params, debug_flag, debug_cb):
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     """
     pid = os.getpid()
-    # unpack parameters
-    fc_mz_tol = params['dda']['dda_chrom_feat_cons']['dda_cfc_mz_tol']
-    fc_rt_tol = params['dda']['dda_chrom_feat_cons']['dda_cfc_rt_tol']
     # consolidate features
     features_consolidated = []
     for feat in feats:
         add = True
         for i in range(len(features_consolidated)):
             fc_i = features_consolidated[i]
-            if abs(feat[0] - fc_i[0]) <= fc_mz_tol and abs(feat[1] - fc_i[1]) <= fc_rt_tol:
+            delta_mz = abs(feat[0] - fc_i[0])
+            if ppm_from_delta_mz(delta_mz, fc_i[0]) <= fc_mz_ppm and abs(feat[1] - fc_i[1]) <= fc_rt_tol:
                 add = False
                 if feat[2] > fc_i[2]:
                     features_consolidated[i] = feat
         if add:
             features_consolidated.append(feat)
-    debug_handler(debug_flag, debug_cb, 'CONSOLIDATING CHROMATOGRAPHIC FEATURES: {} features -> {} features'.format(len(feats), len(features_consolidated)), pid)
+    msg = f"CONSOLIDATING CHROMATOGRAPHIC FEATURES: {len(feats)} features -> {len(features_consolidated)} features"
+    debug_handler(debug_flag, debug_cb, msg, pid)
     return features_consolidated
 
 
