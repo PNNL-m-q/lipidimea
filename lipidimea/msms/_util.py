@@ -84,3 +84,19 @@ def apply_args_and_kwargs(fn: Callable, args: List[Any], kwargs: Dict[Any, Any]
     """ small helper that enables multiprocessing.Pool.starmap with kwargs """
     return fn(*args, **kwargs)
 
+
+def tol_from_ppm(mz: float, ppm: float
+                 ) -> float :
+    """ 
+    convert ppm to a tolerance for a specified m/z
+    
+    Parameters
+    ----------
+    mz : ``float``
+    ppm : ``float``
+
+    Returns
+    -------
+    mz_tolerance : ``float``
+    """
+    return mz * ppm / 1e6

@@ -14,7 +14,8 @@ import numpy as np
 from lipidimea.msms._util import (
     ms2_to_str, 
     str_to_ms2, 
-    apply_args_and_kwargs
+    apply_args_and_kwargs,
+    tol_from_ppm
 )
 
 
@@ -186,6 +187,26 @@ class TestApplyArgsAndKwargs(unittest.TestCase):
                          msg="did not get correct return value from wrapped function")
         self.assertEqual(apply_args_and_kwargs(_helper_two_args_two_kwargs, [1, 2], {"kwarg1": 3, "kwarg2": 4}), _HELPER_VALUE + 10,
                          msg="did not get correct return value from wrapped function")
+
+
+class TestTolFromPPM(unittest.TestCase):
+    """ tests for the tol_from_ppm """
+
+    def test_TFP_correct_tolerances(self):
+        """ ensure that tolerances are calculated correctly """
+        expected = [
+            # (mz, ppm, expected tolerance)
+            (500, 5, 0.0025),
+            (500, 10, 0.0050),
+            (500, 50, 0.0250),
+            (1000, 5, 0.0050),
+            (1000, 10, 0.0100),
+            (1000, 50, 0.0500),
+        ]
+        for mz, ppm, exp_tol in expected:
+            tol = tol_from_ppm(mz, ppm)
+            self.assertAlmostEqual(tol, exp_tol, places=4,
+                                   msg=f"with mz: {mz} ppm: {ppm}, expected tol: {exp_tol} (got tol: {tol})")
 
 
 if __name__ == "__main__":

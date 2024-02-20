@@ -8,6 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
+from typing import List, Tuple, Any, Set, Callable, Optional
 from sqlite3 import connect
 from time import time, sleep
 from itertools import repeat
@@ -20,7 +21,7 @@ import numpy as np
 import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from lipidimea.msms._util import ms2_to_str, apply_args_and_kwargs
+from lipidimea.msms._util import ms2_to_str, apply_args_and_kwargs, tol_from_ppm
 from lipidimea.util import debug_handler
 
 
@@ -258,7 +259,16 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
         return np.array([rts, ins])
 
 
-def _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb):
+def _extract_and_fit_chroms(rdr: _MSMSReaderDDA, 
+                            pre_mzs: Set[float], 
+                            mz_ppm: float, 
+                            min_rel_height: float, 
+                            min_abs_height: float, 
+                            fwhm_min: float, fwhm_max: float,
+                            max_peaks: int, 
+                            min_psnr: float,
+                            debug_flag: str, debug_cb: Optional[Callable] 
+                            ) -> List[Tuple[float, float, float, float, float]] :
     """
     extracts and fits chromatograms for a list of precursor m/zs 
 
@@ -268,8 +278,19 @@ def _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb):
         object for accessing DDA MSMS data from MZA
     pre_mzs : ``set(float)``
         sorted unique precursor m/zs
-    params : ``dict(...)``
-        analysis parameters dict
+    mz_ppm : ``float``
+        m/z tolerance (in ppm) for XIC extraction
+    min_rel_height : ``float``
+        minimum XIC peak height relative to most intense peak
+    min_abs_height : ``float``
+        minimum absolute XIC peak height
+    fwhm_min : ``float``
+    fwhm_max : ``float``
+        min/max XIC peak FWHM bounds
+    max_peaks : ``int``
+        maximum number of XIC peaks to fit
+    min_psnr : ``float``
+        minimum peak SNR for XIC peaks
     debug_flag : ``str``
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``
@@ -282,24 +303,16 @@ def _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb):
         list of chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     """
     pid = os.getpid()
-    # unpack parameters
-    mz_tol = params['dda']['dda_chrom_ext_fit']['dda_cxf_mz_tol']
-    min_rel_height = params['dda']['dda_chrom_ext_fit']['dda_cxf_min_rel_height']
-    min_abs_height = params['dda']['dda_chrom_ext_fit']['dda_cxf_min_abs_height']
-    fwhm_min = params['dda']['dda_chrom_ext_fit']['dda_cxf_fwhm_min']
-    fwhm_max = params['dda']['dda_chrom_ext_fit']['dda_cxf_fwhm_max']
-    max_peaks = params['dda']['dda_chrom_ext_fit']['dda_cxf_max_peaks']
-    min_psnr = params['dda']['dda_chrom_ext_fit']['dda_cxf_min_psnr']
     # extract chromatograms
     debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING CHROMATOGRAMS', pid)
     features = []
     t0 = time()
     n = len(pre_mzs)
     for i, pre_mz in enumerate(pre_mzs): 
-        msg = '({}/{}) precursor m/z: {:.4f} -> '.format(i + 1, n, pre_mz)
+        msg = f"({i + 1}/{n}) precursor m/z: {pre_mz:.4f} -> "
         # extract chromatogram
-        chrom = rdr.get_chrom(pre_mz, mz_tol)
-        # try fitting chromatogram (up to 2 peaks)
+        chrom = rdr.get_chrom(pre_mz, tol_from_ppm(pre_mz, mz_ppm))
+        # try fitting chromatogram (up to n peaks)
         _pkrts, _pkhts, _pkwts = find_peaks_1d_gauss(*chrom, 
                                                      min_rel_height, min_abs_height, 
                                                      fwhm_min, fwhm_max, 
@@ -315,11 +328,12 @@ def _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb):
                 psnrs.append(psnr)
         if len(pkrts) > 0:
             for r, h, w, s in zip(pkrts, pkhts, pkwts, psnrs):
-                debug_handler(debug_flag, debug_cb, msg + ' RT: {:.2f} +/- {:.2f} min ({:.1e}, {:.1f})'.format(r, w, h, s), pid)
+                pkinfo = f"RT: {r:.2f} +/- {w:.2f} min ({h:.1e}, {s:.1f}) "
+                debug_handler(debug_flag, debug_cb, msg + pkinfo, pid)
                 features.append((pre_mz, r, h, w, s))
         else: 
             debug_handler(debug_flag, debug_cb, msg + 'no peaks found', pid)
-    debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING CHROMATOGRAMS: elapsed: {:.1f} s'.format(time() - t0), pid)
+    debug_handler(debug_flag, debug_cb, f"EXTRACTING AND FITTING CHROMATOGRAMS: elapsed: {time() - t0:.1f} s", pid)
     return features
 
 
