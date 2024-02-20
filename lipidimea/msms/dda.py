@@ -300,7 +300,7 @@ def _extract_and_fit_chroms(rdr: _MSMSReaderDDA,
     Returns
     -------
     features : ``list(tuple(...))``
-        list of chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
+        list of chromatographic features (pre_mz, peak RT, peak height, peak FWHM, pSNR)
     """
     pid = os.getpid()
     # extract chromatograms
