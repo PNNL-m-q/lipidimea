@@ -9,7 +9,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 from typing import List, Tuple, Any, Set, Callable, Optional
-from sqlite3 import connect
+import sqlite3
 from time import time, sleep
 from itertools import repeat
 import multiprocessing
@@ -25,6 +25,11 @@ from lipidimea.msms._util import (
     ms2_to_str, apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
 )
 from lipidimea.util import debug_handler
+
+
+# define type aliases
+type DdaChromFeat = Tuple[float, float, float, float, float]
+type DdaQdata = Tuple[None, str, float, float, float, float, float, int, int, Optional[str]]
 
 
 class _MSMSReaderDDA():
@@ -270,7 +275,7 @@ def _extract_and_fit_chroms(rdr: _MSMSReaderDDA,
                             max_peaks: int, 
                             min_psnr: float,
                             debug_flag: str, debug_cb: Optional[Callable] 
-                            ) -> List[Tuple[float, float, float, float, float]] :
+                            ) -> List[DdaChromFeat] :
     """
     extracts and fits chromatograms for a list of precursor m/zs 
 
@@ -339,11 +344,11 @@ def _extract_and_fit_chroms(rdr: _MSMSReaderDDA,
     return features
 
 
-def _consolidate_chrom_feats(feats: List[Tuple[float, float, float, float, float]], 
+def _consolidate_chrom_feats(feats: List[DdaChromFeat], 
                              fc_mz_ppm: float, 
                              fc_rt_tol: float, 
                              debug_flag: str, debug_cb: Optional[Callable] 
-                             ) -> List[Tuple[float, float, float, float, float]] :
+                             ) -> List[DdaChromFeat] :
     """
     consolidate chromatographic features that have very similar m/z and RT
     only keep highest intensity features
@@ -387,7 +392,7 @@ def _consolidate_chrom_feats(feats: List[Tuple[float, float, float, float, float
 
 
 def _extract_and_fit_ms2_spectra(rdr: _MSMSReaderDDA, 
-                                 chrom_feats_consolidated: List[Tuple[float, float, float, float, float]], 
+                                 chrom_feats_consolidated: List[DdaChromFeat], 
                                  pre_mz_ppm: float,
                                  mz_bin_min: float,
                                  mz_bin_size: float,
@@ -396,7 +401,7 @@ def _extract_and_fit_ms2_spectra(rdr: _MSMSReaderDDA,
                                  fwhm_min: float, fwhm_max: float,
                                  peak_min_dist: float,
                                  debug_flag: str, debug_cb: Optional[Callable] 
-                                 ) -> List[Tuple[Any]] :
+                                 ) -> List[DdaQdata] :
     """
     extracts MS2 spectra for consolidated chromatographic features, tries to fit spectra peaks,
     returns query data for adding features to database
@@ -432,6 +437,7 @@ def _extract_and_fit_ms2_spectra(rdr: _MSMSReaderDDA,
     -------
     qdata : ``list(tuple(...))``
         list of query data for all of the features
+            [None, str, float, float, float, float, float, int, int, Optional[str]]
     """
     pid = os.getpid()
     # extract and fit MS2 spectra, return query data
@@ -467,7 +473,10 @@ def _extract_and_fit_ms2_spectra(rdr: _MSMSReaderDDA,
     return qdata
 
 
-def _add_features_to_db(cur, qdata, debug_flag, debug_cb):
+def _add_features_to_db(cur, 
+                        qdata: List[DdaQdata], 
+                        debug_flag: str, debug_cb: Optional[Callable]
+                        ) -> None:
     """
     adds features and metadata into the DDA ids database. 
 
@@ -490,8 +499,13 @@ def _add_features_to_db(cur, qdata, debug_flag, debug_cb):
         cur.execute(qry, qd)
 
 
-def extract_dda_features(dda_data_file, results_db, params, 
-                         cache_ms1=True, debug_flag=None, debug_cb=None, drop_scans=None):
+def extract_dda_features(dda_data_file: str, 
+                         results_db: sqlite3.Cursor, 
+                         params: Any, 
+                         cache_ms1: bool = True, 
+                         debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None, 
+                         drop_scans: List[int] = None
+                         ) -> None:
     """
     Extract features from a raw DDA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
 
@@ -534,7 +548,7 @@ def extract_dda_features(dda_data_file, results_db, params,
     # do not need the reader anymore
     rdr.close()
     # initialize connection to DDA ids database
-    con = connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
+    con = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # add features to database
     _add_features_to_db(cur, qdata, debug_flag, debug_cb)
@@ -542,7 +556,6 @@ def extract_dda_features(dda_data_file, results_db, params,
     con.commit()
     con.close()
     
-
 
 def extract_dda_features_multiproc(dda_data_files, results_db, params, n_proc,
                                    cache_ms1=False, debug_flag=None, debug_cb=None):
@@ -603,7 +616,7 @@ def consolidate_dda_features(results_db, params,
     mzt = params['dda']['dda_feat_cons']['dda_fc_mz_tol']
     rtt = params['dda']['dda_feat_cons']['dda_fc_rt_tol']
     # connect to the database
-    con = connect(results_db)
+    con = sqlite3.connect(results_db)
     cur = con.cursor()
     # step 1, create groups of features based on similar m/z and RT
     qry_sel = "SELECT dda_feat_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAFeatures"

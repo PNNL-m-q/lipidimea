@@ -6,12 +6,6 @@ Dylan Ross (dylan.ross@pnnl.gov)
     tests for the lipidimea/msms/dda.py module
 """
 
-"""
-with patch('t.a.A') as MockClass:
-            instance = MockClass.return_value
-            instance.get_param1.return_value = 1
-"""
-
 
 import unittest
 from unittest.mock import patch
@@ -34,6 +28,7 @@ from lipidimea.msms._util import ms2_to_str, str_to_ms2
 # for the expected debugging messages if needed
 _DEBUG_MSGS = []
 
+
 def _debug_cb(msg: str
               ) -> None :
     """ helper callback function for redirecting debugging messages """
@@ -54,6 +49,7 @@ class Test_MSMSReaderDDACached(unittest.TestCase):
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """
         raise NotImplementedError("no tests implemented yet")
+
 
 class Test_ExtractAndFitChroms(unittest.TestCase):
     """ tests for the _extract_and_fit_chroms function """

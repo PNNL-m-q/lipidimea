@@ -34,7 +34,7 @@ CREATE TABLE DDAFeatures (
     ms2_n_scans INT NOT NULL,
     ms2_n_peaks INT,
     ms2_peaks TEXT
-);
+) STRICT;
 
 
 ----------- DIA Features --------------
@@ -88,7 +88,7 @@ CREATE TABLE _DIAFeatures (
     ms2_n_peaks INT,
     ms2_peaks TEXT,
     ms2 BLOB
-);
+) STRICT;
 
 -- table with descriptions for columns in DIADeconFragments table
 CREATE TABLE _DIADeconFragments_COLUMNS (
@@ -107,7 +107,7 @@ CREATE TABLE DIADeconFragments (
     xic_dist REAL NOT NULL,
     atd BLOB,
     atd_dist REAL NOT NULL
-);
+) STRICT;
 
 
 -- table for mapping DIA feature IDs to deconvoluted fragment IDs
@@ -223,4 +223,4 @@ CREATE TABLE Lipids (
     ppm REAL NOT NULL,
     ccs_rel_err REAL,
     fragments TEXT
-);
+) STRICT;

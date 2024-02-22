@@ -41,7 +41,7 @@ def create_results_db(f: str,
     con = connect(f)  
     cur = con.cursor()
     # execute SQL script to set up the database
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sql'), 'r') as sql_f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3'), 'r') as sql_f:
         cur.executescript(sql_f.read())
     # save and close the database
     con.commit()
