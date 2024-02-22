@@ -114,7 +114,7 @@ CREATE TABLE DIADeconFragments (
 CREATE TABLE _DIAFeatsToDeconFrags (
     dia_feat_id INTEGER NOT NULL,
     decon_frag_id INTEGER NOT NULL
-);
+) STRICT;
 
 
 -- view FROM _DIAFeatures table that adds a generated column with deconvoluted fragment IDs

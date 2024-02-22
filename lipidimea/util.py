@@ -15,7 +15,8 @@ import yaml
 
 
 def create_results_db(f: str, 
-                      overwrite: bool = False
+                      overwrite: bool = False,
+                      strict: bool = True
                       ) -> None:
     """
     creates a sqlite database for results from DDA/DDA data analysis
@@ -29,6 +30,10 @@ def create_results_db(f: str,
     overwrite : ``bool``, default=False
         if the database file already exists and this flag is True, then overwrite existing database 
         and do not raise the RuntimeError
+    strict : ``bool``, default=True
+        use STRICT constraint on all data tables in results database, set this to False to exclude
+        this constraint and enable backward compatibility with older versions of Python/sqlite3
+        since 3.12 is the first Python version to support the STRICT mode
     """
     # see if the file exists
     if os.path.exists(f):
@@ -42,7 +47,11 @@ def create_results_db(f: str,
     cur = con.cursor()
     # execute SQL script to set up the database
     with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3'), 'r') as sql_f:
-        cur.executescript(sql_f.read())
+        content = sql_f.read()
+        # patch in place to remove STRICT constraints if strict flag set to False
+        if not strict:
+            content = content.replace("STRICT", "")
+        cur.executescript(content)
     # save and close the database
     con.commit()
     con.close()

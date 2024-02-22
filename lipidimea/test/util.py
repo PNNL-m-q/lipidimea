@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 import os
 import io
 import contextlib
+import sqlite3
 
 from lipidimea.util import (
     create_results_db,
@@ -64,6 +65,27 @@ class TestCreateResultsDb(unittest.TestCase):
             with open(dbf, "r") as f:
                 self.assertNotEqual(s, os.stat(dbf), 
                                     msg="existing db file contents should have been overwritten")
+                
+    def test_CRD_strict_option(self):
+        """ make sure the strict option works as intended """
+        # first create a database with the default behavior (strict enabled)
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)
+            # try an insert query with the wrong datatypes
+            # with STRICT enabled this should cause an error
+            with self.assertRaises(sqlite3.IntegrityError,
+                                   msg="trying to insert with wrong types and STRICT enabled should cause an error"):
+                con = sqlite3.connect(dbf)
+                con.execute("INSERT INTO _DIAFeatsToDeconFrags VALUES (?,?);", ("bad", "types"))
+        # create a database with strict disabled
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf, strict=False)
+            # try an insert query with the wrong datatypes
+            # with STRICT disabled this should not cause an error
+            con = sqlite3.connect(dbf)
+            con.execute("INSERT INTO _DIAFeatsToDeconFrags VALUES (?,?);", ("bad", "types"))
 
 
 class TestLoadDefaultParams(unittest.TestCase):
