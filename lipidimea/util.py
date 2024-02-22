@@ -117,7 +117,7 @@ def save_params(input_output: Dict[Any, Any], params: Dict[Any, Any], params_fil
         yaml.dump({'input_output': input_output, 'params': params}, out, default_flow_style=False)
 
 
-def debug_handler(debug_flag: str, debug_cb: Optional[Callable], msg: str, 
+def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: str, 
                   pid: Optional[int] = None
                   ) -> None :
     """

@@ -8,7 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Tuple, Any, Set, Callable, Optional
+from typing import Union, List, Tuple, Any, Set, Callable, Optional
 import sqlite3
 from time import time, sleep
 from itertools import repeat
@@ -28,8 +28,9 @@ from lipidimea.util import debug_handler
 
 
 # define type aliases
+type DdaReader = Union[_MSMSReaderDDA, _MSMSReaderDDA_Cached]
 type DdaChromFeat = Tuple[float, float, float, float, float]
-type DdaQdata = Tuple[None, str, float, float, float, float, float, int, int, Optional[str]]
+type DdaQdata = Tuple[None, str, float, float, float, float, float, int, Optional[int], Optional[str]]
 
 
 class _MSMSReaderDDA():
@@ -266,7 +267,7 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
         return np.array([rts, ins])
 
 
-def _extract_and_fit_chroms(rdr: _MSMSReaderDDA, 
+def _extract_and_fit_chroms(rdr: DdaReader, 
                             pre_mzs: Set[float], 
                             mz_ppm: float, 
                             min_rel_height: float, 
@@ -391,7 +392,7 @@ def _consolidate_chrom_feats(feats: List[DdaChromFeat],
     return features_consolidated
 
 
-def _extract_and_fit_ms2_spectra(rdr: _MSMSReaderDDA, 
+def _extract_and_fit_ms2_spectra(rdr: DdaReader, 
                                  chrom_feats_consolidated: List[DdaChromFeat], 
                                  pre_mz_ppm: float,
                                  mz_bin_min: float,
@@ -504,7 +505,7 @@ def extract_dda_features(dda_data_file: str,
                          params: Any, 
                          cache_ms1: bool = True, 
                          debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None, 
-                         drop_scans: List[int] = None
+                         drop_scans: Optional[List[int]] = None
                          ) -> None:
     """
     Extract features from a raw DDA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
@@ -531,25 +532,25 @@ def extract_dda_features(dda_data_file: str,
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
     """
-    pid = os.getpid()
+    pid: int = os.getpid()
     debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
     debug_handler(debug_flag, debug_cb, 'file: {}'.format(dda_data_file), pid)
     # initialize the MSMS reader
-    rdr = _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 else _MSMSReaderDDA(dda_data_file, drop_scans)
+    rdr: DdaReader = _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 else _MSMSReaderDDA(dda_data_file, drop_scans)
     # get the list of precursor m/zs
-    pre_mzs = rdr.get_pre_mzs()
+    pre_mzs: List[float] = rdr.get_pre_mzs()
     debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
     # extract chromatographic features
-    chrom_feats = _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb)
+    chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, pre_mzs, params, debug_flag, debug_cb)
     # consolidate chromatographic features
-    chrom_feats_consolidated = _consolidate_chrom_feats(chrom_feats, params, debug_flag, debug_cb)
+    chrom_feats_consolidated: List[DdaChromFeat] = _consolidate_chrom_feats(chrom_feats, params, debug_flag, debug_cb)
     # extract MS2 spectra
-    qdata = _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_flag, debug_cb)
+    qdata: List[DdaQdata] = _extract_and_fit_ms2_spectra(rdr, chrom_feats_consolidated, params, debug_flag, debug_cb)
     # do not need the reader anymore
     rdr.close()
     # initialize connection to DDA ids database
-    con = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
-    cur = con.cursor()
+    con: sqlite3.Connection = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
+    cur: sqlite3.Cursor = con.cursor()
     # add features to database
     _add_features_to_db(cur, qdata, debug_flag, debug_cb)
     # close database connection
