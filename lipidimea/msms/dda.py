@@ -8,7 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import Union, List, Tuple, Any, Set, Callable, Optional
+from typing import List, Any, Set, Callable, Optional
 import sqlite3
 from time import time, sleep
 from itertools import repeat
@@ -21,16 +21,13 @@ import numpy as np
 import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
+from lipidimea.typing import (
+    ResultsDBCursor, ResultsDBPath, DdaReader, DdaChromFeat, DdaQdata
+)
 from lipidimea.msms._util import (
     ms2_to_str, apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
 )
 from lipidimea.util import debug_handler
-
-
-# define type aliases
-type DdaReader = Union[_MSMSReaderDDA, _MSMSReaderDDA_Cached]
-type DdaChromFeat = Tuple[float, float, float, float, float]
-type DdaQdata = Tuple[None, str, float, float, float, float, float, int, Optional[int], Optional[str]]
 
 
 class _MSMSReaderDDA():
@@ -401,7 +398,7 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                  min_abs_height: float,
                                  fwhm_min: float, fwhm_max: float,
                                  peak_min_dist: float,
-                                 debug_flag: str, debug_cb: Optional[Callable] 
+                                 debug_flag: Optional[str], debug_cb: Optional[Callable] 
                                  ) -> List[DdaQdata] :
     """
     extracts MS2 spectra for consolidated chromatographic features, tries to fit spectra peaks,
@@ -438,18 +435,20 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
     -------
     qdata : ``list(tuple(...))``
         list of query data for all of the features
-            [None, str, float, float, float, float, float, int, int, Optional[str]]
+            [None, str, float, float, float, float, float, int, Optional[int], Optional[str]]
     """
-    pid = os.getpid()
+    pid: int = os.getpid()
     # extract and fit MS2 spectra, return query data
     debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING MS2 SPECTRA', pid)
     t0 = time()
-    qdata = []
-    n = len(chrom_feats_consolidated)
+    qdata: List[DdaQdata] = []
+    n: int = len(chrom_feats_consolidated)
     for i, (fmz, frt, fht, fwt, fsnr) in enumerate(chrom_feats_consolidated):
         msg = f"({i + 1}/{n}) m/z: {fmz:.4f} RT: {frt:.2f} +/- {fwt:.2f} min ({fht:.1e}, {fsnr:.1f}) -> "
-        rt_min, rt_max = frt - fwt, frt + fwt  # RT range is peak RT +/- peak FWHM
-        mz_bin_max = fmz + 5  # only extract MS2 spectrum up to precursor m/z + 5 Da
+        # RT range is peak RT +/- peak FWHM
+        rt_min: float = frt - fwt  
+        rt_max: float = frt + fwt  
+        mz_bin_max: float = fmz + 5  # only extract MS2 spectrum up to precursor m/z + 5 Da
         # (try to) extract MS2 spectrum
         ms2 = rdr.get_msms_spectrum(fmz, tol_from_ppm(fmz, pre_mz_ppm), rt_min, rt_max, 
                                     mz_bin_min, mz_bin_max, mz_bin_size)
@@ -462,7 +461,7 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                                         fwhm_min, fwhm_max, 
                                                         peak_min_dist)
             if len(pkmzs) > 0:
-                ms2_str = ms2_to_str(pkmzs, pkhts)
+                ms2_str: str = ms2_to_str(pkmzs, pkhts)
                 qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, len(pkmzs), ms2_str))
             else:
                 qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, 0, None))
@@ -474,9 +473,9 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
     return qdata
 
 
-def _add_features_to_db(cur: sqlite3.Cursor, 
+def _add_features_to_db(cur: ResultsDBCursor, 
                         qdata: List[DdaQdata], 
-                        debug_flag: str, debug_cb: Optional[Callable]
+                        debug_flag: Optional[str], debug_cb: Optional[Callable]
                         ) -> None:
     """
     adds features and metadata into the DDA ids database. 
@@ -501,7 +500,7 @@ def _add_features_to_db(cur: sqlite3.Cursor,
 
 
 def extract_dda_features(dda_data_file: str, 
-                         results_db: sqlite3.Cursor, 
+                         results_db: ResultsDBPath, 
                          params: Any, 
                          cache_ms1: bool = True, 
                          debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None, 
@@ -558,8 +557,13 @@ def extract_dda_features(dda_data_file: str,
     con.close()
     
 
-def extract_dda_features_multiproc(dda_data_files, results_db, params, n_proc,
-                                   cache_ms1=False, debug_flag=None, debug_cb=None):
+def extract_dda_features_multiproc(dda_data_files: List[str], 
+                                   results_db: ResultsDBPath, 
+                                   params: Any, 
+                                   n_proc: int,
+                                   cache_ms1: bool = False, 
+                                   debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                   ) -> None :
     """
     extracts dda features from multiple DDA files in parallel
 
