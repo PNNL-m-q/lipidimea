@@ -473,7 +473,7 @@ def _extract_and_fit_ms2_spectra(rdr: _MSMSReaderDDA,
     return qdata
 
 
-def _add_features_to_db(cur, 
+def _add_features_to_db(cur: sqlite3.Cursor, 
                         qdata: List[DdaQdata], 
                         debug_flag: str, debug_cb: Optional[Callable]
                         ) -> None:
