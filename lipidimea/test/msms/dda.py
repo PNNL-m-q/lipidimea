@@ -8,7 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 from tempfile import TemporaryDirectory
 import os
 import sqlite3
@@ -53,6 +53,9 @@ _CCF_PARAMS = ConsolidateChromFeatsParams(
 
 _EAFMS2_PARAMS = ExtractAndFitMS2SpectraParams(
     40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1
+)
+_DDA_PARAMS = DdaParams(
+    _EAFC_PARAMS, _CCF_PARAMS, _EAFMS2_PARAMS
 )
 
 
@@ -348,10 +351,55 @@ class Test_AddFeaturesToDb(unittest.TestCase):
 class TestExtractDdaFeatures(unittest.TestCase):
     """ tests for the extract_dda_features function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
-    
+    def test_EDF_with_peaks(self):
+        """ test extracting DDA features from mock data with peaks """
+        # make a fake XIC with two peaks
+        np.random.seed(420)
+        xic_rts = np.arange(0, 20.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
+        xic_iis += _gauss(xic_rts, 14.25, 5e4, 0.4) * noise2
+        # make a fake spectrum with peaks
+        ms2_mzs = np.arange(50, 800, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=ms2_mzs.shape)
+        ms2_iis = 1000 * noise1 
+        noise2 = np.random.normal(1, 0.1, size=ms2_mzs.shape)
+        pkmzs = np.arange(100, 800, 25)
+        for pkmz in pkmzs:
+            ms2_iis += _gauss(ms2_mzs, pkmz, 1e5, 0.1) * noise2 
+        # need to temporarily create a results database and patch a mock _MSMSReaderDDA 
+        with TemporaryDirectory() as tmp_dir, patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # mock a _MSMSReaderDDA instance with 
+            # get_pre_mzs method that returns {789.0123}
+            # get_chrom method that returns a fake XIC 
+            # get_msms_spectrum method that returns a fake spectrum
+            # f property that returns "data.file"
+            rdr = MockReader.return_value
+            type(rdr).f = PropertyMock(return_value="data.file")
+            rdr.get_pre_mzs.return_value = {789.0123}
+            rdr.get_chrom.return_value = (xic_rts, xic_iis)
+            rdr.get_msms_spectrum.return_value = (ms2_mzs, ms2_iis, 1, [789.0123])
+            # use a helper callback function to store instead of printing debugging messages
+            global _DEBUG_MSGS
+            _DEBUG_MSGS = []
+            # test the function
+            n = extract_dda_features("data.file", dbf, _DDA_PARAMS, 
+                                     cache_ms1=False, debug_flag="textcb", debug_cb=_debug_cb)
+            # make sure that the correct number of debugging messages were generated
+            self.assertEqual(len(_DEBUG_MSGS), 13)
+            # fetch the features from the database, there should be 2
+            self.assertEqual(len(cur.execute("SELECT * FROM DDAFeatures;").fetchall()), 2,
+                             msg="there should be 2 DDA features in the database")
+            # make sure the correct number of DDA features is returned from the function
+            self.assertEqual(n, 2,
+                             msg="should have gotten 2 for number of features extracted")
+
 
 class TestExtractDdaFeaturesMultiproc(unittest.TestCase):
     """ tests for the extract_dda_features_multiproc function """

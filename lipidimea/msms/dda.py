@@ -471,7 +471,7 @@ def extract_dda_features(dda_data_file: str,
                          cache_ms1: bool = True, 
                          debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None, 
                          drop_scans: Optional[List[int]] = None
-                         ) -> None:
+                         ) -> int :
     """
     Extract features from a raw DDA data file, store them in a database (initialized using ``create_dda_ids_db`` function)
 
@@ -496,6 +496,11 @@ def extract_dda_features(dda_data_file: str,
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+
+    Returns
+    -------
+    n_dda_features : ``int``
+        number of DDA features extracted
     """
     pid: int = os.getpid()
     debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
@@ -503,7 +508,7 @@ def extract_dda_features(dda_data_file: str,
     # initialize the MSMS reader
     rdr: DdaReader = _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 else _MSMSReaderDDA(dda_data_file, drop_scans)
     # get the list of precursor m/zs
-    pre_mzs: List[float] = rdr.get_pre_mzs()
+    pre_mzs: Set[float] = rdr.get_pre_mzs()
     debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 
@@ -529,6 +534,8 @@ def extract_dda_features(dda_data_file: str,
     # close database connection
     con.commit()
     con.close()
+    # return the number of features extracted
+    return len(qdata)
     
 
 def extract_dda_features_multiproc(dda_data_files: List[str], 

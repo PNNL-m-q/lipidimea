@@ -28,12 +28,14 @@ class ExtractAndFitChromsParams:
 
 @dataclass
 class ConsolidateChromFeatsParams:
+    """ parameters for consolidating chromatographic features """
     mz_ppm: float
     rt_tol: float
 
 
 @dataclass
 class ExtractAndFitMS2SpectraParams:
+    """ parameters for extracting and fitting MS2 spectra """
     pre_mz_ppm: float
     mz_bin_min: float
     mz_bin_size: float
