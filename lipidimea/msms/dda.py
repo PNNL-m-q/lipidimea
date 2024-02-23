@@ -8,7 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Any, Set, Callable, Optional, Dict
+from typing import List, Any, Set, Callable, Optional, Dict, Tuple
 import sqlite3
 from time import time, sleep
 from itertools import repeat
@@ -22,7 +22,7 @@ import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
 from lipidimea.typing import (
-    ResultsDBConnection, ResultsDBCursor, ResultsDBPath, DdaReader, DdaChromFeat, DdaQdata
+    ResultsDBConnection, ResultsDBCursor, ResultsDBPath, DdaReader, DdaChromFeat, DdaFeature
 )
 from lipidimea.msms._util import (
     ms2_to_str, apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
@@ -378,7 +378,7 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                  chrom_feats_consolidated: List[DdaChromFeat],
                                  params: ExtractAndFitMS2SpectraParams,
                                  debug_flag: Optional[str], debug_cb: Optional[Callable] 
-                                 ) -> List[DdaQdata] :
+                                 ) -> List[DdaFeature] :
     """
     extracts MS2 spectra for consolidated chromatographic features, tries to fit spectra peaks,
     returns query data for adding features to database
@@ -407,7 +407,7 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
     # extract and fit MS2 spectra, return query data
     debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING MS2 SPECTRA', pid)
     t0 = time()
-    qdata: List[DdaQdata] = []
+    qdata: List[DdaFeature] = []
     n: int = len(chrom_feats_consolidated)
     for i, (fmz, frt, fht, fwt, fsnr) in enumerate(chrom_feats_consolidated):
         msg: str = f"({i + 1}/{n}) m/z: {fmz:.4f} RT: {frt:.2f} +/- {fwt:.2f} min ({fht:.1e}, {fsnr:.1f}) -> "
@@ -440,7 +440,7 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
 
 
 def _add_features_to_db(cur: ResultsDBCursor, 
-                        qdata: List[DdaQdata], 
+                        qdata: List[DdaFeature], 
                         debug_flag: Optional[str], debug_cb: Optional[Callable]
                         ) -> None:
     """
@@ -520,7 +520,7 @@ def extract_dda_features(dda_data_file: str,
                                                                             params.consolidate_chrom_feats_params, 
                                                                             debug_flag, debug_cb)
     # extract MS2 spectra
-    qdata: List[DdaQdata] = _extract_and_fit_ms2_spectra(rdr, 
+    qdata: List[DdaFeature] = _extract_and_fit_ms2_spectra(rdr, 
                                                          chrom_feats_consolidated, 
                                                          params.extract_and_fit_ms2_spectra_params, 
                                                          debug_flag, debug_cb)
@@ -581,8 +581,10 @@ def extract_dda_features_multiproc(dda_data_files: List[str],
     return {k: v for k, v in zip(dda_data_files, feat_counts)}
 
 
-def consolidate_dda_features(results_db, params, 
-                             debug_flag=None, debug_cb=None):
+def consolidate_dda_features(results_db: ResultsDBPath, 
+                             params: DdaParams, 
+                             debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                             ) -> Tuple[int, int] :
     """
     consolidates DDA features from lipid IDs database based on feature m/z and RT using the following criteria:
 
@@ -590,37 +592,43 @@ def consolidate_dda_features(results_db, params,
       the highest intensity in each group is kept
     * if at least one feature in a group has MS2 scans, then features in that group that do not have MS2 scans 
       are dropped
+    * TODO (Dylan Ross) if more than one feature in a group has MS2 scans, then merge those MS2 scans and merge 
+      the features, see comment below for details
 
     Parameters
     ----------
     results_db : ``str``
         path to DDA-DIA analysis results database
-    params : ``dict(...)``
-        analysis parameters dict
+    params : ``DdaParams``
+        DDA data analysis parameters 
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+    
+    Returns
+    -------
+    n_features_pre : ``int``
+    n_features_post : ``int``
+        return the number of features before and after consolidating
     """
     # no need to get the PID, this should only ever be run in the main process
-    # unpack params
-    mzt = params['dda']['dda_feat_cons']['dda_fc_mz_tol']
-    rtt = params['dda']['dda_feat_cons']['dda_fc_rt_tol']
     # connect to the database
-    con = sqlite3.connect(results_db)
-    cur = con.cursor()
+    con: ResultsDBConnection = sqlite3.connect(results_db)
+    cur: ResultsDBCursor = con.cursor()
     # step 1, create groups of features based on similar m/z and RT
     qry_sel = "SELECT dda_feat_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAFeatures"
-    grouped = []
-    n_dda_features = 0
+    grouped: List[List[Any]] = []
+    n_dda_features: int = 0
     for d in cur.execute(qry_sel).fetchall():
         n_dda_features += 1
         _, mz, rt, *_ = d
         add = True
+        mzt = tol_from_ppm(mz, params.consolidate_dda_features_params.mz_ppm)
         for i in range(len(grouped)):
             for _, mz_i, rt_i, *_ in grouped[i]:
-                if abs(mz - mz_i) <= mzt and abs(rt - rt_i) <= rtt:
+                if abs(mz - mz_i) <= mzt and abs(rt - rt_i) <= params.consolidate_dda_features_params.rt_tol:
                     grouped[i].append(d)
                     add = False
                     break
@@ -629,7 +637,7 @@ def consolidate_dda_features(results_db, params,
         if add:
             grouped.append([d])
     # step 2, determine which features to drop
-    drop_fids = []
+    drop_fids: List[int] = []
     for group in grouped:
         if len(group) > 1:
             # only consider groups with multiple features in them
@@ -639,19 +647,24 @@ def consolidate_dda_features(results_db, params,
                     if feat[4] < 1:
                         # drop any features in the group that do not have MSMS
                         drop_fids.append(feat[0])
-                        # There is a potential here for redundant features that have MSMS spectra because all such
-                        # features in a group are kept. I do not really want to change this though, since I do want
-                        # to keep the connection between a feature and its mass spectrum, extracted from a particular
-                        # data file. Just a note.
+                        # TODO (Dylan Ross): There is a potential here for redundant features that have 
+                        #                    MSMS spectra because all such features in a group are kept. 
+                        #                    I do want to change this, but since the main thing that this
+                        #                    function does is drop rows from the database, it will take 
+                        #                    additional logic to properly merge the spectra together and
+                        #                    update the database accordingly. Also, with this change this
+                        #                    first conditional checking for features that contain spectra
+                        #                    would become unnecessary and everything could be handled in 
+                        #                    the else branch below
             else:
                 # none of the features have MSMS
                 # only keep the feature with the highest intensity of the group
-                # or exclude entirely if params['dda']['dda_feat_cons']['dda_fc_drop_if_no_ms2'] is set
-                max_fint = 0
-                keep_ffid = None
+                # or exclude entirely if params.consolidate_dda_features_params.drop_if_no_ms2 is set
+                max_fint: float = 0.
+                keep_ffid: Optional[int] = None
                 for feat in group:
                     ffid, fint = feat[0], feat[3]
-                    if not params['dda']['dda_feat_cons']['dda_fc_drop_if_no_ms2']:
+                    if not params.consolidate_dda_features_params.drop_if_no_ms2:
                         if keep_ffid is None:
                             max_fint = fint
                             keep_ffid = ffid
@@ -666,7 +679,8 @@ def consolidate_dda_features(results_db, params,
                     else:
                         # drop all of these features if we are not keeping features that lack MS2 scans
                         drop_fids.append(ffid)
-    debug_handler(debug_flag, debug_cb, 'CONSOLIDATING DDA FEATURES: {} features -> {} features'.format(n_dda_features, n_dda_features - len(drop_fids)))
+    n_post: int = n_dda_features - len(drop_fids)                        
+    debug_handler(debug_flag, debug_cb, f"CONSOLIDATING DDA FEATURES: {n_dda_features} features -> {n_post} features")
     # step 3, drop features from database
     qry_drop = "DELETE FROM DDAFeatures WHERE dda_feat_id=?"
     for fid in drop_fids:
@@ -674,5 +688,7 @@ def consolidate_dda_features(results_db, params,
     # commit changes to the database
     con.commit()
     con.close()
+    # return the count of features pre/post consolidating
+    return n_dda_features, n_post
 
     

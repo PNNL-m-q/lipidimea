@@ -47,13 +47,20 @@ class ExtractAndFitMS2SpectraParams:
 
 
 @dataclass
+class ConsolidateDdaFeaturesParams:
+    """ parameters for consolidating DDA features """
+    mz_ppm: float
+    rt_tol: float
+    drop_if_no_ms2: bool
+
+
+@dataclass
 class DdaParams:
     """ class for organizing DDA data processing parameters """
     extract_and_fit_chrom_params: ExtractAndFitChromsParams
     consolidate_chrom_feats_params: ConsolidateChromFeatsParams
     extract_and_fit_ms2_spectra_params: ExtractAndFitMS2SpectraParams
-
-
+    consolidate_dda_features_params: ConsolidateDdaFeaturesParams
 
 
 def load_default_params(

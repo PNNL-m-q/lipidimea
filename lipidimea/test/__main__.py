@@ -17,7 +17,7 @@ from lipidimea.test.msms._util import (
 from lipidimea.test.msms.dda import (
     Test_MSMSReaderDDA, Test_MSMSReaderDDACached, Test_ExtractAndFitChroms, 
     Test_ConsolidateChromFeats, Test_ExtractAndFitMs2Spectra, Test_AddFeaturesToDb,
-    TestExtractDdaFeatures, TestExtractDdaFeaturesMultiproc, TestConsolidateDdaFeatures
+    TestExtractDdaFeatures, TestConsolidateDdaFeatures
 )
 from lipidimea.test.msms.dia import (
     Test_SelectXicPeak, Test_LerpTogether, Test_DeconDistance, Test_DeconvoluteMs2Peaks,

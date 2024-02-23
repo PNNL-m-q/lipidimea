@@ -25,7 +25,7 @@ from lipidimea.msms._util import ms2_to_str, str_to_ms2
 from lipidimea.util import create_results_db
 from lipidimea.params import (
     ExtractAndFitChromsParams, ConsolidateChromFeatsParams, ExtractAndFitMS2SpectraParams,
-    DdaParams
+    ConsolidateDdaFeaturesParams, DdaParams
 )
 
 
@@ -55,8 +55,12 @@ _EAFMS2_PARAMS = ExtractAndFitMS2SpectraParams(
     40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1
 )
 
+_CDF_PARAMS = ConsolidateDdaFeaturesParams(
+    20, 0.1, False
+)
+
 _DDA_PARAMS = DdaParams(
-    _EAFC_PARAMS, _CCF_PARAMS, _EAFMS2_PARAMS
+    _EAFC_PARAMS, _CCF_PARAMS, _EAFMS2_PARAMS, _CDF_PARAMS
 )
 
 
@@ -153,15 +157,15 @@ class Test_ConsolidateChromFeats(unittest.TestCase):
         # define the input features
         features = [
             # this group should condense down to 1 feature
-            (700.0001, 10.01, 1e4, 0.25, 10),
-            (700.0002, 10.02, 1e4, 0.25, 10),
-            (700.0003, 10.03, 1e5, 0.25, 10),  # this should be the only retained feature
-            (700.0004, 10.04, 1e4, 0.25, 10),
-            (700.0005, 10.05, 1e4, 0.25, 10),
+            (700.0001, 10.01, 1e4, 0.25, 10.),
+            (700.0002, 10.02, 1e4, 0.25, 10.),
+            (700.0003, 10.03, 1e5, 0.25, 10.),  # this should be the only retained feature
+            (700.0004, 10.04, 1e4, 0.25, 10.),
+            (700.0005, 10.05, 1e4, 0.25, 10.),
             # this feature stays because the RT is different from the group above
-            (700.0003, 11., 1e5, 0.25, 10),
+            (700.0003, 11., 1e5, 0.25, 10.),
             # this feature has a different enough m/z to to not be combined
-            (700.1003, 10.03, 1e5, 0.25, 10),
+            (700.1003, 10.03, 1e5, 0.25, 10.),
         ]
         # expected consolidated features
         expected_features = [
@@ -197,7 +201,7 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
         ms2_iis = 1000 * noise1 
         # consolidated features
         cons_feats = [
-            (789.0123, 10.03, 1e5, 0.25, 10),
+            (789.0123, 10.03, 1e5, 0.25, 10.),
         ]
         # mock a _MSMSReaderDDA instance with get_msms_spectrum method that returns the fake spectrum
         with patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
@@ -227,7 +231,7 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
         noise1 = np.random.normal(1, 0.2, size=ms2_mzs.shape)
         ms2_iis = 1000 * noise1 
         noise2 = np.random.normal(1, 0.1, size=ms2_mzs.shape)
-        pkmzs = np.arange(100, 800, 25)
+        pkmzs = np.arange(100, 800, 25, dtype=np.float64)
         for pkmz in pkmzs:
             ms2_iis += _gauss(ms2_mzs, pkmz, 1e5, 0.1) * noise2 
         # expected query data generated from extracting and fitting MS2 spectrum
@@ -236,7 +240,7 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
         )
         # consolidated features
         cons_feats = [
-            (789.0123, 10.03, 1e5, 0.25, 10),
+            (789.0123, 10.03, 1e5, 0.25, 10.),
         ]
         # mock a _MSMSReaderDDA instance with get_msms_spectrum method that returns the fake spectrum
         with patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
@@ -261,7 +265,7 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
             self.assertAlmostEqual(qsnr, esnr, places=0)
             self.assertEqual(qnscans, enscans)
             self.assertEqual(qmzpeaks, emzpeaks)
-            qpeak_arrays = str_to_ms2(qspecstr)
+            qpeak_arrays = str_to_ms2(str(qspecstr))
             epeak_arrays = str_to_ms2(especstr)
             for qpmz, qpi, epmz, epi in zip(*qpeak_arrays, *epeak_arrays):
                 self.assertAlmostEqual(qpmz, epmz, places=1)
@@ -283,7 +287,7 @@ class Test_AddFeaturesToDb(unittest.TestCase):
         """ test adding complete qdata to DB """
         # query data
         qdata = [
-            (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 3, 4, "1.2346:12346 2.3457:23457 5.6789:56789"),
+            (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
         ]
         # use a helper callback function to store instead of printing debugging messages
         _DEBUG_MSGS = []
@@ -412,10 +416,48 @@ class TestExtractDdaFeatures(unittest.TestCase):
 class TestConsolidateDdaFeatures(unittest.TestCase):
     """ tests for the consolidate_dda_features function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
-    
+    def test_CDF_multiple_cases(self):
+        """ covers multiple cases of DDA features that should or should not be combined """
+        # query data to fill the database with
+        qdata = [
+            # only the 3rd from this group is kept because it has the highest intensity
+            (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 0, None, None),
+            (None, "file.mza", 789.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
+            (None, "file.mza", 789.0123, 12.34, 0.12, 3.45e4, 10., 0, None, None),
+            # different m/z so different group
+            # second is kept because it has a spectrum
+            # even though the others have higher intensity
+            (None, "file.mza", 799.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
+            (None, "file.mza", 799.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
+            (None, "file.mza", 799.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
+            # different m/z so different group
+            # first and second are kept because they have spectra
+            # even though the third has higher intensity
+            (None, "file.mza", 709.0123, 12.34, 0.12, 1.99e4, 10., 1, 0, None),  # has a spectrum but no peaks
+            (None, "file.mza", 709.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
+            (None, "file.mza", 709.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
+
+        ]
+        # use a helper callback function to store instead of printing debugging messages
+        _DEBUG_MSGS = []
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # fill the db with the features
+            # set debug_flag and debug_cb to None
+            # so we do not capture debug messages from this step
+            _add_features_to_db(cur, qdata, None, None)  
+            # write changes to the db
+            con.commit()
+            # test the function
+            n_pre, n_post = consolidate_dda_features(dbf, _DDA_PARAMS, 
+                                                     debug_flag="text_cb", debug_cb=_debug_cb)
+            # TODO (Dylan Ross): test that the expected features are in the database and
+            #                    that the pre/post consolidation feature counts are correct
+            raise NotImplementedError("TODO")
+
 
 if __name__ == "__main__":
     # run the tests for this module if invoked directly

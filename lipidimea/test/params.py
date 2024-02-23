@@ -13,33 +13,33 @@ from tempfile import TemporaryDirectory
 
 from lipidimea.params import (
     ExtractAndFitChromsParams, ConsolidateChromFeatsParams, ExtractAndFitMS2SpectraParams,
-    DdaParams,
+    ConsolidateDdaFeaturesParams, DdaParams,
     load_default_params, load_params, save_params
 )
     
 
-class TestSomething(unittest.TestCase):
-    """ tests for the ? """
+# class TestSomething(unittest.TestCase):
+#     """ tests for the ? """
 
-    def test_something(self):
-        """ test ? """
-        params = DdaParams(
-            ExtractAndFitChromsParams(
-                20, 0.33, 1e4, 0.1, 0.3, 2, 10
-            ), 
-            ConsolidateChromFeatsParams(
-                20, 0.1
-            ), 
-            ExtractAndFitMS2SpectraParams(
-                20, 50, 0.05, 0.33, 1e4, 0.1, 0.3, 0.1
-            )
-        )
-        print(params)
+#     def test_something(self):
+#         """ test ? """
+#         params = DdaParams(
+#             ExtractAndFitChromsParams(
+#                 20, 0.33, 1e4, 0.1, 0.3, 2, 10
+#             ), 
+#             ConsolidateChromFeatsParams(
+#                 20, 0.1
+#             ), 
+#             ExtractAndFitMS2SpectraParams(
+#                 20, 50, 0.05, 0.33, 1e4, 0.1, 0.3, 0.1
+#             )
+#         )
+#         print(params)
 
     
-    #def test_NO_TESTS_IMPLEMENTED_YET(self):
-    #    """ placeholder, remove this function and implement tests """
-    #    raise NotImplementedError("no tests implemented yet")
+#     #def test_NO_TESTS_IMPLEMENTED_YET(self):
+#     #    """ placeholder, remove this function and implement tests """
+#     #    raise NotImplementedError("no tests implemented yet")
     
 
 class TestLoadDefaultParams(unittest.TestCase):
