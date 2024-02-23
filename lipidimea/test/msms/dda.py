@@ -54,6 +54,7 @@ _CCF_PARAMS = ConsolidateChromFeatsParams(
 _EAFMS2_PARAMS = ExtractAndFitMS2SpectraParams(
     40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1
 )
+
 _DDA_PARAMS = DdaParams(
     _EAFC_PARAMS, _CCF_PARAMS, _EAFMS2_PARAMS
 )
@@ -400,14 +401,6 @@ class TestExtractDdaFeatures(unittest.TestCase):
             self.assertEqual(n, 2,
                              msg="should have gotten 2 for number of features extracted")
 
-
-class TestExtractDdaFeaturesMultiproc(unittest.TestCase):
-    """ tests for the extract_dda_features_multiproc function """
-
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
-    
 
 class TestConsolidateDdaFeatures(unittest.TestCase):
     """ tests for the consolidate_dda_features function """

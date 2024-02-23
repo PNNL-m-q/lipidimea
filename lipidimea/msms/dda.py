@@ -8,7 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Any, Set, Callable, Optional
+from typing import List, Any, Set, Callable, Optional, Dict
 import sqlite3
 from time import time, sleep
 from itertools import repeat
@@ -544,7 +544,7 @@ def extract_dda_features_multiproc(dda_data_files: List[str],
                                    n_proc: int,
                                    cache_ms1: bool = False, 
                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                   ) -> None :
+                                   ) -> Dict[str, int] :
     """
     extracts dda features from multiple DDA files in parallel
 
@@ -567,12 +567,18 @@ def extract_dda_features_multiproc(dda_data_files: List[str],
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+
+    Returns
+    -------
+    dda_features_per_file : ``dict(str:int)``
+        dictionary with the number of DDA features mapped to input DDA data files
     """
     n_proc = min(n_proc, len(dda_data_files))  # no need to use more processes than the number of inputs
     args = [(dda_data_file, results_db, params) for dda_data_file in dda_data_files]
     args_for_starmap = zip(repeat(extract_dda_features), args, repeat({'cache_ms1': cache_ms1, 'debug_flag': debug_flag, 'debug_cb': debug_cb}))
     with multiprocessing.Pool(processes=n_proc) as p:
-        p.starmap(apply_args_and_kwargs, args_for_starmap)
+        feat_counts = p.starmap(apply_args_and_kwargs, args_for_starmap)
+    return {k: v for k, v in zip(dda_data_files, feat_counts)}
 
 
 def consolidate_dda_features(results_db, params, 

@@ -22,7 +22,7 @@ from lipidimea.test.msms.dda import (
 from lipidimea.test.msms.dia import (
     Test_SelectXicPeak, Test_LerpTogether, Test_DeconDistance, Test_DeconvoluteMs2Peaks,
     Test_AddSingleTargetResultsToDb, Test_Ms2PeaksToStr, Test_SingleTargetAnalysis, 
-    TestExtractDiaFeatures, TestExtractDiaFeaturesMultiproc, TestAddCalibratedCcsToDiaFeatures
+    TestExtractDiaFeatures, TestAddCalibratedCcsToDiaFeatures
 )
 from lipidimea.test.annotation import (
     TestSumCompLipidDB, TestRemoveLipidAnnotations, TestAnnotateLipidsSumComposition, 
