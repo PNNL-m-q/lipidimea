@@ -402,6 +402,13 @@ class TestExtractDdaFeatures(unittest.TestCase):
                              msg="should have gotten 2 for number of features extracted")
 
 
+# NOTE (Dylan Ross): removed the unit test for extract_dda_features_multiproc as mocking does 
+#                    not work well with multiprocessing. The actual business logic function is 
+#                    fully tested and the logic of applying it in a multiprocessing context via 
+#                    starmap is small and straightforward so should be able to trust it well 
+#                    enough without the unit test
+
+
 class TestConsolidateDdaFeatures(unittest.TestCase):
     """ tests for the consolidate_dda_features function """
 

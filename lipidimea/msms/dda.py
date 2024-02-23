@@ -540,7 +540,7 @@ def extract_dda_features(dda_data_file: str,
 
 def extract_dda_features_multiproc(dda_data_files: List[str], 
                                    results_db: ResultsDBPath, 
-                                   params: Any, 
+                                   params: DdaParams, 
                                    n_proc: int,
                                    cache_ms1: bool = False, 
                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
