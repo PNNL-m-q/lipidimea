@@ -23,6 +23,10 @@ from lipidimea.msms.dda import (
 )
 from lipidimea.msms._util import ms2_to_str, str_to_ms2
 from lipidimea.util import create_results_db
+from lipidimea.params import (
+    ExtractAndFitChromsParams, ConsolidateChromFeatsParams, ExtractAndFitMS2SpectraParams,
+    DdaParams
+)
 
 
 # Multiple tests cover functions that use the debug handler so instead of 
@@ -32,11 +36,24 @@ from lipidimea.util import create_results_db
 # for the expected debugging messages if needed
 _DEBUG_MSGS = []
 
-
 def _debug_cb(msg: str
               ) -> None :
     """ helper callback function for redirecting debugging messages """
     _DEBUG_MSGS.append(msg)
+
+
+# set some parameters for testing the different DDA data processing steps
+_EAFC_PARAMS = ExtractAndFitChromsParams(
+    20, 0.33, 1e4, 0.1, 0.5, 2, 5
+)
+
+_CCF_PARAMS = ConsolidateChromFeatsParams(
+    20, 0.1
+)
+
+_EAFMS2_PARAMS = ExtractAndFitMS2SpectraParams(
+    40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1
+)
 
 
 class Test_MSMSReaderDDA(unittest.TestCase):
@@ -73,8 +90,7 @@ class Test_ExtractAndFitChroms(unittest.TestCase):
             global _DEBUG_MSGS
             _DEBUG_MSGS = []
             # test the function
-            features = _extract_and_fit_chroms(rdr, {789.0123}, 
-                                               20, 0.3, 1e3, 0.1, 1.0, 3, 4, 
+            features = _extract_and_fit_chroms(rdr, {789.0123}, _EAFC_PARAMS,
                                                debug_flag="textcb", debug_cb=_debug_cb)
             # there should be no features found in this XIC, it is just flat noise
             self.assertListEqual(features, [],
@@ -93,11 +109,11 @@ class Test_ExtractAndFitChroms(unittest.TestCase):
         noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
         xic_iis = 1000 * noise1 
         xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
-        xic_iis += _gauss(xic_rts, 14.25, 5e4, 0.5) * noise2
+        xic_iis += _gauss(xic_rts, 14.25, 5e4, 0.4) * noise2
         # expected feature parameters
         expected_features = [
-            (789.0123, 15., 1e5, 0.25, 14),
-            (789.0123, 14.25, 5e4, 0.5, 5),
+            (789.0123, 15., 1e5, 0.25, 15.6),
+            (789.0123, 14.25, 5e4, 0.4, 5),
         ]
         # mock a _MSMSReaderDDA instance with get_chrom method that returns the fake XIC 
         with patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
@@ -107,8 +123,7 @@ class Test_ExtractAndFitChroms(unittest.TestCase):
             global _DEBUG_MSGS
             _DEBUG_MSGS = []
             # test the function
-            features = _extract_and_fit_chroms(rdr, {789.0123}, 
-                                               20, 0.3, 1e3, 0.1, 1.0, 3, 4, 
+            features = _extract_and_fit_chroms(rdr, {789.0123}, _EAFC_PARAMS,
                                                debug_flag="textcb", debug_cb=_debug_cb)
             # check that the extracted features have close to the expected values
             for feat, exp_feat in zip(features, expected_features):
@@ -153,7 +168,7 @@ class Test_ConsolidateChromFeats(unittest.TestCase):
         # use a helper callback function to store instead of printing debugging messages
         _DEBUG_MSGS = []
         # test the function
-        cons_features = _consolidate_chrom_feats(features, 20, 0.1, 
+        cons_features = _consolidate_chrom_feats(features, _CCF_PARAMS, 
                                                  debug_flag="textcb", debug_cb=_debug_cb)
         # ensure the correct features were consolidated
         self.assertEqual(len(cons_features), len(expected_features),
@@ -189,7 +204,7 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
             global _DEBUG_MSGS
             _DEBUG_MSGS = []
             # test the function
-            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, 40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1, 
+            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, _EAFMS2_PARAMS, 
                                                  debug_flag="textcb", debug_cb=_debug_cb)
             # there should be no features found in this spectrum, it is just flat noise
             # but there will still be qdata with the chromatographic feature
@@ -228,7 +243,7 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
             global _DEBUG_MSGS
             _DEBUG_MSGS = []
             # test the function
-            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, 40, 50, 0.05, 0.3, 1e3, 0.025, 0.25, 0.1, 
+            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, _EAFMS2_PARAMS, 
                                                  debug_flag="textcb", debug_cb=_debug_cb)
             # check the returned qdata values
             qid, qf, qmz, qrt, qwt, qht, qsnr, qnscans, qmzpeaks, qspecstr = qdata[0]

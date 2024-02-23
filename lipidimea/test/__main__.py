@@ -29,7 +29,10 @@ from lipidimea.test.annotation import (
     TestFilterAnnotationsByRTRange, TestUpdateLipidIDsWithFragRules
 )
 from lipidimea.test.util import (
-    TestCreateResultsDb, TestLoadDefaultParams, TestLoadParams, TestSaveParams, TestDebugHandler
+    TestCreateResultsDb, TestDebugHandler
+)
+from lipidimea.test.params import (
+    TestLoadParams, TestLoadDefaultParams, TestSaveParams
 )
 
 

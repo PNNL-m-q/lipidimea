@@ -8,10 +8,8 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import os
-from typing import Optional, Callable, Tuple, Dict, Any
+from typing import Optional, Callable
 from sqlite3 import connect
-
-import yaml
 
 
 def create_results_db(f: str, 
@@ -55,66 +53,6 @@ def create_results_db(f: str,
     # save and close the database
     con.commit()
     con.close()
-
-
-def load_default_params(
-                        ) -> Dict[Any, Any]:
-    """
-    load the default parameters (only the analysis parameters component, not the complete parameters 
-    with input/output component)
-    
-    Returns
-    -------
-    params : ``dict(...)``
-        analysis parameter dict component of parameters, with all default values
-    """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yml'), 'r') as yf:
-        defaults = yaml.safe_load(yf)
-    params = {}
-    for top_lvl in ['dda', 'dia', 'annotation']:
-        params[top_lvl] = {section: {param: value['default'] for param, value in sec_params.items() if param != 'display_name'} for section, sec_params in defaults[top_lvl].items() if section != 'display_name'}
-    params['misc'] = {param: value['default'] for param, value in defaults['misc'].items() if param != 'display_name'}
-    return params
-
-
-def load_params(params_file: str
-                ) -> Tuple[Dict[Any, Any], Dict[Any, Any]]:
-    """
-    load parameters from a YAML file, returns a dict with the params
-    
-    Parameters
-    ----------
-    params_file : ``str``
-        filename/path of parameters file to load (as YAML)
-
-    Returns
-    -------
-    input_output : ``dict(...)``
-        input/output component of parameters
-    params : ``dict(...)``
-        analysis parameter dict component of parameters
-    """
-    with open(params_file, 'r') as yf:
-        params = yaml.safe_load(yf)
-    return params['input_output'], params['params']
-
-
-def save_params(input_output: Dict[Any, Any], params: Dict[Any, Any], params_file: str
-                ) -> None:
-    """
-    save analysis parameters along with input/output info
-
-    Parameters
-    ----------
-    input_output : ``dict(...)``
-        input/output component of parameters
-    params : ``dict(...)``
-        analysis parameter dict component of parameters
-    params_file : ``str``
-        filename/path to save parameters file (as YAML)
-    """
-    with open(params_file, 'w') as out:
-        yaml.dump({'input_output': input_output, 'params': params}, out, default_flow_style=False)
 
 
 def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: str, 
