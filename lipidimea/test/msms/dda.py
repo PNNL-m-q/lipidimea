@@ -436,7 +436,12 @@ class TestConsolidateDdaFeatures(unittest.TestCase):
             (None, "file.mza", 709.0123, 12.34, 0.12, 1.99e4, 10., 1, 0, None),  # has a spectrum but no peaks
             (None, "file.mza", 709.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
             (None, "file.mza", 709.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
-
+        ]
+        expected = [
+            (None, "file.mza", 789.0123, 12.34, 0.12, 3.45e4, 10., 0, None, None),
+            (None, "file.mza", 799.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
+            (None, "file.mza", 709.0123, 12.34, 0.12, 1.99e4, 10., 1, 0, None),
+            (None, "file.mza", 709.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
         ]
         # use a helper callback function to store instead of printing debugging messages
         _DEBUG_MSGS = []
@@ -454,9 +459,18 @@ class TestConsolidateDdaFeatures(unittest.TestCase):
             # test the function
             n_pre, n_post = consolidate_dda_features(dbf, _DDA_PARAMS, 
                                                      debug_flag="text_cb", debug_cb=_debug_cb)
-            # TODO (Dylan Ross): test that the expected features are in the database and
-            #                    that the pre/post consolidation feature counts are correct
-            raise NotImplementedError("TODO")
+            # make sure number of features pre/post is correct
+            self.assertEqual(n_pre, 9,
+                             msg="number of feature before consolidation should be 9")
+            self.assertEqual(n_post, 4,
+                             msg="number of feature after consolidation should be 4")
+            # make sure values in = values out 
+            # exept for the first value which is an ID 
+            # that is generated when the data gets inserted
+            for exp, obs in zip(expected, cur.execute("SELECT * FROM DDAFeatures;").fetchall()):
+                _, *a = exp
+                _, *b = obs
+                self.assertListEqual(a, b)
 
 
 if __name__ == "__main__":
