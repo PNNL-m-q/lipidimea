@@ -8,6 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
+from typing import List, Tuple
 from sqlite3 import connect
 import os
 from itertools import repeat
@@ -22,7 +23,12 @@ from lipidimea.msms._util import str_to_ms2, ms2_to_str, apply_args_and_kwargs
 from lipidimea.util import debug_handler
 
 
-def _select_xic_peak(target_rt, target_rt_tol, pkrts, pkhts, pkwts):
+def _select_xic_peak(target_rt: float, 
+                     target_rt_tol: float, 
+                     pkrts: List[float], 
+                     pkhts: List[float], 
+                     pkwts: List[float]
+                     ) -> Tuple[float, float, float]:
     """ 
     select the peak with the highest intensity that is within target_rt_tol of target_rt 
     returns peak_rt, peak_height, peak_fwhm of selected peak
