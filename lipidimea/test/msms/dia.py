@@ -390,9 +390,13 @@ class Test_AddSingleTargetResultsToDb(unittest.TestCase):
 class Test_Ms2PeaksToStr(unittest.TestCase):
     """ tests for the _ms2_peaks_to_str function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    # NOTE (Dylan Ross): it is only necessary to test the case where the input arg
+    #                    ms2_peaks is None, the rest of the work is done by the 
+    #                    ms2_to_str() function which already has complete unit tests
+
+    def test_MPTS_ms2_peaks_is_none(self):
+        """ test providing None as the ms2_peaks arg """
+        self.assertIsNone(_ms2_peaks_to_str(None))
 
 
 class Test_SingleTargetAnalysis(unittest.TestCase):

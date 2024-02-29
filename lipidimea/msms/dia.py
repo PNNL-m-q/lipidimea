@@ -8,7 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional, Any
 from sqlite3 import connect
 import os
 from itertools import repeat
@@ -197,7 +197,8 @@ def _add_single_target_results_to_db(cur: ResultsDBCursor,
             cur.execute(decon_frags_qry_2, (dia_feat_id, cur.lastrowid))
         
 
-def _ms2_peaks_to_str(ms2_peaks):
+def _ms2_peaks_to_str(ms2_peaks: Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], Any]
+                      ) -> Optional[str]:
     """ convert MS2 peaks (i.e. centroided MS2 spectrum) to string representation """
     if ms2_peaks is None:
         return None
