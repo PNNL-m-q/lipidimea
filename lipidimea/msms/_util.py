@@ -14,9 +14,12 @@ from typing import Any, Callable, List, Dict
 import numpy as np
 import numpy.typing as npt
 
+from lipidimea.typing import Spec, SpecStr
+
+
 
 def ms2_to_str(mzs: npt.NDArray[np.float64], iis: npt.NDArray[np.float64]
-               ) -> str :
+               ) -> SpecStr :
     """  
     converts arrays of m/z bins and intensities to flat str representation
     with space-separated peaks in format "{mz}:{intensity}"
@@ -29,7 +32,7 @@ def ms2_to_str(mzs: npt.NDArray[np.float64], iis: npt.NDArray[np.float64]
 
     Returns
     -------
-    spec_string : ``str``
+    spec_string : ``SpecStr``
         string representation of spectrum
     """
     lm, li = len(mzs), len(iis)
@@ -45,20 +48,20 @@ def ms2_to_str(mzs: npt.NDArray[np.float64], iis: npt.NDArray[np.float64]
     return s.rstrip()
 
 
-def str_to_ms2(s: str
-               ) -> npt.NDArray[np.float64] :
+def str_to_ms2(s: SpecStr
+               ) -> Spec :
     """
     converts flat str representation (space-separated peaks in format "{mz}:{intensity}") 
     to arrays of m/z and intensities
 
     Parameters
     ----------
-    s : ``str``
+    s : ``SpecStr``
         string form of spectrum
 
     Returns
     -------
-    spectrum : ``numpy.ndarray(float)``
+    spectrum : ``Spec``
         spectrum as 2D array with m/z and intensity components
     """
     # check the format of the spectrum string

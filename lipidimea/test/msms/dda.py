@@ -24,8 +24,8 @@ from lipidimea.msms.dda import (
 from lipidimea.msms._util import ms2_to_str, str_to_ms2
 from lipidimea.util import create_results_db
 from lipidimea.params import (
-    ExtractAndFitChromsParams, ConsolidateChromFeatsParams, ExtractAndFitMS2SpectraParams,
-    ConsolidateDdaFeaturesParams, DdaParams
+    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMS2SpectraParams,
+    DdaConsolidateFeaturesParams, DdaParams
 )
 
 
@@ -43,19 +43,19 @@ def _debug_cb(msg: str
 
 
 # set some parameters for testing the different DDA data processing steps
-_EAFC_PARAMS = ExtractAndFitChromsParams(
+_EAFC_PARAMS = DdaExtractAndFitChromsParams(
     20, 0.33, 1e4, 0.1, 0.5, 2, 5
 )
 
-_CCF_PARAMS = ConsolidateChromFeatsParams(
+_CCF_PARAMS = DdaConsolidateChromFeatsParams(
     20, 0.1
 )
 
-_EAFMS2_PARAMS = ExtractAndFitMS2SpectraParams(
+_EAFMS2_PARAMS = DdaExtractAndFitMS2SpectraParams(
     40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1
 )
 
-_CDF_PARAMS = ConsolidateDdaFeaturesParams(
+_CDF_PARAMS = DdaConsolidateFeaturesParams(
     20, 0.1, False
 )
 

@@ -29,7 +29,7 @@ from lipidimea.msms._util import (
 )
 from lipidimea.util import debug_handler
 from lipidimea.params import (
-    ExtractAndFitChromsParams, ConsolidateChromFeatsParams, ExtractAndFitMS2SpectraParams,
+    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMS2SpectraParams,
     DdaParams
 )
 
@@ -270,7 +270,7 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
 
 def _extract_and_fit_chroms(rdr: DdaReader, 
                             pre_mzs: Set[float], 
-                            params: ExtractAndFitChromsParams,
+                            params: DdaExtractAndFitChromsParams,
                             debug_flag: Optional[str], debug_cb: Optional[Callable] 
                             ) -> List[DdaChromFeat] :
     """
@@ -331,7 +331,7 @@ def _extract_and_fit_chroms(rdr: DdaReader,
 
 
 def _consolidate_chrom_feats(feats: List[DdaChromFeat], 
-                             params: ConsolidateChromFeatsParams, 
+                             params: DdaConsolidateChromFeatsParams, 
                              debug_flag: Optional[str], debug_cb: Optional[Callable] 
                              ) -> List[DdaChromFeat] :
     """
@@ -376,7 +376,7 @@ def _consolidate_chrom_feats(feats: List[DdaChromFeat],
 
 def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                  chrom_feats_consolidated: List[DdaChromFeat],
-                                 params: ExtractAndFitMS2SpectraParams,
+                                 params: DdaExtractAndFitMS2SpectraParams,
                                  debug_flag: Optional[str], debug_cb: Optional[Callable] 
                                  ) -> List[DdaFeature] :
     """

@@ -15,7 +15,7 @@ import yaml
 
 
 @dataclass
-class ExtractAndFitChromsParams:
+class DdaExtractAndFitChromsParams:
     """ parameters for extracting and fitting chromatograms """
     mz_ppm: float
     min_rel_height: float
@@ -27,14 +27,14 @@ class ExtractAndFitChromsParams:
 
 
 @dataclass
-class ConsolidateChromFeatsParams:
+class DdaConsolidateChromFeatsParams:
     """ parameters for consolidating chromatographic features """
     mz_ppm: float
     rt_tol: float
 
 
 @dataclass
-class ExtractAndFitMS2SpectraParams:
+class DdaExtractAndFitMS2SpectraParams:
     """ parameters for extracting and fitting MS2 spectra """
     pre_mz_ppm: float
     mz_bin_min: float
@@ -47,7 +47,7 @@ class ExtractAndFitMS2SpectraParams:
 
 
 @dataclass
-class ConsolidateDdaFeaturesParams:
+class DdaConsolidateFeaturesParams:
     """ parameters for consolidating DDA features """
     mz_ppm: float
     rt_tol: float
@@ -57,14 +57,52 @@ class ConsolidateDdaFeaturesParams:
 @dataclass
 class DdaParams:
     """ class for organizing DDA data processing parameters """
-    extract_and_fit_chrom_params: ExtractAndFitChromsParams
-    consolidate_chrom_feats_params: ConsolidateChromFeatsParams
-    extract_and_fit_ms2_spectra_params: ExtractAndFitMS2SpectraParams
-    consolidate_dda_features_params: ConsolidateDdaFeaturesParams
+    extract_and_fit_chrom_params: DdaExtractAndFitChromsParams
+    consolidate_chrom_feats_params: DdaConsolidateChromFeatsParams
+    extract_and_fit_ms2_spectra_params: DdaExtractAndFitMS2SpectraParams
+    consolidate_dda_features_params: DdaConsolidateFeaturesParams
 
 
 @dataclass
-class DeconvoluteMS2PeaksParams:
+class DiaExtractAndFitChromsParams:
+    """ parameters for extracting and fitting chromatograms """
+    mz_ppm: float
+    rt_tol: float
+    min_rel_height: float
+    min_abs_height: float
+    fwhm_min: float 
+    fwhm_max: float
+    max_peaks: int
+    
+
+@dataclass
+class DiaChromPeakSelectionParams:
+    """ parameters for selecting chromatographic peaks """
+    target_rt_shift: float
+    target_rt_tol: float
+
+
+@dataclass
+class DiaAtdFitParams:
+    """ parameters for fitting ATDs """
+    min_rel_height: float
+    min_abs_height: float
+    fwhm_min: float 
+    fwhm_max: float
+    max_peaks: int
+
+
+@dataclass
+class DiaMs2FitParams:
+    min_rel_height: float
+    min_abs_height: float
+    fwhm_min: float 
+    fwhm_max: float
+    min_dist: float
+
+
+@dataclass
+class DiaDeconvoluteMS2PeaksParams:
     """ parameters for deconvoluting MS2 peaks """
     mz_ppm: float
     xic_dist_threshold: float
@@ -76,7 +114,13 @@ class DeconvoluteMS2PeaksParams:
 @dataclass
 class DiaParams:
     """ class for organizing DIA data processing parameters """
-    deconvolute_ms2_peaks_params: DeconvoluteMS2PeaksParams
+    extract_and_fit_chrom_params: DiaExtractAndFitChromsParams
+    select_chrom_peaks_params: DiaChromPeakSelectionParams
+    atd_fit_params: DiaAtdFitParams
+    ms2_fit_params: DiaMs2FitParams
+    ms2_peak_matching_ppm: float
+    deconvolute_ms2_peaks_params: DiaDeconvoluteMS2PeaksParams
+    store_blobs: bool
 
 
 def load_default_params(

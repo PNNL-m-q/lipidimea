@@ -14,6 +14,8 @@ import numpy as np
 import numpy.typing as npt
 
 
+# TODO (Dylan Ross): add some descriptions for all of these
+
 type ResultsDBPath = str
 type ResultsDBConnection = sqlite3.Connection
 type ResultsDBCursor = sqlite3.Cursor
@@ -22,7 +24,8 @@ type Xic = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Atd = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Ms1 = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Ms2 = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
-
+type Spec = Union[Ms1, Ms2]
+type SpecStr = str
 
 type DdaReader = Union[_MSMSReaderDDA, _MSMSReaderDDA_Cached]  # type: ignore
 type DdaChromFeat = Tuple[float, float, float, float, float]

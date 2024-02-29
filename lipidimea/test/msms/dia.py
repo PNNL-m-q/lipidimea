@@ -22,7 +22,7 @@ from lipidimea.msms.dia import (
     extract_dia_features, extract_dia_features_multiproc, add_calibrated_ccs_to_dia_features
 )
 from lipidimea.params import (
-    DeconvoluteMS2PeaksParams, 
+    DiaDeconvoluteMS2PeaksParams, 
     DiaParams
 )
 from lipidimea.util import create_results_db
@@ -42,7 +42,7 @@ def _debug_cb(msg: str
 
 
 # set some parameters for testing the different DIA data processing steps
-_DMP_PARAMS = DeconvoluteMS2PeaksParams(
+_DMP_PARAMS = DiaDeconvoluteMS2PeaksParams(
     40, 0.5, 0.5, "cosine", "cosine"
 )
 

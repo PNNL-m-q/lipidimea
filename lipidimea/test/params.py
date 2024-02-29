@@ -12,8 +12,8 @@ import os
 from tempfile import TemporaryDirectory
 
 from lipidimea.params import (
-    ExtractAndFitChromsParams, ConsolidateChromFeatsParams, ExtractAndFitMS2SpectraParams,
-    ConsolidateDdaFeaturesParams, DdaParams,
+    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMS2SpectraParams,
+    DdaConsolidateFeaturesParams, DdaParams,
     load_default_params, load_params, save_params
 )
     
