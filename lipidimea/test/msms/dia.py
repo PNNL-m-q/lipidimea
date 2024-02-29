@@ -104,9 +104,25 @@ class Test_LerpTogether(unittest.TestCase):
 class Test_DeconDistance(unittest.TestCase):
     """ tests for the _decon_distance function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_DD_zero_dist(self):
+        """ test that identical signals produce 0 distance with multiple distance functions """
+        np.random.seed(420)
+        x = np.arange(0., 101., 1.)
+        data_a = np.array([x, np.random.random(x.shape)])
+        data_b = data_a.copy()
+        for dist_func in ["cosine", "correlation", "euclidean"]:
+            self.assertEqual(_decon_distance(data_a, data_b, dist_func, 1.), 0.,
+                             msg=f"distance func {dist_func} did not produce 0 distance with identical data")
+            
+    def test_DD_nonzero_dist(self):
+        """ test that different random signals produce >0 distance with multiple distance functions """
+        np.random.seed(420)
+        x = np.arange(0., 101., 1.)
+        data_a = np.array([x, np.random.random(x.shape)])
+        data_b = np.array([x, np.random.random(x.shape)])
+        for dist_func in ["cosine", "correlation", "euclidean"]:
+            self.assertGreater(_decon_distance(data_a, data_b, dist_func, 1.), 0.,
+                               msg=f"distance func {dist_func} did not produce >0 distance")
 
 
 class Test_DeconvoluteMs2Peaks(unittest.TestCase):
