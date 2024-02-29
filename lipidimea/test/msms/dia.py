@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch, PropertyMock
 from tempfile import TemporaryDirectory
 import os
+import sqlite3
 
 import numpy as np
 from mzapy.peaks import _gauss
@@ -24,6 +25,7 @@ from lipidimea.params import (
     DeconvoluteMS2PeaksParams, 
     DiaParams
 )
+from lipidimea.util import create_results_db
 
 
 # Multiple tests cover functions that use the debug handler so instead of 
@@ -299,9 +301,90 @@ class Test_DeconvoluteMs2Peaks(unittest.TestCase):
 class Test_AddSingleTargetResultsToDb(unittest.TestCase):
     """ tests for the _add_single_target_results_to_db function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_ASTRTD_no_decon_frags(self):
+        """ test adding a single target's results to DB with no deconvoluted fragments """
+        # make a fake XIC with one peak
+        np.random.seed(420)
+        xic_rts = np.arange(12, 17.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
+        # make a fake ATD with one peak
+        atd_ats = np.arange(30, 50.05, 0.05)
+        noise1 = np.random.normal(1, 0.2, size=atd_ats.shape)
+        noise2 = np.random.normal(1, 0.1, size=atd_ats.shape)
+        atd_iis = 1000 * noise1 
+        atd_iis += _gauss(atd_ats, 40, 1e5, 2.5) * noise2
+        # assemble precursor Xic and Atd from the fake data
+        xic = (xic_rts, xic_iis)
+        atd = (atd_ats, atd_iis)
+        # make fake MS1/MS2 spectra
+        ms12_mzs = np.arange(50, 800, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=ms12_mzs.shape)
+        ms12_iis = 1000 * noise1 
+        noise2 = np.random.normal(1, 0.1, size=ms12_mzs.shape)
+        pkmzs = np.arange(100, 800, 25)
+        for pkmz in pkmzs:
+            ms12_iis += _gauss(ms12_mzs, pkmz, 1e5, 0.1) * noise2 
+        ms12 = (ms12_mzs, ms12_iis)
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # test the function
+            _add_single_target_results_to_db(cur, 0, "dia.data.file", ms12, 12.34, 0.25, 1e5, 10., 
+                                             xic, 40., 2.5, 1e6, 10., atd, 0, "", ms12, [], True)
+            # check that the feature was added to the database
+            # this query should return 1 row
+            self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
+
+    def test_ASTRTD_decon_frags(self):
+        """ test adding a single target's results to DB with deconvoluted fragments """
+        # make a fake XIC with one peak
+        np.random.seed(420)
+        xic_rts = np.arange(12, 17.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
+        # make a fake ATD with one peak
+        atd_ats = np.arange(30, 50.05, 0.05)
+        noise1 = np.random.normal(1, 0.2, size=atd_ats.shape)
+        noise2 = np.random.normal(1, 0.1, size=atd_ats.shape)
+        atd_iis = 1000 * noise1 
+        atd_iis += _gauss(atd_ats, 40, 1e5, 2.5) * noise2
+        # assemble precursor Xic and Atd from the fake data
+        xic = (xic_rts, xic_iis)
+        atd = (atd_ats, atd_iis)
+        # make fake MS1/MS2 spectra
+        ms12_mzs = np.arange(50, 800, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=ms12_mzs.shape)
+        ms12_iis = 1000 * noise1 
+        noise2 = np.random.normal(1, 0.1, size=ms12_mzs.shape)
+        pkmzs = np.arange(100, 800, 25)
+        for pkmz in pkmzs:
+            ms12_iis += _gauss(ms12_mzs, pkmz, 1e5, 0.1) * noise2 
+        ms12 = (ms12_mzs, ms12_iis)
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # test the function
+            _add_single_target_results_to_db(cur, 0, "dia.data.file", ms12, 12.34, 0.25, 1e5, 10., 
+                                             xic, 40., 2.5, 1e6, 10., atd, 0, "", ms12, 
+                                             [
+                                                 (123.4567, xic, 0.05, atd, 0.06),
+                                                 (234.5678, xic, 0.07, atd, 0.08),
+                                                 (345.6789, xic, 0.09, atd, 0.10),
+                                             ], True)
+            # check that the feature was added to the database
+            # this query should return 1 row
+            self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
+            # this query should return 3 rows
+            self.assertEqual(len(cur.execute("SELECT * FROM DIADeconFragments").fetchall()), 3)
 
 
 class Test_Ms2PeaksToStr(unittest.TestCase):

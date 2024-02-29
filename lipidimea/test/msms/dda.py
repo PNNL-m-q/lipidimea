@@ -313,6 +313,7 @@ class Test_AddFeaturesToDb(unittest.TestCase):
             (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 3, 0, None),
         ]
         # use a helper callback function to store instead of printing debugging messages
+        global _DEBUG_MSGS
         _DEBUG_MSGS = []
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
@@ -336,6 +337,7 @@ class Test_AddFeaturesToDb(unittest.TestCase):
             (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 3, None, None),
         ]
         # use a helper callback function to store instead of printing debugging messages
+        global _DEBUG_MSGS
         _DEBUG_MSGS = []
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")

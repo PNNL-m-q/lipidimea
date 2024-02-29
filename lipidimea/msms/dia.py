@@ -27,8 +27,9 @@ from lipidimea.params import (
     DeconvoluteMS2PeaksParams,
 )
 from lipidimea.typing import (
-    Xic, Atd,
-    DiaDeconFragment
+    Xic, Atd, Ms1, Ms2,
+    DiaDeconFragment,
+    ResultsDBCursor
 )
 
 
@@ -152,14 +153,26 @@ def _deconvolute_ms2_peaks(rdr: MZA,
     return deconvoluted
     
 
-def _add_single_target_results_to_db(results_db_cursor, 
-                                     dda_feat_id, f, 
-                                     ms1,
-                                     rt, rt_fwhm, rt_pkht, rt_psnr, xic, 
-                                     dt, dt_fwhm, dt_pkht, dt_psnr, atd, 
-                                     ms2_n_peaks, ms2_peaks, ms2,
-                                     decon_frags,
-                                     store_blobs):
+def _add_single_target_results_to_db(cur: ResultsDBCursor, 
+                                     dda_feat_id: int, 
+                                     f: str, 
+                                     ms1: Ms1,
+                                     rt: float, 
+                                     rt_fwhm: float, 
+                                     rt_pkht: float, 
+                                     rt_psnr: float, 
+                                     xic: Xic, 
+                                     dt: float, 
+                                     dt_fwhm: float, 
+                                     dt_pkht: float, 
+                                     dt_psnr: float, 
+                                     atd: Atd, 
+                                     ms2_n_peaks: int, 
+                                     ms2_peaks: str, 
+                                     ms2: Ms2,
+                                     decon_frags: List[DiaDeconFragment],
+                                     store_blobs: bool
+                                     ) -> None :
     """ add all of the DIA data to DB for single target """
     # convert xic, atd, ms2 to blobs if store_blobs is True, else make them None
     ms1 = np.array(ms1).tobytes() if store_blobs else None
@@ -167,13 +180,11 @@ def _add_single_target_results_to_db(results_db_cursor,
     atd = np.array(atd).tobytes() if store_blobs else None
     ms2 = np.array(ms2).tobytes() if store_blobs else None
     dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
-    results_db_cursor.execute(dia_feats_qry, (None, dda_feat_id, f,
-                                                ms1,
-                                                rt, rt_fwhm, rt_pkht, rt_psnr, xic,
-                                                dt, dt_fwhm, dt_pkht, dt_psnr, atd, None,
-                                                ms2_n_peaks, ms2_peaks, ms2))
+    cur.execute(dia_feats_qry, (None, dda_feat_id, f, ms1, rt, rt_fwhm, rt_pkht, rt_psnr, 
+                                xic, dt, dt_fwhm, dt_pkht, dt_psnr, atd, None, ms2_n_peaks, 
+                                ms2_peaks, ms2))
     # fetch the DIA feature ID that we just added
-    dia_feat_id = results_db_cursor.lastrowid
+    dia_feat_id = cur.lastrowid
     # add deconvoluted fragments (if any) to database and associate with this DIA feature
     if decon_frags is not None:
         decon_frags_qry_1 = 'INSERT INTO DIADeconFragments VALUES (?,?,?,?,?,?);'
@@ -182,8 +193,8 @@ def _add_single_target_results_to_db(results_db_cursor,
             # convert xic, atd to blobs if store_blobs is True, else make them None
             fxic = np.array(fxic).tobytes() if store_blobs else None
             fatd = np.array(fatd).tobytes() if store_blobs else None
-            results_db_cursor.execute(decon_frags_qry_1, (None, fmz, fxic, fxic_dist, fatd, fatd_dist))
-            results_db_cursor.execute(decon_frags_qry_2, (dia_feat_id, results_db_cursor.lastrowid))
+            cur.execute(decon_frags_qry_1, (None, fmz, fxic, fxic_dist, fatd, fatd_dist))
+            cur.execute(decon_frags_qry_2, (dia_feat_id, cur.lastrowid))
         
 
 def _ms2_peaks_to_str(ms2_peaks):

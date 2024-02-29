@@ -20,6 +20,9 @@ type ResultsDBCursor = sqlite3.Cursor
 
 type Xic = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Atd = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+type Ms1 = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+type Ms2 = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+
 
 type DdaReader = Union[_MSMSReaderDDA, _MSMSReaderDDA_Cached]  # type: ignore
 type DdaChromFeat = Tuple[float, float, float, float, float]
