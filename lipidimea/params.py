@@ -63,6 +63,22 @@ class DdaParams:
     consolidate_dda_features_params: ConsolidateDdaFeaturesParams
 
 
+@dataclass
+class DeconvoluteMS2PeaksParams:
+    """ parameters for deconvoluting MS2 peaks """
+    mz_ppm: float
+    xic_dist_threshold: float
+    atd_dist_threshold: float 
+    xic_dist_metric: str
+    atd_dist_metric: str
+
+
+@dataclass
+class DiaParams:
+    """ class for organizing DIA data processing parameters """
+    deconvolute_ms2_peaks_params: DeconvoluteMS2PeaksParams
+
+
 def load_default_params(
                         ) -> Dict[Any, Any]:
     """

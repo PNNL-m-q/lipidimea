@@ -8,13 +8,44 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import unittest
+from unittest.mock import patch, PropertyMock
+from tempfile import TemporaryDirectory
+import os
 
 import numpy as np
+from mzapy.peaks import _gauss
 
 from lipidimea.msms.dia import (
     _select_xic_peak, _lerp_together, _decon_distance, _deconvolute_ms2_peaks,
     _add_single_target_results_to_db, _ms2_peaks_to_str, _single_target_analysis,
     extract_dia_features, extract_dia_features_multiproc, add_calibrated_ccs_to_dia_features
+)
+from lipidimea.params import (
+    DeconvoluteMS2PeaksParams, 
+    DiaParams
+)
+
+
+# Multiple tests cover functions that use the debug handler so instead of 
+# printing the debugging messages, use a callback function to store them
+# in this list. Individual test functions should clear out this list before
+# calling whatever function is being tested, then the list can be checked 
+# for the expected debugging messages if needed
+_DEBUG_MSGS = []
+
+def _debug_cb(msg: str
+              ) -> None :
+    """ helper callback function for redirecting debugging messages """
+    _DEBUG_MSGS.append(msg)
+
+
+# set some parameters for testing the different DIA data processing steps
+_DMP_PARAMS = DeconvoluteMS2PeaksParams(
+    40, 0.5, 0.5, "cosine", "cosine"
+)
+
+_DIA_PARAMS = DiaParams(
+    _DMP_PARAMS
 )
 
 
@@ -128,9 +159,141 @@ class Test_DeconDistance(unittest.TestCase):
 class Test_DeconvoluteMs2Peaks(unittest.TestCase):
     """ tests for the _deconvolute_ms2_peaks function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_DMP_mock_data_match_XIC_match_ATD(self):
+        """ test deconvoluting MS2 peaks with mock data and matching XIC and ATD """
+        # make a fake XIC with one peak
+        np.random.seed(420)
+        xic_rts = np.arange(12, 17.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
+        # make a fake ATD with one peak
+        atd_ats = np.arange(30, 50.05, 0.05)
+        noise1 = np.random.normal(1, 0.2, size=atd_ats.shape)
+        noise2 = np.random.normal(1, 0.1, size=atd_ats.shape)
+        atd_iis = 1000 * noise1 
+        atd_iis += _gauss(atd_ats, 40, 1e5, 2.5) * noise2
+        # make another fake XIC with one peak 
+        np.random.seed(420)
+        xic2_rts = np.arange(12, 17.05, 0.05)
+        noise1 = np.random.normal(1, 0.4, size=xic2_rts.shape)
+        noise2 = np.random.normal(1, 0.2, size=xic2_rts.shape)
+        xic2_iis = 1000 * noise1 
+        xic2_iis += _gauss(xic2_rts, 15.1, 1e5, 0.27) * noise2 
+        # make another fake ATD with one peak
+        atd2_ats = np.arange(30, 50.05, 0.075)
+        noise1 = np.random.normal(1, 0.4, size=atd2_ats.shape)
+        noise2 = np.random.normal(1, 0.2, size=atd2_ats.shape)
+        atd2_iis = 1000 * noise1 
+        atd2_iis += _gauss(atd2_ats, 40.5, 1e5, 2.6) * noise2
+        # assemble precursor Xic and Atd from the second set of fake data
+        pre_xic = (xic2_rts, xic2_iis)
+        pre_atd = (atd2_ats, atd2_iis)
+        # need to patch a mock MZA instance
+        with patch('mzapy.MZA') as MockReader:
+            # mock a MZA instance with 
+            # collect_xic_arrays_by_mz method that returns a fake XIC
+            # collect_atd_arrays_by_rt_mz method that returns a fake ATD
+            rdr = MockReader.return_value
+            rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
+            rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
+            # test the function
+            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DMP_PARAMS)
+            # should get one entry in the deconvoluted list
+            self.assertEqual(len(deconvoluted), 1)
+            # make sure the deconvoluted feature has the correct info
+            self.assertEqual(deconvoluted[0][0], 789.0123)
+            self.assertLess(deconvoluted[0][2], 0.5)
+            self.assertLess(deconvoluted[0][4], 0.5)
+
+    def test_DMP_mock_data_match_XIC_nomatch_ATD(self):
+        """ test deconvoluting MS2 peaks with mock data and matching XIC and non matching ATD """
+        # make a fake XIC with one peak
+        np.random.seed(420)
+        xic_rts = np.arange(12, 17.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
+        # make a fake ATD with one peak, bad AT
+        atd_ats = np.arange(30, 50.05, 0.05)
+        noise1 = np.random.normal(1, 0.2, size=atd_ats.shape)
+        noise2 = np.random.normal(1, 0.1, size=atd_ats.shape)
+        atd_iis = 1000 * noise1 
+        atd_iis += _gauss(atd_ats, 35, 1e5, 2.5) * noise2
+        # make another fake XIC with one peak 
+        np.random.seed(420)
+        xic2_rts = np.arange(12, 17.05, 0.05)
+        noise1 = np.random.normal(1, 0.4, size=xic2_rts.shape)
+        noise2 = np.random.normal(1, 0.2, size=xic2_rts.shape)
+        xic2_iis = 1000 * noise1 
+        xic2_iis += _gauss(xic2_rts, 15.1, 1e5, 0.27) * noise2 
+        # make another fake ATD with one peak
+        atd2_ats = np.arange(30, 50.05, 0.075)
+        noise1 = np.random.normal(1, 0.4, size=atd2_ats.shape)
+        noise2 = np.random.normal(1, 0.2, size=atd2_ats.shape)
+        atd2_iis = 1000 * noise1 
+        atd2_iis += _gauss(atd2_ats, 40.5, 1e5, 2.6) * noise2
+        # assemble precursor Xic and Atd from the second set of fake data
+        pre_xic = (xic2_rts, xic2_iis)
+        pre_atd = (atd2_ats, atd2_iis)
+        # need to patch a mock MZA instance
+        with patch('mzapy.MZA') as MockReader:
+            # mock a MZA instance with 
+            # collect_xic_arrays_by_mz method that returns a fake XIC
+            # collect_atd_arrays_by_rt_mz method that returns a fake ATD
+            rdr = MockReader.return_value
+            rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
+            rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
+            # test the function
+            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DMP_PARAMS)
+            # should get no entries in the deconvoluted list because of non matching ATD
+            self.assertEqual(deconvoluted, [])
+
+    def test_DMP_mock_data_nomatch_XIC_nomatch_ATD(self):
+        """ test deconvoluting MS2 peaks with mock data and non matching XIC and non matching ATD """
+        # make a fake XIC with one peak, bad RT
+        np.random.seed(420)
+        xic_rts = np.arange(12, 17.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 13, 1e5, 0.25) * noise2 
+        # make a fake ATD with one peak, bad AT
+        atd_ats = np.arange(30, 50.05, 0.05)
+        noise1 = np.random.normal(1, 0.2, size=atd_ats.shape)
+        noise2 = np.random.normal(1, 0.1, size=atd_ats.shape)
+        atd_iis = 1000 * noise1 
+        atd_iis += _gauss(atd_ats, 35, 1e5, 2.5) * noise2
+        # make another fake XIC with one peak 
+        np.random.seed(420)
+        xic2_rts = np.arange(12, 17.05, 0.05)
+        noise1 = np.random.normal(1, 0.4, size=xic2_rts.shape)
+        noise2 = np.random.normal(1, 0.2, size=xic2_rts.shape)
+        xic2_iis = 1000 * noise1 
+        xic2_iis += _gauss(xic2_rts, 15.1, 1e5, 0.27) * noise2 
+        # make another fake ATD with one peak
+        atd2_ats = np.arange(30, 50.05, 0.075)
+        noise1 = np.random.normal(1, 0.4, size=atd2_ats.shape)
+        noise2 = np.random.normal(1, 0.2, size=atd2_ats.shape)
+        atd2_iis = 1000 * noise1 
+        atd2_iis += _gauss(atd2_ats, 40.5, 1e5, 2.6) * noise2
+        # assemble precursor Xic and Atd from the second set of fake data
+        pre_xic = (xic2_rts, xic2_iis)
+        pre_atd = (atd2_ats, atd2_iis)
+        # need to patch a mock MZA instance
+        with patch('mzapy.MZA') as MockReader:
+            # mock a MZA instance with 
+            # collect_xic_arrays_by_mz method that returns a fake XIC
+            # collect_atd_arrays_by_rt_mz method that returns a fake ATD
+            rdr = MockReader.return_value
+            rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
+            rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
+            # test the function
+            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DMP_PARAMS)
+            # should get no entries in the deconvoluted list because of non matching ATD
+            self.assertEqual(deconvoluted, [])
 
 
 class Test_AddSingleTargetResultsToDb(unittest.TestCase):

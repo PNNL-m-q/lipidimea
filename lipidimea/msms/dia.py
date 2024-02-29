@@ -8,20 +8,28 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from sqlite3 import connect
 import os
 from itertools import repeat
 import multiprocessing
 
 import numpy as np
-from numpy import typing as npt
+import numpy.typing as npt
 from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
 from lipidimea.msms._util import str_to_ms2, ms2_to_str, apply_args_and_kwargs
 from lipidimea.util import debug_handler
+from lipidimea.msms._util import tol_from_ppm
+from lipidimea.params import (
+    DeconvoluteMS2PeaksParams,
+)
+from lipidimea.typing import (
+    Xic, Atd,
+    DiaDeconFragment
+)
 
 
 def _select_xic_peak(target_rt: float, 
@@ -51,8 +59,8 @@ def _select_xic_peak(target_rt: float,
         return peaks[imax]
 
 
-def _lerp_together(data_a: npt.NDArray[np.float64], 
-                   data_b: npt.NDArray[np.float64], 
+def _lerp_together(data_a: Union[Xic, Atd], 
+                   data_b: Union[Xic, Atd], 
                    dx: float, 
                    normalize: bool = True
                    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]] :
@@ -72,7 +80,11 @@ def _lerp_together(data_a: npt.NDArray[np.float64],
     return x, np.interp(x, x_a, y_a), np.interp(x, x_b, y_b)
 
 
-def _decon_distance(pre_data, frag_data, metric, lerp_dx):
+def _decon_distance(pre_data: Union[Xic, Atd], 
+                    frag_data: Union[Xic, Atd], 
+                    dist_func: str, 
+                    lerp_dx: float
+                    ) -> float :
     """
     Compute a distance between precursor and fragment data (either XICs or ATDs) using
     a specified distance metric
@@ -83,11 +95,17 @@ def _decon_distance(pre_data, frag_data, metric, lerp_dx):
         'euclidean': spatial.distance.euclidean,
     }
     x, y_pre, y_frg = _lerp_together(pre_data, frag_data, lerp_dx)
-    return dist_funcs[metric](y_pre, y_frg)
+    return dist_funcs[dist_func](y_pre, y_frg)
 
 
-def _deconvolute_ms2_peaks(rdr, sel_ms2_mzs, mz_tol, pre_xic, pre_xic_rt, pre_xic_wt, pre_atd, 
-                           xic_dist_threshold, atd_dist_threshold, xic_dist_metric, atd_dist_metric):
+def _deconvolute_ms2_peaks(rdr: MZA, 
+                           sel_ms2_mzs: List[float],
+                           pre_xic: Xic, 
+                           pre_xic_rt: float, 
+                           pre_xic_wt: float, 
+                           pre_atd: Atd, 
+                           params: DeconvoluteMS2PeaksParams
+                           ) -> List[DiaDeconFragment] :
     """
     Deconvolute MS2 peak m/zs, if the XIC and ATD are similar enough to the precursor, 
     they are returned as deconvoluted peak m/zs
@@ -98,45 +116,37 @@ def _deconvolute_ms2_peaks(rdr, sel_ms2_mzs, mz_tol, pre_xic, pre_xic_rt, pre_xi
         interface to raw data
     sel_ms2_mzs : ``list(float)``
         list of selected MS2 peak m/zs
-    mz_tol : ``float``
-        m/z tolerance for XIC extraction
     pre_xic : ``numpy.ndarray(...)``
         precursor XIC
-     pre_xic_rt : ``float``
+    pre_xic_rt : ``float``
         precursor XIC retention time for ATD extraction
     pre_xic_wt : ``float``
         precursor XIC peak width for ATD extraction
-    rt_tol : ``float``
-        RT tolerance for XIC extraction
     pre_atd : ``numpy.ndarray(...)``
         precursor ATD
-    xic_dist_threshold : ``float``
-        distance threshold for accepting fragment using precursor and fragments XICs
-    atd_dist_threshold : ``float``
-        distance threshold for accepting fragment using precursor and fragments ATDs
-    xic_dist_metric : ``str``
-        distance metric for XIC comparison
-    atd_dist_metric : ``str``
-        distance metric for ATD comparison
+    params : ``DeconvoluteMS2PeaksParams``
+        parameters for deconvoluting MS2 peaks
+
     Returns
     -------
-    decon_ms2_mzs : ``list(float)``
+    decon_fragments : ``list(DiaDeconFragment)``
         deconvoluted MS2 peak m/zs 
     """
     deconvoluted = []
     for ms2_mz in sel_ms2_mzs:
+        mz_tol = tol_from_ppm(ms2_mz, params.mz_ppm)
         mz_bounds = (ms2_mz - mz_tol, ms2_mz + mz_tol)
         rt_bounds = (pre_xic_rt - pre_xic_wt, pre_xic_rt + pre_xic_wt)
         # extract fragment XIC 
         ms2_xic = rdr.collect_xic_arrays_by_mz(*mz_bounds, rt_bounds=rt_bounds, mslvl=2)
         # compute XIC distance
-        xic_dist = _decon_distance(pre_xic, ms2_xic, xic_dist_metric, 0.05)
-        if xic_dist <= xic_dist_threshold:
+        xic_dist = _decon_distance(pre_xic, ms2_xic, params.xic_dist_metric, 0.05)
+        if xic_dist <= params.xic_dist_threshold:
             # extract fragment ATD 
             ms2_atd = rdr.collect_atd_arrays_by_rt_mz(*mz_bounds, *rt_bounds, mslvl=2)
             # compute ATD distance
-            atd_dist = _decon_distance(pre_atd, ms2_atd, atd_dist_metric, 0.25)
-            if atd_dist <= atd_dist_threshold:
+            atd_dist = _decon_distance(pre_atd, ms2_atd, params.atd_dist_metric, 0.25)
+            if atd_dist <= params.atd_dist_threshold:
                 # accept fragment
                 deconvoluted.append((ms2_mz, ms2_xic, xic_dist, ms2_atd, atd_dist))
     return deconvoluted

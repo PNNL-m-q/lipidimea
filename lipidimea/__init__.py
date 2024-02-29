@@ -7,4 +7,4 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 # release.major_version.minor_version
-__version__ = '0.10.0.dropscans_21'
+__version__ = '0.10.0.dropscans_22'
