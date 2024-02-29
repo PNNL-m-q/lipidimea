@@ -9,6 +9,8 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 import unittest
 
+import numpy as np
+
 from lipidimea.msms.dia import (
     _select_xic_peak, _lerp_together, _decon_distance, _deconvolute_ms2_peaks,
     _add_single_target_results_to_db, _ms2_peaks_to_str, _single_target_analysis,
@@ -58,9 +60,45 @@ class Test_SelectXicPeak(unittest.TestCase):
 class Test_LerpTogether(unittest.TestCase):
     """ tests for the _lerp_together function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_LT_non_overlapping(self):
+        """ test lerping together non-overlapping ranges """
+        data_a = np.array([[1., 2., 3., 4., 5.], [0., 1., 2., 1., 0]])
+        data_b = np.array([[6., 7., 8., 9., 10.], [0., 1., 2., 1., 0]])
+        xi, yi_a, yi_b = _lerp_together(data_a, data_b, 0.2)
+        # returned arrays should all be empty
+        self.assertEqual(xi.tolist(), [])
+        self.assertEqual(yi_a.tolist(), [])
+        self.assertEqual(yi_b.tolist(), [])
+
+    def test_LT_overlapping(self):
+        """ test lerping together overlapping ranges """
+        data_a = np.array([[1., 2., 3., 4., 5.], [0., 1., 2., 1., 0]])
+        data_b = np.array([[3., 4., 5., 6., 7.], [0., 1., 2., 1., 0]])
+        xi, yi_a, yi_b = _lerp_together(data_a, data_b, 0.25, normalize=False)
+        # all arrays should have the expected length
+        l = 9
+        self.assertEqual(len(xi), l)
+        self.assertEqual(len(yi_a), l)
+        self.assertEqual(len(yi_b), l)
+        # check interpolated values in yi_a and yi_b
+        # x = [3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5.]
+        self.assertListEqual(yi_a.tolist(), [2., 1.75, 1.5, 1.25, 1., 0.75, 0.5, 0.25, 0.])
+        self.assertListEqual(yi_b.tolist(), [0., 0.25, 0.5, 0.75, 1., 1.25, 1.5, 1.75, 2.])
+
+    def test_LT_overlapping_normalized(self):
+        """ test lerping together overlapping ranges and normalized y values """
+        data_a = np.array([[1., 2., 3., 4., 5.], [0., 1., 2., 1., 0]])
+        data_b = np.array([[3., 4., 5., 6., 7.], [0., 1., 2., 1., 0]])
+        xi, yi_a, yi_b = _lerp_together(data_a, data_b, 0.25)
+        # all arrays should have the expected length
+        l = 9
+        self.assertEqual(len(xi), l)
+        self.assertEqual(len(yi_a), l)
+        self.assertEqual(len(yi_b), l)
+        # check interpolated values in yi_a and yi_b
+        # x = [3., 3.25, 3.5, 3.75, 4., 4.25, 4.5, 4.75, 5.]
+        self.assertListEqual(yi_a.tolist(), [1., 0.875, 0.750, 0.625, 0.500, 0.375, 0.250, 0.125, 0.])
+        self.assertListEqual(yi_b.tolist(), [0., 0.125, 0.250, 0.375, 0.500, 0.625, 0.750, 0.875, 1.])
 
 
 class Test_DeconDistance(unittest.TestCase):

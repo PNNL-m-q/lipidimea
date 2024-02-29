@@ -15,6 +15,7 @@ from itertools import repeat
 import multiprocessing
 
 import numpy as np
+from numpy import typing as npt
 from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
@@ -28,7 +29,7 @@ def _select_xic_peak(target_rt: float,
                      pkrts: List[float], 
                      pkhts: List[float], 
                      pkwts: List[float]
-                     ) -> Tuple[float, float, float]:
+                     ) -> Tuple[float, float, float] :
     """ 
     select the peak with the highest intensity that is within target_rt_tol of target_rt 
     returns peak_rt, peak_height, peak_fwhm of selected peak
@@ -50,8 +51,11 @@ def _select_xic_peak(target_rt: float,
         return peaks[imax]
 
 
-def _lerp_together(data_a, data_b, dx, 
-                   normalize=True):
+def _lerp_together(data_a: npt.NDArray[np.float64], 
+                   data_b: npt.NDArray[np.float64], 
+                   dx: float, 
+                   normalize: bool = True
+                   ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64]] :
     """
     take two sets of data (XICs or ATDs) and use linear interpolation to 
     put them both on the same scale
