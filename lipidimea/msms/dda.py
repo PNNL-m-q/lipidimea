@@ -575,7 +575,9 @@ def extract_dda_features_multiproc(dda_data_files: List[str],
     """
     n_proc = min(n_proc, len(dda_data_files))  # no need to use more processes than the number of inputs
     args = [(dda_data_file, results_db, params) for dda_data_file in dda_data_files]
-    args_for_starmap = zip(repeat(extract_dda_features), args, repeat({'cache_ms1': cache_ms1, 'debug_flag': debug_flag, 'debug_cb': debug_cb}))
+    args_for_starmap = zip(repeat(extract_dda_features), args, repeat({'cache_ms1': cache_ms1, 
+                                                                       'debug_flag': debug_flag, 
+                                                                       'debug_cb': debug_cb}))
     with multiprocessing.Pool(processes=n_proc) as p:
         feat_counts = p.starmap(apply_args_and_kwargs, args_for_starmap)
     return {k: v for k, v in zip(dda_data_files, feat_counts)}

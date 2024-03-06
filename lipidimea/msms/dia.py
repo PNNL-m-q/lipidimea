@@ -8,7 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Tuple, Union, Optional, Any, Callable
+from typing import List, Tuple, Union, Optional, Any, Callable, Dict
 from sqlite3 import connect
 import os
 from itertools import repeat
@@ -217,7 +217,7 @@ def _single_target_analysis(n: int,
                             dda_ms2: Optional[SpecStr], 
                             params: DiaParams, 
                             debug_flag: Optional[str], debug_cb: Optional[Callable]
-                            ) -> None:
+                            ) -> int :
     """
     Perform a complete analysis of DIA data for a single target DDA feature 
     
@@ -248,7 +248,13 @@ def _single_target_analysis(n: int,
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+
+    Returns
+    -------
+    n_features : ``int``
+        number of features extracted
     """
+    n_features: int = 0
     pid = os.getpid()
     msg = '({}/{}) DDA feature ID: {}, m/z: {:.4f}, RT: {:.2f} min -> '.format(i + 1, n, dda_fid, dda_mz, dda_rt)
     # extract the XIC, fit 
@@ -340,8 +346,11 @@ def _single_target_analysis(n: int,
                                              n_dia_peaks_pre_decon, _ms2_peaks_to_str(dia_ms2_peaks), ms2,
                                              decon_frags,
                                              params.store_blobs)
+            n_features += 1
     else:
         debug_handler(debug_flag, debug_cb, msg + 'no XIC peak found', pid)
+    # return the count of features extracted
+    return n_features
 
 
 def extract_dia_features(dia_data_file: str, 
@@ -349,7 +358,7 @@ def extract_dia_features(dia_data_file: str,
                          params: DiaParams, 
                          debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None,
                          mza_io_threads: int = 4,
-                         ) -> None :
+                         ) -> int :
     """
     Extract features from a raw DIA data file, store them in a database 
     (initialized using ``lipidimea.util.create_results_db`` function)
@@ -369,6 +378,11 @@ def extract_dia_features(dia_data_file: str,
         debug_flag is not set to 'textcb' or 'textcb_pid'
     mza_io_threads : ``int``, default=4
         number of I/O threads to specify for the MZA reader object
+
+    Returns
+    -------
+    n_dia_features : ``int``
+        number of DIA features extracted
     """
     pid = os.getpid()
     debug_handler(debug_flag, debug_cb, 'Extracting DIA FEATURES', pid)
@@ -383,8 +397,9 @@ def extract_dia_features(dia_data_file: str,
     dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]  
     # extract DIA features for each DDA feature
     n = len(dda_feats)
+    n_dia_features: int = 0
     for i, (dda_fid, dda_mz, dda_rt, dda_ms2) in enumerate(dda_feats):
-        _single_target_analysis(n, i, rdr, cur, dia_data_file, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb)
+        n_dia_features += _single_target_analysis(n, i, rdr, cur, dia_data_file, dda_fid, dda_mz, dda_rt, dda_ms2, params, debug_flag, debug_cb)
         # commit DB changes after each target? Yes.
         con.commit()
     # commit DB changes at the end of the analysis? No.
@@ -392,6 +407,8 @@ def extract_dia_features(dia_data_file: str,
     # clean up
     con.close()
     rdr.close()
+    # return the number of features extracted
+    return n_dia_features
 
 
 # TODO (Dylan Ross): Test out different numbers of MZA I/O threads and see if they cause any problems
@@ -408,7 +425,7 @@ def extract_dia_features_multiproc(dia_data_files: List[str],
                                    n_proc: int, 
                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None,
                                    mza_io_threads: int = 4
-                                   ) -> None :
+                                   ) -> Dict[str, int] :
     """
     extracts dda features from multiple DDA files in parallel
 
@@ -429,6 +446,11 @@ def extract_dia_features_multiproc(dia_data_files: List[str],
         debug_flag is not set to 'textcb' or 'textcb_pid'
     mza_io_threads : ``int``, default=4
         number of I/O threads to specify for the MZA reader objects
+
+    Returns
+    -------
+    dia_features_per_file : ``dict(str:int)``
+        dictionary with the number of DIA features mapped to input DIA data files
     """
     n_proc = min(n_proc, len(dia_data_files))  # no need to use more processes than the number of inputs
     args = [(dia_data_file, results_db, params) for dia_data_file in dia_data_files]
@@ -436,7 +458,8 @@ def extract_dia_features_multiproc(dia_data_files: List[str],
                                                                        'debug_cb': debug_cb, 
                                                                        'mza_io_threads': mza_io_threads}))
     with multiprocessing.Pool(processes=n_proc) as p:
-        p.starmap(apply_args_and_kwargs, args_for_starmap)
+        feat_counts = p.starmap(apply_args_and_kwargs, args_for_starmap)
+    return {k: v for k, v in zip(dia_data_files, feat_counts)}
 
 
 def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath, 

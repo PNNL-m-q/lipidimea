@@ -161,10 +161,6 @@ class SumCompLipidDB():
             LMGP0106: ['[M+H]+']
             LMGP0107: ['[M+H]+']
 
-        where the top-level keys are lipid class names (abbreviated) which map to three lists of parameters 
-        with keys "fa_mod", "n_chains" and "adducts". All permutations of defined lipid class, fatty acid modifier, 
-        number of chains, and adduct are used to fill the database
-
         Parameters
         ----------
         config_yml : ``str``

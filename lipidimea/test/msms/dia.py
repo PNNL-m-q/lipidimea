@@ -468,12 +468,14 @@ class Test_SingleTargetAnalysis(unittest.TestCase):
             con = sqlite3.connect(dbf)
             cur = con.cursor()
             # test the function
-            _single_target_analysis(1, 1, rdr, cur, "dia.data.file", 69420, 789.0123, 15., dda_spec_str, _DIA_PARAMS, None, None)
+            n = _single_target_analysis(1, 1, rdr, cur, "dia.data.file", 69420, 789.0123, 15., dda_spec_str, _DIA_PARAMS, None, None)
             # check that the feature was added to the database
             # this query should return 1 row
             self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
             # this query should return 3 rows
             self.assertEqual(len(cur.execute("SELECT * FROM DIADeconFragments").fetchall()), 19)
+            # also the feature count returned from the function should be 1
+            self.assertEqual(n, 1)
 
 
 class TestExtractDiaFeatures(unittest.TestCase):
@@ -540,12 +542,14 @@ class TestExtractDiaFeatures(unittest.TestCase):
             cur.execute("INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);", dda_qdata)
             con.commit()
             # test the function
-            extract_dia_features("dia.data.file", dbf, _DIA_PARAMS)
+            n = extract_dia_features("dia.data.file", dbf, _DIA_PARAMS)
             # check that the feature was added to the database
             # this query should return 1 row
             self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
             # this query should return 3 rows
             self.assertEqual(len(cur.execute("SELECT * FROM DIADeconFragments").fetchall()), 19)
+            # also the feature count returned from the function should be 1
+            self.assertEqual(n, 1)
 
 
 # NOTE (Dylan Ross): removed the unit test for extract_dia_features_multiproc as mocking does 
