@@ -19,7 +19,7 @@ from mzapy.peaks import _gauss
 from lipidimea.msms.dda import (
     _MSMSReaderDDA, _MSMSReaderDDA_Cached, _extract_and_fit_chroms, _consolidate_chrom_feats,
     _extract_and_fit_ms2_spectra, _add_features_to_db, extract_dda_features, 
-    extract_dda_features_multiproc, consolidate_dda_features
+    consolidate_dda_features
 )
 from lipidimea.msms._util import ms2_to_str, str_to_ms2
 from lipidimea.util import create_results_db
@@ -60,7 +60,10 @@ _CDF_PARAMS = DdaConsolidateFeaturesParams(
 )
 
 _DDA_PARAMS = DdaParams(
-    _EAFC_PARAMS, _CCF_PARAMS, _EAFMS2_PARAMS, _CDF_PARAMS
+    _EAFC_PARAMS, 
+    _CCF_PARAMS, 
+    _EAFMS2_PARAMS, 
+    _CDF_PARAMS
 )
 
 

@@ -19,10 +19,11 @@ from mzapy.peaks import _gauss
 from lipidimea.msms.dia import (
     _select_xic_peak, _lerp_together, _decon_distance, _deconvolute_ms2_peaks,
     _add_single_target_results_to_db, _ms2_peaks_to_str, _single_target_analysis,
-    extract_dia_features, extract_dia_features_multiproc, add_calibrated_ccs_to_dia_features
+    extract_dia_features, add_calibrated_ccs_to_dia_features
 )
 from lipidimea.params import (
-    DiaDeconvoluteMS2PeaksParams, 
+    DiaExtractAndFitChromsParams, DiaChromPeakSelectionParams, DiaAtdFitParams,
+    DiaMs2FitParams, DiaDeconvoluteMS2PeaksParams, 
     DiaParams
 )
 from lipidimea.util import create_results_db
@@ -42,12 +43,34 @@ def _debug_cb(msg: str
 
 
 # set some parameters for testing the different DIA data processing steps
+_EAFC_PARAMS = DiaExtractAndFitChromsParams(
+    20, 0.25, 0.1, 1e4, 0.1, 1.0, 1
+)
+
+_CPS_PARAMS = DiaChromPeakSelectionParams(
+    0., 0.1
+)
+
+_AF_PARAMS = DiaAtdFitParams(
+    0.1, 1e4, 0.5, 5, 1
+)
+
+_MF_PARAMS = DiaMs2FitParams(
+    0.1, 1e3, 0.01, 0.1, 0.2
+)
+
 _DMP_PARAMS = DiaDeconvoluteMS2PeaksParams(
     40, 0.5, 0.5, "cosine", "cosine"
 )
 
 _DIA_PARAMS = DiaParams(
-    _DMP_PARAMS
+    _EAFC_PARAMS, 
+    _CPS_PARAMS,
+    _AF_PARAMS,
+    _MF_PARAMS,
+    40,
+    _DMP_PARAMS,
+    True
 )
 
 
@@ -395,32 +418,77 @@ class Test_Ms2PeaksToStr(unittest.TestCase):
     #                    ms2_to_str() function which already has complete unit tests
 
     def test_MPTS_ms2_peaks_is_none(self):
-        """ test providing None as the ms2_peaks arg """
+        """ test providing None as the ms2_peaks arg should return None """
         self.assertIsNone(_ms2_peaks_to_str(None))
 
 
 class Test_SingleTargetAnalysis(unittest.TestCase):
     """ tests for the _single_target_analysis function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_STA_mock_data(self):
+        """ use mock data to test complete single target analysis """
+        # make a fake XIC with one peak
+        np.random.seed(420)
+        xic_rts = np.arange(12, 17.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
+        # make a fake ATD with one peak, bad AT
+        atd_ats = np.arange(30, 50.05, 0.05)
+        noise1 = np.random.normal(1, 0.2, size=atd_ats.shape)
+        noise2 = np.random.normal(1, 0.1, size=atd_ats.shape)
+        atd_iis = 1000 * noise1 
+        atd_iis += _gauss(atd_ats, 35, 1e5, 2.5) * noise2
+        # make a fake MS2 spectrum with peaks
+        ms2_mzs = np.arange(50, 800, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=ms2_mzs.shape)
+        ms2_iis = 1000 * noise1 
+        noise2 = np.random.normal(1, 0.1, size=ms2_mzs.shape)
+        pkmzs = np.arange(100, 800, 25, dtype=np.float64)
+        for pkmz in pkmzs:
+            ms2_iis += _gauss(ms2_mzs, pkmz, 1e5, 0.1) * noise2 
+        # DDA MS2 spectrum string
+        noise3 = np.random.normal(1, 0.1, size=pkmzs.shape)
+        dda_spec_str = _ms2_peaks_to_str((pkmzs, 1e5 * noise3, None))
+        # need to patch a mock MZA instance
+        # and create a fake database
+        with patch('mzapy.MZA') as MockReader, TemporaryDirectory() as tmp_dir:
+            # mock a MZA instance with 
+            # collect_xic_arrays_by_mz method that returns a fake XIC
+            # collect_atd_arrays_by_rt_mz method that returns a fake ATD
+            # collect_ms2_arrays_by_rt_dt method that returns a fake MS2 spectrum
+            rdr = MockReader.return_value
+            rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
+            rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
+            rdr.collect_ms2_arrays_by_rt_dt.return_value = (ms2_mzs, ms2_iis)
+            # make the fake results database
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # test the function
+            _single_target_analysis(1, 1, rdr, cur, "test.file", 69420, 789.0123, 15., dda_spec_str, _DIA_PARAMS, None, None)
+            # check that the feature was added to the database
+            # this query should return 1 row
+            self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
+            # this query should return 3 rows
+            self.assertEqual(len(cur.execute("SELECT * FROM DIADeconFragments").fetchall()), 19)
 
 
 class TestExtractDiaFeatures(unittest.TestCase):
     """ tests for the extract_dia_features function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
+    def test_EDF_mock_data(self):
         """ placeholder, remove this function and implement tests """
         raise NotImplementedError("no tests implemented yet")
 
 
-class TestExtractDiaFeaturesMultiproc(unittest.TestCase):
-    """ tests for the extract_dia_features_multiproc function """
-
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+# NOTE (Dylan Ross): removed the unit test for extract_dia_features_multiproc as mocking does 
+#                    not work well with multiprocessing. The actual business logic function is 
+#                    fully tested and the logic of applying it in a multiprocessing context via 
+#                    starmap is small and straightforward so should be able to trust it well 
+#                    enough without the unit test
 
 
 class TestAddCalibratedCcsToDiaFeatures(unittest.TestCase):

@@ -168,21 +168,21 @@ def _add_single_target_results_to_db(cur: ResultsDBCursor,
                                      dt_psnr: float, 
                                      atd: Atd, 
                                      ms2_n_peaks: int, 
-                                     ms2_peaks: str, 
+                                     ms2_peaks: Optional[SpecStr], 
                                      ms2: Ms2,
                                      decon_frags: List[DiaDeconFragment],
                                      store_blobs: bool
                                      ) -> None :
     """ add all of the DIA data to DB for single target """
     # convert xic, atd, ms2 to blobs if store_blobs is True, else make them None
-    ms1 = np.array(ms1).tobytes() if store_blobs else None
-    xic = np.array(xic).tobytes() if store_blobs else None
-    atd = np.array(atd).tobytes() if store_blobs else None
-    ms2 = np.array(ms2).tobytes() if store_blobs else None
+    ms1_qd = np.array(ms1).tobytes() if store_blobs else None
+    xic_qd = np.array(xic).tobytes() if store_blobs else None
+    atd_qd = np.array(atd).tobytes() if store_blobs else None
+    ms2_qd = np.array(ms2).tobytes() if store_blobs else None
     dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
-    cur.execute(dia_feats_qry, (None, dda_feat_id, f, ms1, rt, rt_fwhm, rt_pkht, rt_psnr, 
-                                xic, dt, dt_fwhm, dt_pkht, dt_psnr, atd, None, ms2_n_peaks, 
-                                ms2_peaks, ms2))
+    cur.execute(dia_feats_qry, (None, dda_feat_id, f, ms1_qd, rt, rt_fwhm, rt_pkht, rt_psnr, 
+                                xic_qd, dt, dt_fwhm, dt_pkht, dt_psnr, atd_qd, None, ms2_n_peaks, 
+                                ms2_peaks, ms2_qd))
     # fetch the DIA feature ID that we just added
     dia_feat_id = cur.lastrowid
     # add deconvoluted fragments (if any) to database and associate with this DIA feature
@@ -197,7 +197,7 @@ def _add_single_target_results_to_db(cur: ResultsDBCursor,
             cur.execute(decon_frags_qry_2, (dia_feat_id, cur.lastrowid))
         
 
-def _ms2_peaks_to_str(ms2_peaks: Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], Any]
+def _ms2_peaks_to_str(ms2_peaks: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], Any]]
                       ) -> Optional[SpecStr]:
     """ convert MS2 peaks (i.e. centroided MS2 spectrum) to string representation """
     if ms2_peaks is None:
@@ -219,34 +219,35 @@ def _single_target_analysis(n: int,
                             debug_flag: Optional[str], debug_cb: Optional[Callable]
                             ) -> None:
     """
-    Perform a complete analysis of a single target
+    Perform a complete analysis of DIA data for a single target DDA feature 
     
     Parameters
     ----------
     n : ``int``
-    
+        total number of DDA targets we are processing
     i : ``int``
-    
+        index of DDA target we are currently processing
     rdr : ``mzapy.MZA``
-
+        MZA instance for extracting raw data
     cur : ``ResultsDBCursor``
-
+        cursor for querying into results database
     f : ``str``
-    
+        DIA data file
     dda_fid : ``int``
-
+        feauture ID of the DDA feature we are currently processing
     dda_mz : ``float``
-
+        precursor m/z of the DDA feature we are currently processing
     dda_rt : ``float``
-
+        retention time of the DDA feature we are currently processing
     dda_ms2 : ``SpecStr``
-
+        MS/MS spectrum (as a spectrum string) for the DDA feature we are currently processing
     params : ``DiaParams``
-
-    debug_flag : ``str``
-
-    debug_cb : ``func``
-    
+        DIA analysis params 
+     debug_flag : ``str``, optional
+        specifies how to dispatch debugging messages, None to do nothing
+    debug_cb : ``func``, optional
+        callback function that takes the debugging message as an argument, can be None if
+        debug_flag is not set to 'textcb' or 'textcb_pid'
     """
     pid = os.getpid()
     msg = '({}/{}) DDA feature ID: {}, m/z: {:.4f}, RT: {:.2f} min -> '.format(i + 1, n, dda_fid, dda_mz, dda_rt)
