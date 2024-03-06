@@ -10,6 +10,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 from os import path as op
 from sqlite3 import connect
 from itertools import product
+from typing import Generator, Tuple, List, Optional, Callable
 
 from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
@@ -19,8 +20,17 @@ from lipidlib.lipids import LMAPS, get_c_u_combos, Lipid
 from lipidlib.parser import parse_lipid_name
 from lipidlib._fragmentation_rules import load_rules
 
+from lipidimea.typing import (
+    ScdbLipidId, ResultsDbPath
+)
 from lipidimea.util import debug_handler
+from lipidimea.msms._util import tol_from_ppm
+from lipidimea.params import AnnotationParams
 
+
+# define paths to default sum composition lipid DB config files
+DEFAULT_POS_SCDB_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/pos.yml')
+DEFAULT_NEG_SCDB_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/neg.yml')
 
 
 class SumCompLipidDB():
@@ -29,7 +39,8 @@ class SumCompLipidDB():
     lipid identifications, using a configuration file to specify what lipids to include
     """
 
-    def _init_db(self):
+    def _init_db(self
+                 ) -> None :
         """ initialize DB in memory and set up SumCompLipids table """
         create_qry = """
         CREATE TABLE SumCompLipids (
@@ -47,7 +58,8 @@ class SumCompLipidDB():
         self._cur.execute(create_qry)
 
     @staticmethod
-    def max_u(c):
+    def max_u(c: int
+              ) -> int :
         """
         Maximum number of unsaturations as a function of carbon count for a single carbon chain. By default up 
         to 15 C = 2 max U, 16+ C = 6 max U
@@ -70,7 +82,13 @@ class SumCompLipidDB():
         else:
             return 6
 
-    def gen_sum_compositions(self, n_chains, min_c, max_c, odd_c, max_u=None):
+    def gen_sum_compositions(self, 
+                             n_chains, 
+                             min_c, 
+                             max_c, 
+                             odd_c, 
+                             max_u=None
+                             ) -> Generator[Tuple[int, int], None, None] :
         """ 
         yields all unique sum compositions from combinations of fatty acids that are iterated over
         using some rules:
@@ -115,13 +133,19 @@ class SumCompLipidDB():
         for comp in sum_comp:
             yield comp
 
-    def __init__(self):
+    def __init__(self
+                 ) -> None :
         """
         Initialize the database. Fill the database with lipids using ``SumCompLipidDB.fill_db_from_config()``
         """
         self._init_db()
 
-    def fill_db_from_config(self, config, min_c, max_c, odd_c):
+    def fill_db_from_config(self, 
+                            config_yml: str,
+                            min_c: int, 
+                            max_c: int, 
+                            odd_c: bool
+                            ) -> None :
         """ 
         fill the DB with lipids using parameters from a YAML config file
         
@@ -143,7 +167,7 @@ class SumCompLipidDB():
 
         Parameters
         ----------
-        config : ``str``
+        config_yml : ``str``
             YAML configuration file specifying what lipids to include
         min_c, max_c : ``int``
             min/max number of carbons in an acyl chain
@@ -151,8 +175,9 @@ class SumCompLipidDB():
             whether to include odd # C for FAs 
         """
         # load params from config file
-        with open(config, 'r') as yf:
+        with open(config_yml, 'r') as yf:
             cnf = yaml.safe_load(yf)
+        # TODO (Dylan Ross): validate the structure of the data from the YAML config file
         # iterate over the lipid classes specified in the config and generate m/zs
         # then add to db
         insert_qry = 'INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?);'
@@ -167,7 +192,10 @@ class SumCompLipidDB():
                     qdata = (lpd.lmaps_id_prefix, sumc, sumu, str(lpd), adduct, mz)
                     self._cur.execute(insert_qry, qdata)
             
-    def get_sum_comp_lipid_ids(self, mz, mz_tol):
+    def get_sum_comp_lipid_ids(self, 
+                               mz: float, 
+                               ppm: float
+                               ) -> List[ScdbLipidId] :
         """
         searches the sum composition lipid ids database using a feature m/z 
         
@@ -177,8 +205,8 @@ class SumCompLipidDB():
         ----------
         mz : ``float``
             feature m/z
-        mz_tol : ``float``
-            tolerance for matching m/z
+        ppm : ``float``
+            tolerance for matching m/z (in ppm)
 
         Returns
         -------
@@ -186,18 +214,21 @@ class SumCompLipidDB():
             list of lipid annotation candidates, each is a tuple consisting of 
             lmaps_id_prefix, name, adduct, and m/z
         """
+        mz_tol = tol_from_ppm(mz, ppm)
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
         qry = "SELECT lmid_prefix, name, adduct, mz FROM SumCompLipids WHERE mz>=? AND mz<=?"
         return [_ for _ in self._cur.execute(qry, (mz_min, mz_max)).fetchall()]
 
-    def close(self):
+    def close(self
+              ) -> None :
         """
         close the database
         """
         self._con.close()
 
 
-def remove_lipid_annotations(results_db):
+def remove_lipid_annotations(results_db: ResultsDbPath
+                             ) -> None :
     """
     remove all annotations from the results database
 
@@ -216,8 +247,11 @@ def remove_lipid_annotations(results_db):
     con.close()
 
 
-def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params,
-                                    debug_flag=None, debug_cb=None):
+def annotate_lipids_sum_composition(results_db: ResultsDbPath, 
+                                    scdb_config_yml: str, 
+                                    params: AnnotationParams,
+                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                    ) -> int :
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -226,30 +260,33 @@ def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params,
     ----------
     results_db : ``str``
         path to DDA-DIA analysis results database
-    lipid_class_scdb_config : ``str``
-        path to lipid class config file for generating lipid database, None to use built-in default
-    params : ``dict(...)``
+    scdb_config_yml : ``str``
+        path to lipid class config file for generating lipid database
+        use DEFAULT_POS_SCDB_CONFIG or DEFAULT_NEG_SCDB_CONFIG for built in default config files
+    params : ``AnnotationParams``
         parameters for lipid annotation
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+
+    Returns
+    -------
+    n_feats_annotated : ``int``
+        number of features annotated
     """
-    debug_handler(debug_flag, debug_cb, 'ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABSE...')
+    debug_handler(debug_flag, debug_cb, 
+                  "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABSE...")
     # unpack params
-    ionization = params['misc']['ionization']
     overwrite = params['misc']['overwrite_annotations']
     params = params['annotation']['ann_sum_comp']
-    # load default lipid class params if they werent specified
-    dlcp_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/scdb_params')
-    lipid_class_scdb_config = op.join(dlcp_path, 'default_{}.yml'.format(ionization)) if lipid_class_scdb_config is None else lipid_class_scdb_config
     # params for FA length
     min_c, max_c, odd_c = params['ann_sc_min_c'], params['ann_sc_max_c'], params['ann_sc_odd_c']
     mz_tol = params['ann_sc_mz_tol']
     # create the sum composition lipid database
     scdb = SumCompLipidDB()
-    scdb.fill_db_from_config(lipid_class_scdb_config, min_c, max_c, odd_c)
+    scdb.fill_db_from_config(scdb_config_yml, min_c, max_c, odd_c)
     # remove existing annotations if requested
     if overwrite:
         debug_handler(debug_flag, debug_cb, 'removing any existing lipid annotations')
@@ -274,22 +311,28 @@ def annotate_lipids_sum_composition(results_db, lipid_class_scdb_config, params,
         if annotated:
             n_feats_annotated += 1
     # report how many features were annotated
-    debug_handler(debug_flag, debug_cb, 'ANNOTATED: {} / {} DIA features ({} annotations total)'.format(n_feats_annotated, n_feats, n_anns))
+    debug_handler(debug_flag, debug_cb, 
+                  f"ANNOTATED: {n_feats_annotated} / {n_feats} DIA features ({n_anns} annotations total)")
     # clean up
     scdb.close()
     con.commit()
     con.close()
+    # return the number of features annotated
+    return n_feats_annotated
 
 
-def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params,
-                                   debug_flag=None, debug_cb=None):
+def filter_annotations_by_rt_range(results_db, 
+                                   lipid_class_rt_ranges, 
+                                   params: AnnotationParams,
+                                   debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                   ) -> int :
     """
     filter feature annotations based on their retention times vs. expected retention time ranges
     by lipid class for a specified chromatographic method
 
     Parameters
     ----------
-    results_db : ``srt``
+    results_db : ``str``
         path to DDA-DIA analysis results database
     lipid_class_rt_ranges : ``str``
         path to config file with lipid class RT ranges, None to use built-in default
@@ -300,8 +343,14 @@ def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params,
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+
+    Returns
+    -------
+    n_feats_filtered : ``int``
+        number of features filtered based on RT ranges
     """
-    debug_handler(debug_flag, debug_cb, 'FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...')
+    debug_handler(debug_flag, debug_cb, 
+                  "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...")
     # unpack params
     params = params['annotation']['ann_rt_range']
     # ann_rtr_only_keep_defined_classes
@@ -332,13 +381,18 @@ def filter_annotations_by_rt_range(results_db, lipid_class_rt_ranges, params,
     # clean up
     con.commit()
     con.close()
-    debug_handler(debug_flag, debug_cb, 'FILTERED: {} / {} annotations based on lipid class RT ranges'.format(len(anns_to_del), n_anns))
+    n_feats_filtered = len(anns_to_del)
+    debug_handler(debug_flag, debug_cb, 
+                  f"FILTERED: {n_feats_filtered} / {n_anns} annotations based on lipid class RT ranges")
+    # return the number of features that were filtered out
+    return n_feats_filtered 
 
 
-def update_lipid_ids_with_frag_rules(results_db,
-                                     debug_flag=None, debug_cb=None):
+def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
+                                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                     ) -> None :
     """
-    update lipid annotations
+    update lipid annotations based on MS/MS spectra and fragmentation rules
 
     Parameters
     ----------
@@ -357,15 +411,16 @@ def update_lipid_ids_with_frag_rules(results_db,
     n_anns = cur.execute('SELECT COUNT(*) FROM Lipids;').fetchall()[0][0]
     # iterate through annotations, see if there are annotatable fragments
     # only select out the annotations that have NULL fragments
-    qry_sel1 = ('SELECT ann_id, lmaps_id_prefix, lipid, mz, dia_feat_id FROM Lipids '
-                'JOIN _DIAFeatures USING(dia_feat_id) JOIN DDAFeatures USING(dda_feat_id) '
-                'WHERE fragments IS NULL;')
+    qry_sel1 = ("SELECT ann_id, lmaps_id_prefix, lipid, mz, dia_feat_id FROM Lipids "
+                "JOIN _DIAFeatures USING(dia_feat_id) JOIN DDAFeatures USING(dda_feat_id) "
+                "WHERE fragments IS NULL;")
     n_updt = 0
-    qry_upd = 'UPDATE Lipids SET fragments=? WHERE ann_id=?;'
+    qry_upd = "UPDATE Lipids SET fragments=? WHERE ann_id=?;"
     for ann_id, lmid_prefix, lipid_name, pmz, dia_feat_id in cur.execute(qry_sel1).fetchall():
         print(ann_id, lmid_prefix, lipid_name, dia_feat_id)
         # get fragment m/zs
-        qry_sel2 = 'SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags USING(decon_frag_id) WHERE dia_feat_id=?'
+        qry_sel2 = ("SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags "
+                    "USING(decon_frag_id) WHERE dia_feat_id=?")
         res = cur.execute(qry_sel2, (dia_feat_id,)).fetchall()
         fmzs = []
         if res is not None:

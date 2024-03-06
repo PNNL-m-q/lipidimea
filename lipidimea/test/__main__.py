@@ -25,6 +25,7 @@ from lipidimea.test.msms.dia import (
     TestExtractDiaFeatures, TestAddCalibratedCcsToDiaFeatures
 )
 from lipidimea.test.annotation import (
+    TestDefaultSumCompLipidDBConfigs,
     TestSumCompLipidDB, TestRemoveLipidAnnotations, TestAnnotateLipidsSumComposition, 
     TestFilterAnnotationsByRTRange, TestUpdateLipidIDsWithFragRules
 )

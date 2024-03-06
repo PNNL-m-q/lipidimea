@@ -32,3 +32,5 @@ type DdaChromFeat = Tuple[float, float, float, float, float]
 type DdaFeature = Tuple[None, str, float, float, float, float, float, int, Optional[int], Optional[str]]
 
 type DiaDeconFragment = Tuple[float, Xic, float, Atd, float]
+
+type ScdbLipidId = Tuple[str, str, str, float]

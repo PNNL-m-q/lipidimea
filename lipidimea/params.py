@@ -123,6 +123,12 @@ class DiaParams:
     store_blobs: bool
 
 
+@dataclass
+class AnnotationParams:
+    """ class for organizing lipid annotation parameters """
+    
+
+
 def load_default_params(
                         ) -> Dict[Any, Any]:
     """
