@@ -468,7 +468,7 @@ class Test_SingleTargetAnalysis(unittest.TestCase):
             con = sqlite3.connect(dbf)
             cur = con.cursor()
             # test the function
-            _single_target_analysis(1, 1, rdr, cur, "test.file", 69420, 789.0123, 15., dda_spec_str, _DIA_PARAMS, None, None)
+            _single_target_analysis(1, 1, rdr, cur, "dia.data.file", 69420, 789.0123, 15., dda_spec_str, _DIA_PARAMS, None, None)
             # check that the feature was added to the database
             # this query should return 1 row
             self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
@@ -480,8 +480,73 @@ class TestExtractDiaFeatures(unittest.TestCase):
     """ tests for the extract_dia_features function """
 
     def test_EDF_mock_data(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+        """ use mock data to test the main workflow function for extracting DIA features """
+        # make a fake XIC with one peak
+        np.random.seed(420)
+        xic_rts = np.arange(12, 17.05, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=xic_rts.shape)
+        noise2 = np.random.normal(1, 0.1, size=xic_rts.shape)
+        xic_iis = 1000 * noise1 
+        xic_iis += _gauss(xic_rts, 15, 1e5, 0.25) * noise2 
+        # make a fake ATD with one peak, bad AT
+        atd_ats = np.arange(30, 50.05, 0.05)
+        noise1 = np.random.normal(1, 0.2, size=atd_ats.shape)
+        noise2 = np.random.normal(1, 0.1, size=atd_ats.shape)
+        atd_iis = 1000 * noise1 
+        atd_iis += _gauss(atd_ats, 35, 1e5, 2.5) * noise2
+        # make a fake MS2 spectrum with peaks
+        ms2_mzs = np.arange(50, 800, 0.01)
+        noise1 = np.random.normal(1, 0.2, size=ms2_mzs.shape)
+        ms2_iis = 1000 * noise1 
+        noise2 = np.random.normal(1, 0.1, size=ms2_mzs.shape)
+        pkmzs = np.arange(100, 800, 25, dtype=np.float64)
+        for pkmz in pkmzs:
+            ms2_iis += _gauss(ms2_mzs, pkmz, 1e5, 0.1) * noise2 
+        # DDA MS2 spectrum string
+        noise3 = np.random.normal(1, 0.1, size=pkmzs.shape)
+        dda_spec_str = _ms2_peaks_to_str((pkmzs, 1e5 * noise3, None))
+        # need to patch a mock MZA instance
+        # and create a fake database
+        # NOTE (Dylan Ross): Notice here that I had to patch lipidimea.msms.dia.MZA rather than mzapy.MZA
+        #                    as I did in the other tests. The reason for this as I currently understand it
+        #                    is that the lipidimea.msms.dia module imports MZA and uses that to instantiate 
+        #                    a reader object inside of the extract_dia_features function and it is that 
+        #                    imported MZA that needs to get patched, not the source MZA from mzapy for it to
+        #                    work correctly. In the other examples I am passing in an instance of the mocked
+        #                    reader object into the functions I am testing so it seems that it suffices to
+        #                    just use the patch method on mzapy.MZA. In fact, now that I think about it in 
+        #                    those cases it may not be necessary at all to use patch() since I am building 
+        #                    the mock object with all required methods/attributes and not even importing 
+        #                    from mzapy.
+        # TODO (Dylan Ross): Considering the above, I should change all the places where I use patch()
+        #                    unnecessarily and just build out the mocked reader objects without the unneeded 
+        #                    reference to mzapy.MZA
+        with patch('lipidimea.msms.dia.MZA') as MockReader, TemporaryDirectory() as tmp_dir:
+            # mock a MZA instance with 
+            # collect_xic_arrays_by_mz method that returns a fake XIC
+            # collect_atd_arrays_by_rt_mz method that returns a fake ATD
+            # collect_ms2_arrays_by_rt_dt method that returns a fake MS2 spectrum
+            rdr = MockReader.return_value
+            rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
+            rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
+            rdr.collect_ms2_arrays_by_rt_dt.return_value = (ms2_mzs, ms2_iis)
+            print(rdr)
+            # make the fake results database
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # add the input data to DDAFeatures table
+            dda_qdata = (69420, "dda.data.file", 789.0123, 15., 0.1, 1e5, 20., 3, 19, dda_spec_str)
+            cur.execute("INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);", dda_qdata)
+            con.commit()
+            # test the function
+            extract_dia_features("dia.data.file", dbf, _DIA_PARAMS)
+            # check that the feature was added to the database
+            # this query should return 1 row
+            self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
+            # this query should return 3 rows
+            self.assertEqual(len(cur.execute("SELECT * FROM DIADeconFragments").fetchall()), 19)
 
 
 # NOTE (Dylan Ross): removed the unit test for extract_dia_features_multiproc as mocking does 

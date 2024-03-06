@@ -29,7 +29,7 @@ from lipidimea.params import (
 from lipidimea.typing import (
     Xic, Atd, Ms1, Ms2, Spec, SpecStr,
     DiaDeconFragment,
-    ResultsDBCursor
+    ResultsDbPath, ResultsDbCursor
 )
 
 
@@ -153,7 +153,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
     return deconvoluted
     
 
-def _add_single_target_results_to_db(cur: ResultsDBCursor, 
+def _add_single_target_results_to_db(cur: ResultsDbCursor, 
                                      dda_feat_id: int, 
                                      f: str, 
                                      ms1: Ms1,
@@ -209,7 +209,7 @@ def _ms2_peaks_to_str(ms2_peaks: Optional[Tuple[npt.NDArray[np.float64], npt.NDA
 def _single_target_analysis(n: int, 
                             i: int, 
                             rdr: MZA, 
-                            cur: ResultsDBCursor, 
+                            cur: ResultsDbCursor, 
                             f: str, 
                             dda_fid: int, 
                             dda_mz: float, 
@@ -229,7 +229,7 @@ def _single_target_analysis(n: int,
         index of DDA target we are currently processing
     rdr : ``mzapy.MZA``
         MZA instance for extracting raw data
-    cur : ``ResultsDBCursor``
+    cur : ``ResultsDbCursor``
         cursor for querying into results database
     f : ``str``
         DIA data file
@@ -344,30 +344,37 @@ def _single_target_analysis(n: int,
         debug_handler(debug_flag, debug_cb, msg + 'no XIC peak found', pid)
 
 
-def extract_dia_features(dia_data_file, results_db, params, 
-                         debug_flag=None, debug_cb=None):
+def extract_dia_features(dia_data_file: str, 
+                         results_db: ResultsDbPath, 
+                         params: DiaParams, 
+                         debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None,
+                         mza_io_threads: int = 4,
+                         ) -> None :
     """
-    Extract features from a raw DIA data file, store them in a database (initialized using ``lipidimea.util.create_results_db`` function)
+    Extract features from a raw DIA data file, store them in a database 
+    (initialized using ``lipidimea.util.create_results_db`` function)
 
     Parameters
     ----------
     dia_data_file : ``str``
         path to raw DIA data file (MZA format)
-    results_db : ``str``
+    results_db : ``ResultsDbPath``
         path to DDA-DIA analysis results database
-    params : ``dict(...)``
+    params : ``DiaParams``
         parameters for the various steps of DIA feature extraction
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+    mza_io_threads : ``int``, default=4
+        number of I/O threads to specify for the MZA reader object
     """
     pid = os.getpid()
     debug_handler(debug_flag, debug_cb, 'Extracting DIA FEATURES', pid)
     debug_handler(debug_flag, debug_cb, 'file: {}'.format(dia_data_file), pid)
     # initialize the data file reader
-    rdr = MZA(dia_data_file, io_threads=1, cache_scan_data=True)
+    rdr: MZA = MZA(dia_data_file, io_threads=mza_io_threads, cache_scan_data=True)
     # initialize connection to the database
     con = connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
@@ -387,8 +394,21 @@ def extract_dia_features(dia_data_file, results_db, params,
     rdr.close()
 
 
-def extract_dia_features_multiproc(dia_data_files, results_db, params, n_proc, 
-                                   debug_flag=None, debug_cb=None):
+# TODO (Dylan Ross): Test out different numbers of MZA I/O threads and see if they cause any problems
+#                    or provide any benefits when it comes to running this part of the analysis
+#                    with multiprocessing. It might be beneficial for each process to have a few I/O
+#                    threads since the primary bottleneck has been disk I/O. Multiple I/O threads should
+#                    at least keep the disk reads pinned and the multiprocessing context keeps the CPU 
+#                    busy with all of the other stuff that needs to happen besides I/O, at least I think
+#                    that is how this should work...
+    
+def extract_dia_features_multiproc(dia_data_files: List[str], 
+                                   results_db: ResultsDbPath, 
+                                   params: DiaParams, 
+                                   n_proc: int, 
+                                   debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None,
+                                   mza_io_threads: int = 4
+                                   ) -> None :
     """
     extracts dda features from multiple DDA files in parallel
 
@@ -407,10 +427,14 @@ def extract_dia_features_multiproc(dia_data_files, results_db, params, n_proc,
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+    mza_io_threads : ``int``, default=4
+        number of I/O threads to specify for the MZA reader objects
     """
     n_proc = min(n_proc, len(dia_data_files))  # no need to use more processes than the number of inputs
     args = [(dia_data_file, results_db, params) for dia_data_file in dia_data_files]
-    args_for_starmap = zip(repeat(extract_dia_features), args, repeat({'debug_flag': debug_flag, 'debug_cb': debug_cb}))
+    args_for_starmap = zip(repeat(extract_dia_features), args, repeat({'debug_flag': debug_flag, 
+                                                                       'debug_cb': debug_cb, 
+                                                                       'mza_io_threads': mza_io_threads}))
     with multiprocessing.Pool(processes=n_proc) as p:
         p.starmap(apply_args_and_kwargs, args_for_starmap)
 

@@ -16,9 +16,9 @@ import numpy.typing as npt
 
 # TODO (Dylan Ross): add some descriptions for all of these
 
-type ResultsDBPath = str
-type ResultsDBConnection = sqlite3.Connection
-type ResultsDBCursor = sqlite3.Cursor
+type ResultsDbPath = str
+type ResultsDbConnection = sqlite3.Connection
+type ResultsDbCursor = sqlite3.Cursor
 
 type Xic = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Atd = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]

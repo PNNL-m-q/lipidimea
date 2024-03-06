@@ -22,7 +22,7 @@ import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
 from lipidimea.typing import (
-    ResultsDBConnection, ResultsDBCursor, ResultsDBPath, DdaReader, DdaChromFeat, DdaFeature
+    ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaFeature
 )
 from lipidimea.msms._util import (
     ms2_to_str, apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
@@ -439,7 +439,7 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
     return qdata
 
 
-def _add_features_to_db(cur: ResultsDBCursor, 
+def _add_features_to_db(cur: ResultsDbCursor, 
                         qdata: List[DdaFeature], 
                         debug_flag: Optional[str], debug_cb: Optional[Callable]
                         ) -> None:
@@ -466,7 +466,7 @@ def _add_features_to_db(cur: ResultsDBCursor,
 
 
 def extract_dda_features(dda_data_file: str, 
-                         results_db: ResultsDBPath, 
+                         results_db: ResultsDbPath, 
                          params: DdaParams, 
                          cache_ms1: bool = True, 
                          debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None, 
@@ -527,8 +527,8 @@ def extract_dda_features(dda_data_file: str,
     # do not need the reader anymore
     rdr.close()
     # initialize connection to DDA ids database
-    con: ResultsDBConnection = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
-    cur: ResultsDBCursor = con.cursor()
+    con: ResultsDbConnection = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
+    cur: ResultsDbCursor = con.cursor()
     # add features to database
     _add_features_to_db(cur, qdata, debug_flag, debug_cb)
     # close database connection
@@ -539,7 +539,7 @@ def extract_dda_features(dda_data_file: str,
     
 
 def extract_dda_features_multiproc(dda_data_files: List[str], 
-                                   results_db: ResultsDBPath, 
+                                   results_db: ResultsDbPath, 
                                    params: DdaParams, 
                                    n_proc: int,
                                    cache_ms1: bool = False, 
@@ -581,7 +581,7 @@ def extract_dda_features_multiproc(dda_data_files: List[str],
     return {k: v for k, v in zip(dda_data_files, feat_counts)}
 
 
-def consolidate_dda_features(results_db: ResultsDBPath, 
+def consolidate_dda_features(results_db: ResultsDbPath, 
                              params: DdaParams, 
                              debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                              ) -> Tuple[int, int] :
@@ -615,8 +615,8 @@ def consolidate_dda_features(results_db: ResultsDBPath,
     """
     # no need to get the PID, this should only ever be run in the main process
     # connect to the database
-    con: ResultsDBConnection = sqlite3.connect(results_db)
-    cur: ResultsDBCursor = con.cursor()
+    con: ResultsDbConnection = sqlite3.connect(results_db)
+    cur: ResultsDbCursor = con.cursor()
     # step 1, create groups of features based on similar m/z and RT
     qry_sel = "SELECT dda_feat_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAFeatures"
     grouped: List[List[Any]] = []
