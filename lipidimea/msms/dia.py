@@ -439,7 +439,10 @@ def extract_dia_features_multiproc(dia_data_files: List[str],
         p.starmap(apply_args_and_kwargs, args_for_starmap)
 
 
-def add_calibrated_ccs_to_dia_features(results_db, t_fix, beta):
+def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath, 
+                                       t_fix: float, 
+                                       beta: float
+                                       ) -> None :
     """
     Uses calibration parameters to calculate calibrated CCS values from m/z and arrival times of DIA features
 

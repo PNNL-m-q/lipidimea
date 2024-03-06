@@ -530,7 +530,6 @@ class TestExtractDiaFeatures(unittest.TestCase):
             rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
             rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
             rdr.collect_ms2_arrays_by_rt_dt.return_value = (ms2_mzs, ms2_iis)
-            print(rdr)
             # make the fake results database
             dbf = os.path.join(tmp_dir, "results.db")
             create_results_db(dbf)  # STRICT!
@@ -559,9 +558,33 @@ class TestExtractDiaFeatures(unittest.TestCase):
 class TestAddCalibratedCcsToDiaFeatures(unittest.TestCase):
     """ tests for the add_calibrated_ccs_to_dia_features function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_ACCTDF_mock_data(self):
+        """ test adding calibrated CCS to DIA features with some mock data """
+        with TemporaryDirectory() as tmp_dir:
+            # make the fake results database
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # add the input data to DDAFeatures table
+            dda_qdata = (69420, "dda.data.file", 789.0123, 15., 0.1, 1e5, 20., 3, 0, None)
+            cur.execute("INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);", dda_qdata)
+            # add the input data to _DIAFeautures table
+            for dia_qdata in [
+                (1, 69420, "dia.data.file", None, 15.0, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
+                (2, 69420, "dia.data.file", None, 15.1, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
+                (3, 69420, "dia.data.file", None, 15.2, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
+                (4, 69420, "dia.data.file", None, 15.3, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
+                (5, 69420, "dia.data.file", None, 15.4, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
+            ]: 
+                cur.execute("INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);",
+                            dia_qdata)
+            con.commit()
+            # test the function
+            add_calibrated_ccs_to_dia_features(dbf, 0., 1.)
+            # make sure the CCS values got added
+            for ccs in cur.execute("SELECT ccs FROM _DIAFeatures").fetchall():
+                self.assertIsNotNone(ccs)
 
 
 if __name__ == "__main__":
