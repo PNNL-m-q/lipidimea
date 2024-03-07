@@ -44,13 +44,13 @@ class SumCompLipidDB():
         """ initialize DB in memory and set up SumCompLipids table """
         create_qry = """
         CREATE TABLE SumCompLipids (
-            lmid_prefix TEXT, 
-            sum_c INT,
-            sum_u INT, 
-            name TEXT,
-            adduct TEXT,
-            mz REAL
-        );
+            lmid_prefix TEXT NOT NULL, 
+            sum_c INT NOT NULL,
+            sum_u INT NOT NULL, 
+            name TEXT NOT NULL,
+            adduct TEXT NOT NULL,
+            mz REAL NOT NULL
+        ) STRICT;
         """
         # create the database in memory
         self._con = connect(':memory:')
@@ -355,6 +355,7 @@ def filter_annotations_by_rt_range(results_db,
     lipid_class_rt_ranges = rtr_path if lipid_class_rt_ranges is None else lipid_class_rt_ranges
     with open(lipid_class_rt_ranges, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
+    # TODO (Dylan Ross): validate the structure of the data from the YAML config file
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()

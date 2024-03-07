@@ -468,7 +468,8 @@ class Test_SingleTargetAnalysis(unittest.TestCase):
             con = sqlite3.connect(dbf)
             cur = con.cursor()
             # test the function
-            n = _single_target_analysis(1, 1, rdr, cur, "dia.data.file", 69420, 789.0123, 15., dda_spec_str, _DIA_PARAMS, None, None)
+            n = _single_target_analysis(1, 1, rdr, cur, "dia.data.file", 69420, 789.0123, 15., dda_spec_str, 
+                                        _DIA_PARAMS, None, None)
             # check that the feature was added to the database
             # this query should return 1 row
             self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
@@ -575,11 +576,16 @@ class TestAddCalibratedCcsToDiaFeatures(unittest.TestCase):
             cur.execute("INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);", dda_qdata)
             # add the input data to _DIAFeautures table
             for dia_qdata in [
-                (1, 69420, "dia.data.file", None, 15.0, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
-                (2, 69420, "dia.data.file", None, 15.1, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
-                (3, 69420, "dia.data.file", None, 15.2, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
-                (4, 69420, "dia.data.file", None, 15.3, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
-                (5, 69420, "dia.data.file", None, 15.4, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., None, None, None, None, None),
+                (1, 69420, "dia.data.file", None, 15.0, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None),
+                (2, 69420, "dia.data.file", None, 15.1, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None),
+                (3, 69420, "dia.data.file", None, 15.2, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None),
+                (4, 69420, "dia.data.file", None, 15.3, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None),
+                (5, 69420, "dia.data.file", None, 15.4, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None),
             ]: 
                 cur.execute("INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);",
                             dia_qdata)
