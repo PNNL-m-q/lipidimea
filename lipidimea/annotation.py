@@ -235,6 +235,10 @@ def remove_lipid_annotations(results_db: ResultsDbPath
     results_db : ``str``
         path to DDA-DIA analysis results database
     """
+    # ensure results database file exists
+    if not op.isfile(results_db):
+        msg = f"remove_lipid_annotations: results database file: {results_db} not found"
+        raise ValueError(msg)
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()

@@ -8,8 +8,11 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import os
-
 import unittest
+from tempfile import TemporaryDirectory
+import sqlite3
+
+from lipidimea.util import create_results_db
 
 
 from lipidimea.annotation import (
@@ -149,9 +152,47 @@ class TestSumCompLipidDB(unittest.TestCase):
 class TestRemoveLipidAnnotations(unittest.TestCase):
     """ tests for the remove_lipid_annotations function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_RLA_results_db_file_does_not_exist(self):
+        """ should raise an error if the results database file does not exist """
+        with self.assertRaises(ValueError, 
+                               msg="expect a ValueError from nonexistent database file"):
+            remove_lipid_annotations("this results database file does not exist")
+
+    def test_RLA_empty_lipids_table(self):
+        """ remove lipid annotations from database with empty Lipids table """
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # test the function
+            remove_lipid_annotations(dbf)
+            # make sure there are no entries left in the Lipids table
+            self.assertEqual(len([_ for _ in cur.execute("SELECT * FROM Lipids")]), 0)
+
+    def test_RLA_non_empty_lipids_table(self):
+        """ remove lipid annotations from database with non empty Lipids table """
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # fill the db with the features
+            for qdata in [
+                (None, 1, "LMID prefix", "lipid", "adduct", 20., None, None),
+                (None, 2, "LMID prefix", "lipid", "adduct", 20., None, None),
+                (None, 3, "LMID prefix", "lipid", "adduct", 20., None, None),
+                (None, 4, "LMID prefix", "lipid", "adduct", 20., None, None),
+                (None, 5, "LMID prefix", "lipid", "adduct", 20., None, None),
+            ]:
+                cur.execute("INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)", qdata) 
+            con.commit()
+            # test the function
+            # entries are in the Lipids table before removing
+            self.assertEqual(len([_ for _ in cur.execute("SELECT * FROM Lipids")]), 5)
+            remove_lipid_annotations(dbf)
+            # make sure there are no entries left in the Lipids table
+            self.assertEqual(len([_ for _ in cur.execute("SELECT * FROM Lipids")]), 0)
 
 
 class TestAnnotateLipidsSumComposition(unittest.TestCase):
