@@ -62,7 +62,7 @@ class SumCompLipidDB():
               ) -> int :
         """
         Maximum number of unsaturations as a function of carbon count for a single carbon chain. By default up 
-        to 15 C = 2 max U, 16+ C = 6 max U
+        to 15 C = 2 max U, 16-19 C = 4 max U, 20+ C = 6 max U
 
         override this static method to change how this is calculated (input: ``int`` number of carbons in chain, 
         output: ``int`` max number of unsaturations)
@@ -79,6 +79,8 @@ class SumCompLipidDB():
         """
         if c < 16:
             return 2
+        elif c < 20:
+            return 4
         else:
             return 6
 
@@ -122,16 +124,16 @@ class SumCompLipidDB():
                 for n_u in range(0, self.max_u(n_c) + 1):
                     fas.append((n_c, n_u))
         # permute over acyl chains
-        sum_comp = set() 
+        sum_comp = {}
         for combo in product(fas, repeat=n_chains):
             c, u = 0, 0
             for fac, fau in combo:
                 c += fac
                 u += fau
-            sum_comp.add((c, u))
-        # yield the unique sum compositions
-        for comp in sum_comp:
-            yield comp
+            comp = (c, u)
+            if sum_comp.get(comp) is None:
+                sum_comp[comp] = comp
+                yield comp
 
     def __init__(self
                  ) -> None :
