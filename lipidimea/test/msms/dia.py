@@ -29,19 +29,6 @@ from lipidimea.params import (
 from lipidimea.util import create_results_db
 
 
-# Multiple tests cover functions that use the debug handler so instead of 
-# printing the debugging messages, use a callback function to store them
-# in this list. Individual test functions should clear out this list before
-# calling whatever function is being tested, then the list can be checked 
-# for the expected debugging messages if needed
-_DEBUG_MSGS = []
-
-def _debug_cb(msg: str
-              ) -> None :
-    """ helper callback function for redirecting debugging messages """
-    _DEBUG_MSGS.append(msg)
-
-
 # set some parameters for testing the different DIA data processing steps
 _EAFC_PARAMS = DiaExtractAndFitChromsParams(
     20, 0.25, 0.1, 1e4, 0.1, 1.0, 1

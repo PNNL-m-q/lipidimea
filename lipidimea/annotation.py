@@ -25,7 +25,7 @@ from lipidimea.typing import (
 )
 from lipidimea.util import debug_handler
 from lipidimea.msms._util import tol_from_ppm
-from lipidimea.params import AnnotationParams
+from lipidimea.params import SumCompAnnotationParams, AnnotationParams
 
 
 # define paths to default sum composition lipid DB config files
@@ -251,9 +251,9 @@ def remove_lipid_annotations(results_db: ResultsDbPath
 
 def annotate_lipids_sum_composition(results_db: ResultsDbPath, 
                                     scdb_config_yml: str, 
-                                    params: AnnotationParams,
+                                    params: SumCompAnnotationParams,
                                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                    ) -> int :
+                                    ) -> Tuple[int, int] :
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -265,8 +265,8 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     scdb_config_yml : ``str``
         path to lipid class config file for generating lipid database
         use DEFAULT_POS_SCDB_CONFIG or DEFAULT_NEG_SCDB_CONFIG for built in default config files
-    params : ``AnnotationParams``
-        parameters for lipid annotation
+    params : ``SumCompAnnotationParams``
+        parameters for lipid annotation by sum composition
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -277,24 +277,24 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     -------
     n_feats_annotated : ``int``
         number of features annotated
+    n_anns : ``int``
+        number of total annotations
     """
+    # ensure results database file exists
+    if not op.isfile(results_db):
+        msg = f"remove_lipid_annotations: results database file: {results_db} not found"
+        raise ValueError(msg)
     debug_handler(debug_flag, debug_cb, 
                   "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABSE...")
-    # unpack params
-    overwrite = params['misc']['overwrite_annotations']
-    params = params['annotation']['ann_sum_comp']
-    # params for FA length
-    min_c, max_c, odd_c = params['ann_sc_min_c'], params['ann_sc_max_c'], params['ann_sc_odd_c']
-    mz_tol = params['ann_sc_mz_tol']
-    # create the sum composition lipid database
-    scdb = SumCompLipidDB()
-    scdb.fill_db_from_config(scdb_config_yml, min_c, max_c, odd_c)
     # remove existing annotations if requested
-    if overwrite:
+    if params.overwrite:
         debug_handler(debug_flag, debug_cb, 'removing any existing lipid annotations')
         remove_lipid_annotations(results_db)
     else:
         debug_handler(debug_flag, debug_cb, 'appending new lipid annotations to any existing annotations')
+    # create the sum composition lipid database
+    scdb = SumCompLipidDB()
+    scdb.fill_db_from_config(scdb_config_yml, params.fa_min_c, params.fa_max_c, params.fa_odd_c)
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
@@ -305,7 +305,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
         n_feats += 1
         annotated = False
-        for clmidp, cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, mz_tol):
+        for clmidp, cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.mz_ppm):
             annotated = True
             qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None, None)
             cur.execute(qry_ins, qdata)
@@ -320,7 +320,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     con.commit()
     con.close()
     # return the number of features annotated
-    return n_feats_annotated
+    return n_feats_annotated, n_anns
 
 
 def filter_annotations_by_rt_range(results_db, 

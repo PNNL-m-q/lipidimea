@@ -13,6 +13,17 @@ from tempfile import TemporaryDirectory
 import sqlite3
 
 from lipidimea.util import create_results_db
+from lipidimea.params import SumCompAnnotationParams, AnnotationParams
+
+
+# set some parameters for testing the different DIA data processing steps
+_SCA_PARAMS = SumCompAnnotationParams(
+    True, 12, 24, True, 40
+)
+
+_ANNOTATION_PARAMS = AnnotationParams(
+    _SCA_PARAMS
+)
 
 
 from lipidimea.annotation import (
@@ -198,9 +209,30 @@ class TestRemoveLipidAnnotations(unittest.TestCase):
 class TestAnnotateLipidsSumComposition(unittest.TestCase):
     """ tests for the annotate_lipids_sum_composition function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_ALSC_mock_features(self):
+        """ annotate lipids at sum compoisition level with mocked DDA/DIA features """
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # fill the db with the features
+            dda_qdata = (69420, "dda.data.file", 766.5, 15., 0.1, 1e5, 20., 3, 19, "DDA spec str")
+            cur.execute("INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);", dda_qdata)            
+            dia_qdata = (1, 69420, "dia.data.file", None, 15.0, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None)
+            cur.execute("INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);",
+                        dia_qdata)
+            con.commit()
+            # test the function
+            n_feats_annotated, n_ann = annotate_lipids_sum_composition(dbf, 
+                                                                       DEFAULT_POS_SCDB_CONFIG, 
+                                                                       _SCA_PARAMS)
+            # there should be 1 feature annotated and more than 1 annotation
+            self.assertEqual(n_feats_annotated, 1)
+            self.assertGreater(n_ann, 1)
+            # there should be more than 1 annotation in the Lipid table of the database
+            self.assertGreater(len(cur.execute("SELECT * FROM Lipids").fetchall()), 1)
     
 
 class TestFilterAnnotationsByRTRange(unittest.TestCase):

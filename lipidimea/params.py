@@ -124,9 +124,19 @@ class DiaParams:
 
 
 @dataclass
+class SumCompAnnotationParams:
+    """ parameters for initial annotation based on sum composition """
+    overwrite: bool
+    fa_min_c: int
+    fa_max_c: int
+    fa_odd_c: bool
+    mz_ppm: float
+    
+
+@dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
-    
+    sum_comp_annotation_params: SumCompAnnotationParams
 
 
 def load_default_params(
