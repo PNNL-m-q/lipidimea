@@ -451,14 +451,14 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                     print('\trule:', rule.label(), rule.mz(pmz))
                     rmz = rule.mz(pmz)
                     for fmz in fmzs:
-                        if abs(rmz - fmz) <= 0.025:
+                        if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
                             fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
                 else:
                     for c, u in sorted(c_u_combos):
                         print('\trule:', rule.label(c, u), rule.mz(pmz, c, u))
                         rmz = rule.mz(pmz, c, u)
                         for fmz in fmzs:
-                            if abs(rmz - fmz) <= 0.025:
+                            if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
                                 fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
                                 # TODO (Dylan Ross): need some logic here to figure out new names
             if fragments_str != '':

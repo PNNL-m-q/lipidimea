@@ -29,7 +29,7 @@ _SCA_PARAMS = SumCompAnnotationParams(
 )
 
 _FRA_PARAMS = FragRuleAnnParams(
-
+    40
 )
 
 _ANNOTATION_PARAMS = AnnotationParams(
@@ -317,6 +317,7 @@ class TestUpdateLipidIDsWithFragRules(unittest.TestCase):
 
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """
+        print(_ANNOTATION_PARAMS)
         raise NotImplementedError("no tests implemented yet")
 
 

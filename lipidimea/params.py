@@ -136,7 +136,8 @@ class SumCompAnnotationParams:
 @dataclass
 class FragRuleAnnParams:
     """ parameters for annotation using fragmentation rules """
-    
+    mz_ppm: float
+
 
 @dataclass
 class AnnotationParams:
