@@ -15,9 +15,18 @@ import contextlib
 import sqlite3
 
 from lipidimea.util import (
+    _RESULTS_DB_SCHEMA,
     create_results_db,
     debug_handler
 )
+
+
+class Test_ResultsDbSchemaPath(unittest.TestCase):
+    """ test for the global storing the path to the results DB schema file """
+
+    def test_RDSP_built_schema_file_exist(self):
+        """ ensure the results database schema file exists """
+        self.assertTrue(os.path.isfile(_RESULTS_DB_SCHEMA))
 
 
 class TestCreateResultsDb(unittest.TestCase):

@@ -32,6 +32,9 @@ from lipidimea.params import SumCompAnnotationParams, AnnotationParams
 DEFAULT_POS_SCDB_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/pos.yml')
 DEFAULT_NEG_SCDB_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/neg.yml')
 
+# define path to default RT ranges config
+DEFAULT_RP_RT_RANGE_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/rt_ranges/RP.yml')
+
 
 class SumCompLipidDB():
     """
@@ -282,7 +285,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     """
     # ensure results database file exists
     if not op.isfile(results_db):
-        msg = f"remove_lipid_annotations: results database file: {results_db} not found"
+        msg = f"annotate_lipids_sum_composition: results database file: {results_db} not found"
         raise ValueError(msg)
     debug_handler(debug_flag, debug_cb, 
                   "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABSE...")
@@ -323,9 +326,8 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     return n_feats_annotated, n_anns
 
 
-def filter_annotations_by_rt_range(results_db, 
-                                   lipid_class_rt_ranges, 
-                                   params: AnnotationParams,
+def filter_annotations_by_rt_range(results_db: ResultsDbPath, 
+                                   rt_range_config: str,
                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                                    ) -> int :
     """
@@ -334,12 +336,10 @@ def filter_annotations_by_rt_range(results_db,
 
     Parameters
     ----------
-    results_db : ``str``
+    results_db : ``ResultsDbPath``
         path to DDA-DIA analysis results database
-    lipid_class_rt_ranges : ``str``
+    rt_ranges_config : ``str``
         path to config file with lipid class RT ranges, None to use built-in default
-    params : ``dict(...)``
-        parameters for lipid annotation
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -351,15 +351,17 @@ def filter_annotations_by_rt_range(results_db,
     n_feats_filtered : ``int``
         number of features filtered based on RT ranges
     """
+    # ensure results database file exists
+    if not op.isfile(results_db):
+        msg = f"filter_annotations_by_rt_range: results database file: {results_db} not found"
+        raise ValueError(msg)
     debug_handler(debug_flag, debug_cb, 
                   "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...")
-    # unpack params
-    params = params['annotation']['ann_rt_range']
     # ann_rtr_only_keep_defined_classes
     # load RT ranges
-    rtr_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), '_include/rt_ranges/default_RP.yml')
-    lipid_class_rt_ranges = rtr_path if lipid_class_rt_ranges is None else lipid_class_rt_ranges
-    with open(lipid_class_rt_ranges, 'r') as yf:
+    rtr_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), "_include/rt_ranges/default_RP.yml")
+    rt_range_config = rtr_path if rt_range_config is None else rt_range_config
+    with open(rt_range_config, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
     # TODO (Dylan Ross): validate the structure of the data from the YAML config file
     # connect to  results database
@@ -367,7 +369,7 @@ def filter_annotations_by_rt_range(results_db,
     cur = con.cursor()
     # iterate through annotations, check if the RT is within specified range 
     anns_to_del = []  # track annotation IDs to delete
-    qry_sel = 'SELECT ann_id, lmaps_id_prefix, rt FROM Lipids JOIN _DIAFeatures USING(dia_feat_id);'
+    qry_sel = "SELECT ann_id, lmaps_id_prefix, rt FROM Lipids JOIN _DIAFeatures USING(dia_feat_id);"
     n_anns = 0
     for ann_id, lmid_prefix, rt in cur.execute(qry_sel).fetchall():
         n_anns += 1
@@ -375,10 +377,10 @@ def filter_annotations_by_rt_range(results_db,
             rtmin, rtmax = rt_ranges[lmid_prefix]
             if rt <= rtmin or rt >= rtmax:
                 anns_to_del.append(ann_id)
-        elif params['ann_rtr_only_keep_defined_classes']:
+        else:
             anns_to_del.append(ann_id)
     # delete any annotations not within specified RT range
-    qry_del = 'DELETE FROM Lipids WHERE ann_id=?'
+    qry_del = "DELETE FROM Lipids WHERE ann_id=?"
     for ann_id in anns_to_del:
         cur.execute(qry_del, (ann_id,))
     # clean up
@@ -407,6 +409,9 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
     """
+    # ensure results database file exists
+    if not op.isfile(results_db):
+        msg = f"update_lipid_ids_with_frag_rules: results database file: {results_db} not found"
     debug_handler(debug_flag, debug_cb, 'UPDATING LIPID ANNOTATIONS USING FRAGMENTATION RULES ...')
     # connect to  results database
     con = connect(results_db) 

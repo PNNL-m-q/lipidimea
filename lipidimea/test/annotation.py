@@ -14,6 +14,11 @@ import sqlite3
 
 from lipidimea.util import create_results_db
 from lipidimea.params import SumCompAnnotationParams, AnnotationParams
+from lipidimea.annotation import (
+    DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG, DEFAULT_RP_RT_RANGE_CONFIG,
+    SumCompLipidDB, remove_lipid_annotations, annotate_lipids_sum_composition, 
+    filter_annotations_by_rt_range, update_lipid_ids_with_frag_rules
+)
 
 
 # set some parameters for testing the different DIA data processing steps
@@ -26,13 +31,6 @@ _ANNOTATION_PARAMS = AnnotationParams(
 )
 
 
-from lipidimea.annotation import (
-    DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG,
-    SumCompLipidDB, remove_lipid_annotations, annotate_lipids_sum_composition, 
-    filter_annotations_by_rt_range, update_lipid_ids_with_frag_rules
-)
-
-
 class TestDefaultSumCompLipidDBConfigs(unittest.TestCase):
     """ tests for the globals storing paths to default SumCompLipidDB config files """
 
@@ -40,6 +38,14 @@ class TestDefaultSumCompLipidDBConfigs(unittest.TestCase):
         """ ensure the built in default SumCompLipidDB config files exist """
         self.assertTrue(os.path.isfile(DEFAULT_POS_SCDB_CONFIG))
         self.assertTrue(os.path.isfile(DEFAULT_NEG_SCDB_CONFIG))
+
+
+class TestDefaultRTRangeConfig(unittest.TestCase):
+    """ tests for the globals storing paths to default RT ranges config files """
+
+    def test_DRRC_built_in_config_exists(self):
+        """ ensure the built in default RT ranges config file exists """
+        self.assertTrue(os.path.isfile(DEFAULT_RP_RT_RANGE_CONFIG))
 
 
 class TestSumCompLipidDB(unittest.TestCase):
@@ -233,14 +239,64 @@ class TestAnnotateLipidsSumComposition(unittest.TestCase):
             self.assertGreater(n_ann, 1)
             # there should be more than 1 annotation in the Lipid table of the database
             self.assertGreater(len(cur.execute("SELECT * FROM Lipids").fetchall()), 1)
+
+    def test_ALSC_results_db_file_does_not_exist(self):
+        """ should raise an error if the results database file does not exist """
+        with self.assertRaises(ValueError, 
+                               msg="expect a ValueError from nonexistent database file"):
+            _ = annotate_lipids_sum_composition("results db file doesnt exist",
+                                                DEFAULT_POS_SCDB_CONFIG, _ANNOTATION_PARAMS)
     
 
 class TestFilterAnnotationsByRTRange(unittest.TestCase):
     """ tests for the filter_annotations_by_rt_range function """
 
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
-        """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+    def test_FABRR_default_rt_range_config_and_mock_data(self):
+        """ filter annotations with default RT range config and mock data """
+        with TemporaryDirectory() as tmp_dir:
+            dbf = os.path.join(tmp_dir, "results.db")
+            create_results_db(dbf)  # STRICT!
+            con = sqlite3.connect(dbf)
+            cur = con.cursor()
+            # fill the db with the features
+            dda_qdata = (69420, "dda.data.file", 766.5, 20., 0.1, 1e5, 20., 3, 19, "DDA spec str")
+            cur.execute("INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);", dda_qdata)            
+            dda_qdata = (69421, "dda.data.file", 766.5, 15., 0.1, 1e5, 20., 3, 19, "DDA spec str")
+            cur.execute("INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);", dda_qdata)            
+            dia_qdata = (1, 69420, "dia.data.file", None, 20.0, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None)
+            cur.execute("INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);",
+                        dia_qdata)
+            dia_qdata = (2, 69420, "dia.data.file", None, 15.0, 0.1, 1e5, 20., None, 35, 2.5, 1e5, 10., 
+                 None, None, None, None, None)
+            cur.execute("INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);",
+                        dia_qdata)
+            con.commit()
+            # annotate the features (there should be a couple PCs in there)
+            n_feats_annotated, n_ann = annotate_lipids_sum_composition(dbf, 
+                                                                       DEFAULT_POS_SCDB_CONFIG, 
+                                                                       _SCA_PARAMS)
+            # check the features before filtering
+            # there should be 1 feature annotated and more than 1 annotation
+            self.assertEqual(n_feats_annotated, 2)
+            self.assertGreater(n_ann, 2)
+            # there should be more than 2 annotation in the Lipid table of the database
+            self.assertGreater(len(cur.execute("SELECT * FROM Lipids").fetchall()), 2)
+            # test the function
+            n_filtered = filter_annotations_by_rt_range(dbf, DEFAULT_RP_RT_RANGE_CONFIG)
+            # check the features after filtering 
+            # there should have been at least one annotation filtered out
+            self.assertGreater(n_filtered, 0)
+            # there should be fewer annotations after filtering than there were 
+            # after initial annotation
+            self.assertLess(len(cur.execute("SELECT * FROM Lipids").fetchall()), n_ann)
+    
+    def test_FABRR_results_db_file_does_not_exist(self):
+        """ should raise an error if the results database file does not exist """
+        with self.assertRaises(ValueError, 
+                               msg="expect a ValueError from nonexistent database file"):
+            _ = filter_annotations_by_rt_range("results db file doesnt exist", 
+                                               DEFAULT_RP_RT_RANGE_CONFIG)
 
 
 class TestUpdateLipidIDsWithFragRules(unittest.TestCase):

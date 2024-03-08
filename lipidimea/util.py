@@ -12,6 +12,10 @@ from typing import Optional, Callable
 from sqlite3 import connect
 
 
+# define path to results DB schema file
+_RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3')
+
+
 def create_results_db(f: str, 
                       overwrite: bool = False,
                       strict: bool = True
@@ -44,7 +48,7 @@ def create_results_db(f: str,
     con = connect(f)  
     cur = con.cursor()
     # execute SQL script to set up the database
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3'), 'r') as sql_f:
+    with open(_RESULTS_DB_SCHEMA, 'r') as sql_f:
         content = sql_f.read()
         # patch in place to remove STRICT constraints if strict flag set to False
         if not strict:
