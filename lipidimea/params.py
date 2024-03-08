@@ -134,9 +134,15 @@ class SumCompAnnotationParams:
     
 
 @dataclass
+class FragRuleAnnParams:
+    """ parameters for annotation using fragmentation rules """
+    
+
+@dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
     sum_comp_annotation_params: SumCompAnnotationParams
+    frag_rule_ann_params: FragRuleAnnParams
 
 
 def load_default_params(

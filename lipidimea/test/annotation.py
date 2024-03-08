@@ -13,7 +13,9 @@ from tempfile import TemporaryDirectory
 import sqlite3
 
 from lipidimea.util import create_results_db
-from lipidimea.params import SumCompAnnotationParams, AnnotationParams
+from lipidimea.params import (
+    SumCompAnnotationParams, FragRuleAnnParams, AnnotationParams
+)
 from lipidimea.annotation import (
     DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG, DEFAULT_RP_RT_RANGE_CONFIG,
     SumCompLipidDB, remove_lipid_annotations, annotate_lipids_sum_composition, 
@@ -26,8 +28,12 @@ _SCA_PARAMS = SumCompAnnotationParams(
     True, 12, 24, True, 40
 )
 
+_FRA_PARAMS = FragRuleAnnParams(
+
+)
+
 _ANNOTATION_PARAMS = AnnotationParams(
-    _SCA_PARAMS
+    _SCA_PARAMS, _FRA_PARAMS
 )
 
 
@@ -301,6 +307,13 @@ class TestFilterAnnotationsByRTRange(unittest.TestCase):
 
 class TestUpdateLipidIDsWithFragRules(unittest.TestCase):
     """ tests for the update_lipid_ids_with_frag_rules function """
+
+    def test_ULIWFR_results_db_file_does_not_exist(self):
+        """ should raise an error if the results database file does not exist """
+        with self.assertRaises(ValueError, 
+                               msg="expect a ValueError from nonexistent database file"):
+            update_lipid_ids_with_frag_rules("results db file doesnt exist", _FRA_PARAMS)
+
 
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """

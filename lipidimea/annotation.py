@@ -25,7 +25,9 @@ from lipidimea.typing import (
 )
 from lipidimea.util import debug_handler
 from lipidimea.msms._util import tol_from_ppm
-from lipidimea.params import SumCompAnnotationParams, AnnotationParams
+from lipidimea.params import (
+    SumCompAnnotationParams, FragRuleAnnParams, AnnotationParams
+)
 
 
 # define paths to default sum composition lipid DB config files
@@ -394,6 +396,7 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
 
 
 def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
+                                     params: FragRuleAnnParams,
                                      debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                                      ) -> None :
     """
@@ -401,7 +404,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``srt``
+    results_db : ``ResultsDbPath``
         path to DDA-DIA analysis results database
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
@@ -463,3 +466,4 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     con.commit()
     con.close()
     debug_handler(debug_flag, debug_cb, 'UPDATED: {} / {} annotations using fragmentation rules'.format(n_updt, n_anns))
+    # TODO (Dylan Ross): return a count of features updated?
