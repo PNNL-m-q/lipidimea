@@ -415,6 +415,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     # ensure results database file exists
     if not op.isfile(results_db):
         msg = f"update_lipid_ids_with_frag_rules: results database file: {results_db} not found"
+        raise ValueError(msg)
     debug_handler(debug_flag, debug_cb, 'UPDATING LIPID ANNOTATIONS USING FRAGMENTATION RULES ...')
     # connect to  results database
     con = connect(results_db) 
