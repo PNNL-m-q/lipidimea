@@ -584,7 +584,7 @@ def extract_dda_features_multiproc(dda_data_files: List[str],
 
 
 def consolidate_dda_features(results_db: ResultsDbPath, 
-                             params: DdaParams, 
+                             params: DdaConsolidateChromFeatsParams, 
                              debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                              ) -> Tuple[int, int] :
     """
@@ -601,7 +601,7 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     ----------
     results_db : ``str``
         path to DDA-DIA analysis results database
-    params : ``DdaParams``
+    params : ``DdaConsolidateChromFeatsParams``
         DDA data analysis parameters 
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
@@ -627,10 +627,10 @@ def consolidate_dda_features(results_db: ResultsDbPath,
         n_dda_features += 1
         _, mz, rt, *_ = d
         add = True
-        mzt = tol_from_ppm(mz, params.consolidate_dda_features_params.mz_ppm)
+        mzt = tol_from_ppm(mz, params.mz_ppm)
         for i in range(len(grouped)):
             for _, mz_i, rt_i, *_ in grouped[i]:
-                if abs(mz - mz_i) <= mzt and abs(rt - rt_i) <= params.consolidate_dda_features_params.rt_tol:
+                if abs(mz - mz_i) <= mzt and abs(rt - rt_i) <= params.rt_tol:
                     grouped[i].append(d)
                     add = False
                     break
@@ -666,7 +666,7 @@ def consolidate_dda_features(results_db: ResultsDbPath,
                 keep_ffid: Optional[int] = None
                 for feat in group:
                     ffid, fint = feat[0], feat[3]
-                    if not params.consolidate_dda_features_params.drop_if_no_ms2:
+                    if not params.drop_if_no_ms2:
                         if keep_ffid is None:
                             max_fint = fint
                             keep_ffid = ffid

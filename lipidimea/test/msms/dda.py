@@ -462,7 +462,7 @@ class TestConsolidateDdaFeatures(unittest.TestCase):
             # write changes to the db
             con.commit()
             # test the function
-            n_pre, n_post = consolidate_dda_features(dbf, _DDA_PARAMS, 
+            n_pre, n_post = consolidate_dda_features(dbf, _DDA_PARAMS.consolidate_dda_features_params, 
                                                      debug_flag="text_cb", debug_cb=_debug_cb)
             # make sure number of features pre/post is correct
             self.assertEqual(n_pre, 9,

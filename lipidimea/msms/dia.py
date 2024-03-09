@@ -266,7 +266,7 @@ def _single_target_analysis(n: int,
     # (tight enough bounds and high enough threshold can do that)
     if len(pre_xic[0]) < 2:
         debug_handler(debug_flag, debug_cb, msg +  'empty XIC', pid)
-        return
+        return 0
     pre_pkrts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_xic,
                                                           params.extract_and_fit_chrom_params.min_rel_height,
                                                           params.extract_and_fit_chrom_params.min_abs_height,
@@ -319,6 +319,8 @@ def _single_target_analysis(n: int,
                                                        params.ms2_fit_params.fwhm_max,
                                                        params.ms2_fit_params.min_dist)
                 n_dia_peaks_pre_decon = len(dia_ms2_peaks[0])
+                if n_dia_peaks_pre_decon < 1:
+                    dia_ms2_peaks = None
                 if n_dia_peaks_pre_decon > 0:
                     dtmsg += '# DIA MS2 peaks: {} -> '.format(n_dia_peaks_pre_decon)
                     # try to match peaks from DDA spectrum
