@@ -24,7 +24,7 @@ from lipidimea.msms._util import str_to_ms2, ms2_to_str, apply_args_and_kwargs
 from lipidimea.util import debug_handler
 from lipidimea.msms._util import tol_from_ppm
 from lipidimea.params import (
-    DiaDeconvoluteMS2PeaksParams, DiaParams
+    DiaDeconvoluteMs2PeaksParams, DiaParams
 )
 from lipidimea.typing import (
     Xic, Atd, Ms1, Ms2, Spec, SpecStr,
@@ -105,7 +105,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
                            pre_xic_rt: float, 
                            pre_xic_wt: float, 
                            pre_atd: Atd, 
-                           params: DiaDeconvoluteMS2PeaksParams
+                           params: DiaDeconvoluteMs2PeaksParams
                            ) -> List[DiaDeconFragment] :
     """
     Deconvolute MS2 peak m/zs, if the XIC and ATD are similar enough to the precursor, 
@@ -205,6 +205,10 @@ def _ms2_peaks_to_str(ms2_peaks: Optional[Tuple[npt.NDArray[np.float64], npt.NDA
     mzs, iis, _ = ms2_peaks
     return ms2_to_str(mzs, iis)
 
+
+# TODO (Dylan Ross): This function could probably benefit from being broken up into a couple
+#                    smaller functions. In particular, probably one for extracting/fitting
+#                    chromatograms, and another for extracting/fitting ATDs
 
 def _single_target_analysis(n: int, 
                             i: int, 

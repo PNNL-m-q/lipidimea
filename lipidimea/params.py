@@ -34,7 +34,7 @@ class DdaConsolidateChromFeatsParams:
 
 
 @dataclass
-class DdaExtractAndFitMS2SpectraParams:
+class DdaExtractAndFitMs2SpectraParams:
     """ parameters for extracting and fitting MS2 spectra """
     pre_mz_ppm: float
     mz_bin_min: float
@@ -59,7 +59,7 @@ class DdaParams:
     """ class for organizing DDA data processing parameters """
     extract_and_fit_chrom_params: DdaExtractAndFitChromsParams
     consolidate_chrom_feats_params: DdaConsolidateChromFeatsParams
-    extract_and_fit_ms2_spectra_params: DdaExtractAndFitMS2SpectraParams
+    extract_and_fit_ms2_spectra_params: DdaExtractAndFitMs2SpectraParams
     consolidate_dda_features_params: DdaConsolidateFeaturesParams
 
 
@@ -102,7 +102,7 @@ class DiaMs2FitParams:
 
 
 @dataclass
-class DiaDeconvoluteMS2PeaksParams:
+class DiaDeconvoluteMs2PeaksParams:
     """ parameters for deconvoluting MS2 peaks """
     mz_ppm: float
     xic_dist_threshold: float
@@ -119,7 +119,7 @@ class DiaParams:
     atd_fit_params: DiaAtdFitParams
     ms2_fit_params: DiaMs2FitParams
     ms2_peak_matching_ppm: float
-    deconvolute_ms2_peaks_params: DiaDeconvoluteMS2PeaksParams
+    deconvolute_ms2_peaks_params: DiaDeconvoluteMs2PeaksParams
     store_blobs: bool
 
 

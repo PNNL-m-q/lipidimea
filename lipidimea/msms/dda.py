@@ -29,7 +29,7 @@ from lipidimea.msms._util import (
 )
 from lipidimea.util import debug_handler
 from lipidimea.params import (
-    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMS2SpectraParams,
+    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMs2SpectraParams,
     DdaParams
 )
 
@@ -376,7 +376,7 @@ def _consolidate_chrom_feats(feats: List[DdaChromFeat],
 
 def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                  chrom_feats_consolidated: List[DdaChromFeat],
-                                 params: DdaExtractAndFitMS2SpectraParams,
+                                 params: DdaExtractAndFitMs2SpectraParams,
                                  debug_flag: Optional[str], debug_cb: Optional[Callable] 
                                  ) -> List[DdaFeature] :
     """

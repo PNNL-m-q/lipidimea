@@ -23,7 +23,7 @@ from lipidimea.msms.dia import (
 )
 from lipidimea.params import (
     DiaExtractAndFitChromsParams, DiaChromPeakSelectionParams, DiaAtdFitParams,
-    DiaMs2FitParams, DiaDeconvoluteMS2PeaksParams, 
+    DiaMs2FitParams, DiaDeconvoluteMs2PeaksParams, 
     DiaParams
 )
 from lipidimea.util import create_results_db
@@ -46,7 +46,7 @@ _MF_PARAMS = DiaMs2FitParams(
     0.1, 1e3, 0.01, 0.1, 0.2
 )
 
-_DMP_PARAMS = DiaDeconvoluteMS2PeaksParams(
+_DMP_PARAMS = DiaDeconvoluteMs2PeaksParams(
     40, 0.5, 0.5, "cosine", "cosine"
 )
 
