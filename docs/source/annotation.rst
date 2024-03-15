@@ -28,12 +28,9 @@ Annotation
 
 .. autofunction:: lipidimea.annotation.remove_lipid_annotations
 
-``annotate_lipid_sum_composition``
+``annotate_lipids``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: lipidimea.annotation.annotate_lipids_sum_composition
+.. autofunction:: lipidimea.annotation.annotate_lipids
 
-``filter_annotations_by_rt_range``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autofunction:: lipidimea.annotation.filter_annotations_by_rt_range

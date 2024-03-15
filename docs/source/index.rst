@@ -19,6 +19,7 @@ Source code is available at https://github.com/PNNL-m-q/lipidimea
    :caption: API Reference
 
    util
+   params
    msms
    annotation
 

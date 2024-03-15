@@ -13,23 +13,6 @@ Results Database
 
 .. autofunction:: lipidimea.util.create_results_db
 
-Analysis Parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``load_default_params``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autofunction:: lipidimea.util.load_default_params
-
-``load_params``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autofunction:: lipidimea.util.load_params
-
-``save_params``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. autofunction:: lipidimea.util.save_params
 
 Debug Handler
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
