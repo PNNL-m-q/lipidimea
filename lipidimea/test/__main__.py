@@ -26,8 +26,9 @@ from lipidimea.test.msms.dia import (
 )
 from lipidimea.test.annotation import (
     TestDefaultSumCompLipidDBConfigs,
-    TestSumCompLipidDB, TestRemoveLipidAnnotations, TestAnnotateLipidsSumComposition, 
-    TestFilterAnnotationsByRTRange, TestUpdateLipidIDsWithFragRules
+    TestSumCompLipidDB, TestRemoveLipidAnnotations, Test_AnnotateLipidsSumComposition, 
+    Test_FilterAnnotationsByRTRange, Test_UpdateLipidIDsWithFragRules,
+    TestAnnotateLipids
 )
 from lipidimea.test.util import (
     TestCreateResultsDb, TestDebugHandler

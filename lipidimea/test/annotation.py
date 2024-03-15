@@ -18,8 +18,8 @@ from lipidimea.params import (
 )
 from lipidimea.annotation import (
     DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG, DEFAULT_RP_RT_RANGE_CONFIG,
-    SumCompLipidDB, remove_lipid_annotations, annotate_lipids_sum_composition, 
-    filter_annotations_by_rt_range, update_lipid_ids_with_frag_rules
+    SumCompLipidDB, remove_lipid_annotations, _annotate_lipids_sum_composition, 
+    _filter_annotations_by_rt_range, _update_lipid_ids_with_frag_rules
 )
 
 
@@ -29,7 +29,7 @@ _SCA_PARAMS = SumCompAnnotationParams(
 )
 
 _FRA_PARAMS = FragRuleAnnParams(
-    40
+    80
 )
 
 _ANNOTATION_PARAMS = AnnotationParams(
@@ -218,8 +218,8 @@ class TestRemoveLipidAnnotations(unittest.TestCase):
             self.assertEqual(len([_ for _ in cur.execute("SELECT * FROM Lipids")]), 0)
 
 
-class TestAnnotateLipidsSumComposition(unittest.TestCase):
-    """ tests for the annotate_lipids_sum_composition function """
+class Test_AnnotateLipidsSumComposition(unittest.TestCase):
+    """ tests for the _annotate_lipids_sum_composition function """
 
     def test_ALSC_mock_features(self):
         """ annotate lipids at sum compoisition level with mocked DDA/DIA features """
@@ -237,7 +237,7 @@ class TestAnnotateLipidsSumComposition(unittest.TestCase):
                         dia_qdata)
             con.commit()
             # test the function
-            n_feats_annotated, n_ann = annotate_lipids_sum_composition(dbf, 
+            n_feats_annotated, n_ann = _annotate_lipids_sum_composition(dbf, 
                                                                        DEFAULT_POS_SCDB_CONFIG, 
                                                                        _SCA_PARAMS)
             # there should be 1 feature annotated and more than 1 annotation
@@ -250,12 +250,12 @@ class TestAnnotateLipidsSumComposition(unittest.TestCase):
         """ should raise an error if the results database file does not exist """
         with self.assertRaises(ValueError, 
                                msg="expect a ValueError from nonexistent database file"):
-            _ = annotate_lipids_sum_composition("results db file doesnt exist",
+            _ = _annotate_lipids_sum_composition("results db file doesnt exist",
                                                 DEFAULT_POS_SCDB_CONFIG, _ANNOTATION_PARAMS)
     
 
-class TestFilterAnnotationsByRTRange(unittest.TestCase):
-    """ tests for the filter_annotations_by_rt_range function """
+class Test_FilterAnnotationsByRTRange(unittest.TestCase):
+    """ tests for the _filter_annotations_by_rt_range function """
 
     def test_FABRR_default_rt_range_config_and_mock_data(self):
         """ filter annotations with default RT range config and mock data """
@@ -279,7 +279,7 @@ class TestFilterAnnotationsByRTRange(unittest.TestCase):
                         dia_qdata)
             con.commit()
             # annotate the features (there should be a couple PCs in there)
-            n_feats_annotated, n_ann = annotate_lipids_sum_composition(dbf, 
+            n_feats_annotated, n_ann = _annotate_lipids_sum_composition(dbf, 
                                                                        DEFAULT_POS_SCDB_CONFIG, 
                                                                        _SCA_PARAMS)
             # check the features before filtering
@@ -289,7 +289,7 @@ class TestFilterAnnotationsByRTRange(unittest.TestCase):
             # there should be more than 2 annotation in the Lipid table of the database
             self.assertGreater(len(cur.execute("SELECT * FROM Lipids").fetchall()), 2)
             # test the function
-            n_filtered = filter_annotations_by_rt_range(dbf, DEFAULT_RP_RT_RANGE_CONFIG)
+            n_filtered = _filter_annotations_by_rt_range(dbf, DEFAULT_RP_RT_RANGE_CONFIG)
             # check the features after filtering 
             # there should have been at least one annotation filtered out
             self.assertGreater(n_filtered, 0)
@@ -301,23 +301,31 @@ class TestFilterAnnotationsByRTRange(unittest.TestCase):
         """ should raise an error if the results database file does not exist """
         with self.assertRaises(ValueError, 
                                msg="expect a ValueError from nonexistent database file"):
-            _ = filter_annotations_by_rt_range("results db file doesnt exist", 
+            _ = _filter_annotations_by_rt_range("results db file doesnt exist", 
                                                DEFAULT_RP_RT_RANGE_CONFIG)
 
 
-class TestUpdateLipidIDsWithFragRules(unittest.TestCase):
-    """ tests for the update_lipid_ids_with_frag_rules function """
+class Test_UpdateLipidIDsWithFragRules(unittest.TestCase):
+    """ tests for the _update_lipid_ids_with_frag_rules function """
 
     def test_ULIWFR_results_db_file_does_not_exist(self):
         """ should raise an error if the results database file does not exist """
         with self.assertRaises(ValueError, 
                                msg="expect a ValueError from nonexistent database file"):
-            update_lipid_ids_with_frag_rules("results db file doesnt exist", _FRA_PARAMS)
+            _update_lipid_ids_with_frag_rules("results db file doesnt exist", _FRA_PARAMS)
 
 
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """
         print(_ANNOTATION_PARAMS)
+        raise NotImplementedError("no tests implemented yet")
+
+
+class TestAnnotateLipids(unittest.TestCase):
+    """ tests for the annotate_lipids function """
+
+    def test_AL_not_implemented(self):
+        """ placeholder, remove this function and implement tests """
         raise NotImplementedError("no tests implemented yet")
 
 

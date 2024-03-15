@@ -20,6 +20,8 @@ type ResultsDbPath = str
 type ResultsDbConnection = sqlite3.Connection
 type ResultsDbCursor = sqlite3.Cursor
 
+type YamlFilePath = str
+
 type Xic = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Atd = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Ms1 = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]

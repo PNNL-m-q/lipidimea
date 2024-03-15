@@ -21,7 +21,7 @@ from lipidlib.parser import parse_lipid_name
 from lipidlib._fragmentation_rules import load_rules
 
 from lipidimea.typing import (
-    ScdbLipidId, ResultsDbPath
+    ScdbLipidId, ResultsDbPath, YamlFilePath
 )
 from lipidimea.util import debug_handler
 from lipidimea.msms._util import tol_from_ppm
@@ -31,11 +31,11 @@ from lipidimea.params import (
 
 
 # define paths to default sum composition lipid DB config files
-DEFAULT_POS_SCDB_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/pos.yml')
-DEFAULT_NEG_SCDB_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/neg.yml')
+DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/pos.yml')
+DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/neg.yml')
 
 # define path to default RT ranges config
-DEFAULT_RP_RT_RANGE_CONFIG = op.join(op.dirname(op.abspath(__file__)), '_include/rt_ranges/RP.yml')
+DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/rt_ranges/RP.yml')
 
 
 class SumCompLipidDB():
@@ -254,11 +254,11 @@ def remove_lipid_annotations(results_db: ResultsDbPath
     con.close()
 
 
-def annotate_lipids_sum_composition(results_db: ResultsDbPath, 
-                                    scdb_config_yml: str, 
-                                    params: SumCompAnnotationParams,
-                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                    ) -> Tuple[int, int] :
+def _annotate_lipids_sum_composition(results_db: ResultsDbPath, 
+                                     scdb_config_yml: YamlFilePath, 
+                                     params: SumCompAnnotationParams,
+                                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                     ) -> Tuple[int, int] :
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -328,10 +328,10 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     return n_feats_annotated, n_anns
 
 
-def filter_annotations_by_rt_range(results_db: ResultsDbPath, 
-                                   rt_range_config: str,
-                                   debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                   ) -> int :
+def _filter_annotations_by_rt_range(results_db: ResultsDbPath, 
+                                    rt_range_config_yml: YamlFilePath,
+                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                    ) -> int :
     """
     filter feature annotations based on their retention times vs. expected retention time ranges
     by lipid class for a specified chromatographic method
@@ -341,7 +341,7 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     results_db : ``ResultsDbPath``
         path to DDA-DIA analysis results database
     rt_ranges_config : ``str``
-        path to config file with lipid class RT ranges, None to use built-in default
+        path to YAML config file with lipid class RT ranges, None to use built-in default
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -362,8 +362,8 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     # ann_rtr_only_keep_defined_classes
     # load RT ranges
     rtr_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), "_include/rt_ranges/default_RP.yml")
-    rt_range_config = rtr_path if rt_range_config is None else rt_range_config
-    with open(rt_range_config, 'r') as yf:
+    rt_range_config_yml = rtr_path if rt_range_config_yml is None else rt_range_config_yml
+    with open(rt_range_config_yml, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
     # TODO (Dylan Ross): validate the structure of the data from the YAML config file
     # connect to  results database
@@ -395,10 +395,10 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     return n_feats_filtered 
 
 
-def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
-                                     params: FragRuleAnnParams,
-                                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                     ) -> None :
+def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
+                                      params: FragRuleAnnParams,
+                                      debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                      ) -> None :
     """
     update lipid annotations based on MS/MS spectra and fragmentation rules
 
@@ -411,6 +411,11 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     debug_cb : ``func``, optional
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
+    
+    Returns 
+    -------
+    n_anns_updated : ``int``
+        number of feature annotations updated using frag rules
     """
     # ensure results database file exists
     if not op.isfile(results_db):
@@ -429,6 +434,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     n_updt = 0
     qry_upd = "UPDATE Lipids SET fragments=? WHERE ann_id=?;"
     for ann_id, lmid_prefix, lipid_name, pmz, dia_feat_id in cur.execute(qry_sel1).fetchall():
+        updt = False
         print(ann_id, lmid_prefix, lipid_name, dia_feat_id)
         # get fragment m/zs
         qry_sel2 = ("SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags "
@@ -453,6 +459,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                     for fmz in fmzs:
                         if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
                             fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
+                            updt = True
                 else:
                     for c, u in sorted(c_u_combos):
                         print('\trule:', rule.label(c, u), rule.mz(pmz, c, u))
@@ -460,11 +467,30 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                         for fmz in fmzs:
                             if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
                                 fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
+                                updt = True
                                 # TODO (Dylan Ross): need some logic here to figure out new names
             if fragments_str != '':
                 cur.execute(qry_upd, (fragments_str, ann_id))
+            if updt:
+                n_updt += 1
     # clean up
     con.commit()
     con.close()
     debug_handler(debug_flag, debug_cb, 'UPDATED: {} / {} annotations using fragmentation rules'.format(n_updt, n_anns))
-    # TODO (Dylan Ross): return a count of features updated?
+    return n_updt
+
+
+def annotate_lipids(results_db: ResultsDbPath,
+                    params: AnnotationParams,
+                    scdb_config_yml: YamlFilePath,
+                    rt_range_config_yml: YamlFilePath,
+                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                    ) -> None :
+    n_feats_annotated, n_anns = _annotate_lipids_sum_composition(results_db, scdb_config_yml, 
+                                                                 params.sum_comp_annotation_params, 
+                                                                 debug_flag=debug_flag, debug_cb=debug_cb)
+    n_feats_filtered = _filter_annotations_by_rt_range(results_db, rt_range_config_yml, 
+                                                       debug_flag=debug_flag, debug_cb=debug_cb)
+    n_anns_updated = _update_lipid_ids_with_frag_rules(results_db, params.frag_rule_ann_params,
+                                                       debug_flag=debug_flag, debug_cb=debug_cb)
+    pass

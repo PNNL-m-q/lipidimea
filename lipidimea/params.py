@@ -166,6 +166,10 @@ def load_default_params(
     return params
 
 
+# TODO (Dylan Ross): The load params function should return a tuple of the top level 
+#                    dataclasses, at present this is (DdaParams, DiaParams) but will
+#                    add AnnotationParams and InputOutput Params?
+
 def load_params(params_file: str
                 ) -> Tuple[Dict[Any, Any], Dict[Any, Any]]:
     """
