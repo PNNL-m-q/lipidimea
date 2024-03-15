@@ -29,7 +29,8 @@ from lipidimea.params import (
 from lipidimea.typing import (
     Xic, Atd, Ms1, Ms2, Spec, SpecStr,
     DiaDeconFragment,
-    ResultsDbPath, ResultsDbCursor
+    ResultsDbPath, ResultsDbCursor,
+    MzaFilePath
 )
 
 
@@ -155,7 +156,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
 
 def _add_single_target_results_to_db(cur: ResultsDbCursor, 
                                      dda_feat_id: int, 
-                                     f: str, 
+                                     f: MzaFilePath, 
                                      ms1: Ms1,
                                      rt: float, 
                                      rt_fwhm: float, 
@@ -214,7 +215,7 @@ def _single_target_analysis(n: int,
                             i: int, 
                             rdr: MZA, 
                             cur: ResultsDbCursor, 
-                            f: str, 
+                            f: MzaFilePath, 
                             dda_fid: int, 
                             dda_mz: float, 
                             dda_rt: float, 
@@ -359,7 +360,7 @@ def _single_target_analysis(n: int,
     return n_features
 
 
-def extract_dia_features(dia_data_file: str, 
+def extract_dia_features(dia_data_file: MzaFilePath, 
                          results_db: ResultsDbPath, 
                          params: DiaParams, 
                          debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None,
@@ -425,7 +426,7 @@ def extract_dia_features(dia_data_file: str,
 #                    busy with all of the other stuff that needs to happen besides I/O, at least I think
 #                    that is how this should work...
     
-def extract_dia_features_multiproc(dia_data_files: List[str], 
+def extract_dia_features_multiproc(dia_data_files: List[MzaFilePath], 
                                    results_db: ResultsDbPath, 
                                    params: DiaParams, 
                                    n_proc: int, 

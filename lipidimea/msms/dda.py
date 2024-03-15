@@ -22,7 +22,8 @@ import pandas as pd
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
 from lipidimea.typing import (
-    ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaFeature
+    ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaFeature,
+    MzaFilePath
 )
 from lipidimea.msms._util import (
     ms2_to_str, apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
@@ -465,7 +466,7 @@ def _add_features_to_db(cur: ResultsDbCursor,
         cur.execute(qry, qd)
 
 
-def extract_dda_features(dda_data_file: str, 
+def extract_dda_features(dda_data_file: MzaFilePath, 
                          results_db: ResultsDbPath, 
                          params: DdaParams, 
                          cache_ms1: bool = True, 
@@ -538,7 +539,7 @@ def extract_dda_features(dda_data_file: str,
     return len(qdata)
     
 
-def extract_dda_features_multiproc(dda_data_files: List[str], 
+def extract_dda_features_multiproc(dda_data_files: List[MzaFilePath], 
                                    results_db: ResultsDbPath, 
                                    params: DdaParams, 
                                    n_proc: int,

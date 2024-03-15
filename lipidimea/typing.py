@@ -16,6 +16,8 @@ import numpy.typing as npt
 
 # TODO (Dylan Ross): add some descriptions for all of these
 
+type MzaFilePath = str
+
 type ResultsDbPath = str
 type ResultsDbConnection = sqlite3.Connection
 type ResultsDbCursor = sqlite3.Cursor
@@ -31,7 +33,7 @@ type SpecStr = str
 
 type DdaReader = Union[_MSMSReaderDDA, _MSMSReaderDDA_Cached]  # type: ignore
 type DdaChromFeat = Tuple[float, float, float, float, float]
-type DdaFeature = Tuple[None, str, float, float, float, float, float, int, Optional[int], Optional[str]]
+type DdaFeature = Tuple[None, MzaFilePath, float, float, float, float, float, int, Optional[int], Optional[str]]
 
 type DiaDeconFragment = Tuple[float, Xic, float, Atd, float]
 
