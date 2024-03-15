@@ -24,7 +24,7 @@ from lipidimea.typing import (
     ScdbLipidId, ResultsDbPath, YamlFilePath
 )
 from lipidimea.util import debug_handler
-from lipidimea.msms._util import tol_from_ppm
+from lipidimea.msms._util import tol_from_ppm, str_to_ms2
 from lipidimea.params import (
     SumCompAnnotationParams, FragRuleAnnParams, AnnotationParams
 )
@@ -290,7 +290,7 @@ def _annotate_lipids_sum_composition(results_db: ResultsDbPath,
         msg = f"annotate_lipids_sum_composition: results database file: {results_db} not found"
         raise ValueError(msg)
     debug_handler(debug_flag, debug_cb, 
-                  "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABSE...")
+                  "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABASE...")
     # remove existing annotations if requested
     if params.overwrite:
         debug_handler(debug_flag, debug_cb, 'removing any existing lipid annotations')
@@ -350,8 +350,8 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
 
     Returns
     -------
-    n_feats_filtered : ``int``
-        number of features filtered based on RT ranges
+    n_anns_filtered : ``int``
+        number of annotations filtered based on RT ranges
     """
     # ensure results database file exists
     if not op.isfile(results_db):
@@ -388,11 +388,11 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
     # clean up
     con.commit()
     con.close()
-    n_feats_filtered = len(anns_to_del)
+    n_anns_filtered = len(anns_to_del)
     debug_handler(debug_flag, debug_cb, 
-                  f"FILTERED: {n_feats_filtered} / {n_anns} annotations based on lipid class RT ranges")
-    # return the number of features that were filtered out
-    return n_feats_filtered 
+                  f"FILTERED: {n_anns_filtered} / {n_anns} annotations based on lipid class RT ranges")
+    # return the number of annotations that were filtered out
+    return n_anns_filtered 
 
 
 def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
@@ -428,51 +428,85 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     n_anns = cur.execute('SELECT COUNT(*) FROM Lipids;').fetchall()[0][0]
     # iterate through annotations, see if there are annotatable fragments
     # only select out the annotations that have NULL fragments
-    qry_sel1 = ("SELECT ann_id, lmaps_id_prefix, lipid, mz, dia_feat_id FROM Lipids "
+    qry_sel1 = ("SELECT ann_id, lmaps_id_prefix, lipid, mz, dia_feat_id,"
+                "DDAFeatures.ms2_peaks, _DIAFeatures.ms2_peaks"
+                " FROM Lipids "
                 "JOIN _DIAFeatures USING(dia_feat_id) JOIN DDAFeatures USING(dda_feat_id) "
                 "WHERE fragments IS NULL;")
     n_updt = 0
     qry_upd = "UPDATE Lipids SET fragments=? WHERE ann_id=?;"
-    for ann_id, lmid_prefix, lipid_name, pmz, dia_feat_id in cur.execute(qry_sel1).fetchall():
+    for ann_id, lmid_prefix, lipid_name, pmz, dia_feat_id, dda_ms2_pks, dia_ms2_pks in cur.execute(qry_sel1).fetchall():
         updt = False
         print(ann_id, lmid_prefix, lipid_name, dia_feat_id)
+        # TODO (Dylan Ross): Maybe we should just consider all DIA fragments, regardless of whether they 
+        #                    are deconvoluted or not?
         # get fragment m/zs
-        qry_sel2 = ("SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags "
-                    "USING(decon_frag_id) WHERE dia_feat_id=?")
-        res = cur.execute(qry_sel2, (dia_feat_id,)).fetchall()
-        fmzs = []
-        if res is not None:
-            fmzs = [_[0] for _ in res]
-        for fmz in fmzs:
-            print('\tfragment:', fmz)
-        if fmzs != []:
+        # qry_sel2 = ("SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags "
+        #             "USING(decon_frag_id) WHERE dia_feat_id=?")
+        # res = cur.execute(qry_sel2, (dia_feat_id,)).fetchall()
+        dda_fmzs = str_to_ms2(dda_ms2_pks)[0].tolist() if dda_ms2_pks is not None else None
+        dia_fmzs = str_to_ms2(dia_ms2_pks)[0].tolist() if dia_ms2_pks is not None else None
+        if dda_fmzs is not None and dia_fmzs is not None:
             fragments_str = ''
             new_names = set()
             # load fragmentation rules
             lipid = parse_lipid_name(lipid_name)
-            rules = load_rules(lipid.lipid_class_abbrev, 'POS')
-            c_u_combos = [_ for _ in get_c_u_combos(lipid, 12, 24, False)]
-            for rule in rules:
-                if rule.static:
-                    print('\trule:', rule.label(), rule.mz(pmz))
-                    rmz = rule.mz(pmz)
-                    for fmz in fmzs:
-                        if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                            fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
-                            updt = True
-                else:
-                    for c, u in sorted(c_u_combos):
-                        print('\trule:', rule.label(c, u), rule.mz(pmz, c, u))
-                        rmz = rule.mz(pmz, c, u)
-                        for fmz in fmzs:
+            found, rules = load_rules(lipid.lmaps_id_prefix, 'POS')
+            # TODO (Dylan Ross): This logic needs to be modified to work like the SumCompositionLipidDB class
+            #                    and restrict the maximum number of double bonds that a FA can have depending
+            #                    on its length
+            c_u_combos = [_ for _ in get_c_u_combos(lipid, params.fa_min_c, params.fa_max_c, params.fa_odd_c)]
+            # for rule in rules:
+            #     if rule.static:
+            #         rmz = rule.mz(pmz)
+            #         for fmz in dia_fmzs:
+            #             if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
+            #                 fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
+            #                 updt = True
+            #                 print('\trule:', rule.label(), rmz)
+            #                 print("\t\tmatches fragment:", fmz)
+            #     else:
+            #         for c, u in sorted(c_u_combos):
+            #             rmz = rule.mz(pmz, c, u)
+            #             for fmz in dia_fmzs:
+            #                 if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
+            #                     fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
+            #                     updt = True
+            #                     print('\trule:', rule.label(c, u), rmz)
+            #                     print("\t\tmatches fragment:", fmz)
+            #                     # TODO (Dylan Ross): need some logic here to figure out new names
+            # if fragments_str != '':
+            #     cur.execute(qry_upd, (fragments_str, ann_id))
+            # if updt:
+            #     n_updt += 1
+            for fmz in dia_fmzs:
+                is_in_dda = False
+                for dda_fmz in dda_fmzs:
+                    if _ppm_error(dda_fmz, fmz) <= params.mz_ppm:
+                        is_in_dda = True
+                if is_in_dda:
+                    for rule in rules:
+                        if rule.static:
+                            rmz = rule.mz(pmz)
                             if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                                fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
+                                fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
                                 updt = True
-                                # TODO (Dylan Ross): need some logic here to figure out new names
+                                print('\trule:', rule.label(), rmz)
+                                print("\t\tmatches fragment:", fmz)
+                        else:
+                            for c, u in sorted(c_u_combos):
+                                rmz = rule.mz(pmz, c, u)
+                                if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
+                                    fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
+                                    updt = True
+                                    print('\trule:', rule.label(c, u), rmz)
+                                    print("\t\tmatches fragment:", fmz)
+                                    # TODO (Dylan Ross): need some logic here to figure out new names
             if fragments_str != '':
                 cur.execute(qry_upd, (fragments_str, ann_id))
             if updt:
                 n_updt += 1
+
     # clean up
     con.commit()
     con.close()

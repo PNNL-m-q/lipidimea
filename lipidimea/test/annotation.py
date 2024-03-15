@@ -25,15 +25,23 @@ from lipidimea.annotation import (
 
 # set some parameters for testing the different DIA data processing steps
 _SCA_PARAMS = SumCompAnnotationParams(
-    True, 12, 24, True, 40
+    overwrite=True, 
+    fa_min_c=12, 
+    fa_max_c=24, 
+    fa_odd_c=True, 
+    mz_ppm=40
 )
 
 _FRA_PARAMS = FragRuleAnnParams(
-    80
+    mz_ppm=80,
+    fa_min_c=12, 
+    fa_max_c=24, 
+    fa_odd_c=True, 
 )
 
 _ANNOTATION_PARAMS = AnnotationParams(
-    _SCA_PARAMS, _FRA_PARAMS
+    sum_comp_annotation_params=_SCA_PARAMS, 
+    frag_rule_ann_params=_FRA_PARAMS
 )
 
 
@@ -314,11 +322,9 @@ class Test_UpdateLipidIDsWithFragRules(unittest.TestCase):
                                msg="expect a ValueError from nonexistent database file"):
             _update_lipid_ids_with_frag_rules("results db file doesnt exist", _FRA_PARAMS)
 
-
-    def test_NO_TESTS_IMPLEMENTED_YET(self):
+    def test_something(self):
         """ placeholder, remove this function and implement tests """
-        print(_ANNOTATION_PARAMS)
-        raise NotImplementedError("no tests implemented yet")
+        
 
 
 class TestAnnotateLipids(unittest.TestCase):
