@@ -103,8 +103,8 @@ class SumCompLipidDB():
         * specify minimum number of carbons in a FA chain
         * specify maximum number of carbons in a FA chain
         * specify whether to include odd # of carbons for FA chains
-        * max number of unsaturations is determined by FA chain length (by default: up to 15 C = 2 max 
-            U, 16+ C = 6 max U... override ``SumCompLipidDB.max_u()`` static method to change)
+        * max number of unsaturations is determined by FA chain length,
+          override ``SumCompLipidDB.max_u()`` static method to change)
 
         Parameters
         ----------
@@ -143,7 +143,9 @@ class SumCompLipidDB():
     def __init__(self
                  ) -> None :
         """
-        Initialize the database. Fill the database with lipids using ``SumCompLipidDB.fill_db_from_config()``
+        Initialize the database. 
+        
+        Fill the database with lipids using ``SumCompLipidDB.fill_db_from_config()``
         """
         self._init_db()
 
@@ -452,10 +454,8 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             # load fragmentation rules
             lipid = parse_lipid_name(lipid_name)
             found, rules = load_rules(lipid.lmaps_id_prefix, 'POS')
-            # TODO (Dylan Ross): This logic needs to be modified to work like the SumCompositionLipidDB class
-            #                    and restrict the maximum number of double bonds that a FA can have depending
-            #                    on its length
-            c_u_combos = [_ for _ in get_c_u_combos(lipid, params.fa_min_c, params.fa_max_c, params.fa_odd_c)]
+            c_u_combos = [_ for _ in get_c_u_combos(lipid, params.fa_min_c, params.fa_max_c, params.fa_odd_c,
+                                                    max_u=SumCompLipidDB.max_u)]
             # for rule in rules:
             #     if rule.static:
             #         rmz = rule.mz(pmz)
@@ -484,6 +484,9 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                 for dda_fmz in dda_fmzs:
                     if _ppm_error(dda_fmz, fmz) <= params.mz_ppm:
                         is_in_dda = True
+                        break
+                    elif dda_fmz > fmz + 1:
+                        break
                 if is_in_dda:
                     for rule in rules:
                         if rule.static:
