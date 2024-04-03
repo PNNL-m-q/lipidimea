@@ -40,7 +40,7 @@ docs:
 
 # grab the current version from the Python package and update package.json
 version:
-	@echo "-> updating GUI version from LipidIMEA Python package"
+	@echo "-> updating GUI version from lipidimea Python package"
 	@python3 update_version.py
 
 # clean up generated files in dist and out

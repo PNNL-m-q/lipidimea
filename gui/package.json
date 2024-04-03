@@ -30,7 +30,7 @@
         "asar": false,
         "platform": "darwin",
         "extraResource": [
-          "../LipidIMEA"
+          "../lipidimea"
         ]
       },
       "makers": [

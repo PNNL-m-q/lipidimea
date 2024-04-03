@@ -156,3 +156,6 @@ gui/*.seed
 gui/src/docs/*
 # do track this README, it makes sure that the gui/src/docs/ directory actually gets tracked as well
 !gui/src/docs/README.txt
+
+
+.vscode/

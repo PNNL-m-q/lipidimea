@@ -78,7 +78,7 @@ app.on('activate', () => {
 // Load on DOM
 // Get Defaults Data
 ipcMain.on('getDefaults', (event) => {
-  const defaultsPath = path.join(__dirname, '../../LipidIMEA/_include/default_params.yml');
+  const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yml');
   console.log('YAML Path:', defaultsPath);
 
   fs.readFile(defaultsPath, 'utf8', (err, data) => {
@@ -219,7 +219,7 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
 
 
 
-// Run python script to run the Lipidimea workflow
+// Run python script to run the lipidimea workflow
 // ipcMain.on('run-python-experiment', (event, options) => {
 //   const inputNumber = options.args;
 //   console.log('Experiment input values:', inputNumber);

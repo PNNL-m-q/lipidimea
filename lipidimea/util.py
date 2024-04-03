@@ -1,5 +1,5 @@
 """
-LipidIMEA/util.py
+lipidimea/util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -8,12 +8,18 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import os
+from typing import Optional, Callable
 from sqlite3 import connect
 
-import yaml
+
+# define path to results DB schema file
+_RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3')
 
 
-def create_results_db(f, overwrite=False):
+def create_results_db(f: str, 
+                      overwrite: bool = False,
+                      strict: bool = True
+                      ) -> None:
     """
     creates a sqlite database for results from DDA/DDA data analysis
 
@@ -26,6 +32,10 @@ def create_results_db(f, overwrite=False):
     overwrite : ``bool``, default=False
         if the database file already exists and this flag is True, then overwrite existing database 
         and do not raise the RuntimeError
+    strict : ``bool``, default=True
+        use STRICT constraint on all data tables in results database, set this to False to exclude
+        this constraint and enable backward compatibility with older versions of Python/sqlite3
+        since 3.12 is the first Python version to support the STRICT mode
     """
     # see if the file exists
     if os.path.exists(f):
@@ -38,71 +48,20 @@ def create_results_db(f, overwrite=False):
     con = connect(f)  
     cur = con.cursor()
     # execute SQL script to set up the database
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sql'), 'r') as sql_f:
-        cur.executescript(sql_f.read())
+    with open(_RESULTS_DB_SCHEMA, 'r') as sql_f:
+        content = sql_f.read()
+        # patch in place to remove STRICT constraints if strict flag set to False
+        if not strict:
+            content = content.replace("STRICT", "")
+        cur.executescript(content)
     # save and close the database
     con.commit()
     con.close()
 
 
-def load_default_params():
-    """
-    load the default parameters (only the analysis parameters component, not the complete parameters 
-    with input/output component)
-    
-    Returns
-    -------
-    params : ``dict(...)``
-        analysis parameter dict component of parameters, with all default values
-    """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yml'), 'r') as yf:
-        defaults = yaml.safe_load(yf)
-    params = {}
-    for top_lvl in ['dda', 'dia', 'annotation']:
-        params[top_lvl] = {section: {param: value['default'] for param, value in sec_params.items() if param != 'display_name'} for section, sec_params in defaults[top_lvl].items() if section != 'display_name'}
-    params['misc'] = {param: value['default'] for param, value in defaults['misc'].items() if param != 'display_name'}
-    return params
-
-
-def load_params(params_file):
-    """
-    load parameters from a YAML file, returns a dict with the params
-    
-    Parameters
-    ----------
-    params_file : ``str``
-        filename/path of parameters file to load (as YAML)
-
-    Returns
-    -------
-    input_output : ``dict(...)``
-        input/output component of parameters
-    params : ``dict(...)``
-        analysis parameter dict component of parameters
-    """
-    with open(params_file, 'r') as yf:
-        params = yaml.safe_load(yf)
-    return params['input_output'], params['params']
-
-
-def save_params(input_output, params, params_file):
-    """
-    save analysis parameters along with input/output info
-
-    Parameters
-    ----------
-    input_output : ``dict(...)``
-        input/output component of parameters
-    params : ``dict(...)``
-        analysis parameter dict component of parameters
-    params_file : ``str``
-        filename/path to save parameters file (as YAML)
-    """
-    with open(params_file, 'w') as out:
-        yaml.dump({'input_output': input_output, 'params': params}, out, default_flow_style=False)
-
-
-def debug_handler(debug_flag, debug_cb, msg, pid=None):
+def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: str, 
+                  pid: Optional[int] = None
+                  ) -> None :
     """
     deal with different debugging states automatically 
     
@@ -122,7 +81,7 @@ def debug_handler(debug_flag, debug_cb, msg, pid=None):
         specifies how to dispatch the message, `None` to do nothing
     debug_cb : ``func``
         callback function that takes the debugging message as an argument, can be None if
-        debug_flag is not set to 'textcb'
+        debug_flag is not set to 'textcb' or 'textcb_pid'
     msg : ``str``
         debugging message (automatically prepended with "DEBUG: ")
     pid : ``int``, optional

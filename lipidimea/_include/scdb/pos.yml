@@ -1,0 +1,22 @@
+# These defaults come from lipids identified from NIST SRM1950 plasma
+LMFA0707: ["[M+H]+"]  # CAR
+LMGP0101: ["[M+H]+", "[M+Na]+"]  # PC
+LMGP0102: ["[M+H]+", "[M+Na]+"]  # PC O-
+LMGP0103: ["[M+H]+", "[M+Na]+"]  # PC P-
+LMGP0105: ["[M+H]+", "[M+Na]+"]  # LPC 
+LMGP0106: ["[M+H]+", "[M+Na]+"]  # LPC O-
+LMGP0107: ["[M+H]+", "[M+Na]+"]  # LPC P-
+LMGP0201: ["[M+H]+", "[M+Na]+"]  # PE
+LMGP0202: ["[M+H]+", "[M+Na]+"]  # PE O-
+LMGP0203: ["[M+H]+", "[M+Na]+"]  # PE P-
+LMGP0205: ["[M+H]+", "[M+Na]+"]  # LPE 
+LMGP0206: ["[M+H]+", "[M+Na]+"]  # LPE O-
+LMGP0207: ["[M+H]+", "[M+Na]+"]  # LPE P-
+LMGL0201: ["[M+NH4]+", "[M+Na]+", "[M+H-H2O]+"]  # DG
+LMGL0301: ["[M+NH4]+", "[M+Na]+", "[M+H-H2O]+"]  # TG
+LMGL0302: ["[M+NH4]+", "[M+Na]+", "[M+H-H2O]+"]  # TG O-
+LMSP0201: ["[M+H]+", "[M+H-H2O]+"]  # Cer
+LMSP0501AA: ["[M+H]+", "[M+H-H2O]+"]  # HexCer
+LMSP0501AB: ["[M+H]+", "[M+H-H2O]+"]  # Hex2Cer
+LMSP0301: ["[M+H]+", "[M+Na]+"]  # SM
+LMST0102: ["[M+NH4]+", "[M+Na]+"]  # CE

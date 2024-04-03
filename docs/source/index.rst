@@ -1,8 +1,8 @@
-LipidIMEA |LipidIMEA_version|
+lipidimea |lipidimea_version|
 =======================================
 desc
 
-Source code is available at https://github.com/PNNL-m-q/LipidIMEA
+Source code is available at https://github.com/PNNL-m-q/lipidimea
 
 
 .. toctree::
@@ -19,8 +19,9 @@ Source code is available at https://github.com/PNNL-m-q/LipidIMEA
    :caption: API Reference
 
    util
-   lipids
+   params
    msms
+   annotation
 
 
 Contributors

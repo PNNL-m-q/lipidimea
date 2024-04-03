@@ -1,4 +1,4 @@
-LipidIMEA
+lipidimea
 numpydoc
 nbsphinx
 sphinx-js
