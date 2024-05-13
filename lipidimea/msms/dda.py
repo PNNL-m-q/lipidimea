@@ -75,7 +75,7 @@ class _MSMSReaderDDA():
         self.h5 = h5py.File(mza_file, 'r')
         self.f = mza_file
         self.metadata = pd.DataFrame(self.h5['Metadata'][:]).set_index('Scan')
-        self.arrays_mz = pd.DataFrame(self.h5['Arrays_mz'].items(), columns=['Scan', 'Data']).set_index('Scan')
+        self.arrays_mz = pd.DataFrame(self.h5['Arrays_mzbin'].items(), columns=['Scan', 'Data']).set_index('Scan')
         self.arrays_mz.index = self.arrays_mz.index.astype('int64')
         self.arrays_i = pd.DataFrame(self.h5['Arrays_intensity'].items(), columns=['Scan', 'Data']).set_index('Scan')
         self.arrays_i.index = self.arrays_i.index.astype('int64')
@@ -84,10 +84,12 @@ class _MSMSReaderDDA():
             self.metadata.drop(drop_scans, inplace=True)
             self.arrays_mz.drop(drop_scans, inplace=True)
             self.arrays_i.drop(drop_scans, inplace=True)
-        self.ms1_scans = self.metadata[self.metadata['PrecursorScan'] == 0].index.to_numpy()
-        self.ms2_scans = self.metadata[self.metadata['PrecursorScan'] != 0].index.to_numpy()
-        rt = self.metadata[self.metadata['PrecursorScan'] == 0].loc[:, 'RetentionTime'].to_numpy()
+        self.ms1_scans = self.metadata[self.metadata['MSLevel'] == 1].index.to_numpy()
+        self.ms2_scans = self.metadata[self.metadata['MSLevel'] == 2].index.to_numpy()
+        rt = self.metadata[self.metadata['MSLevel'] == 1].loc[:, 'RetentionTime'].to_numpy()
         self.min_rt, self.max_rt = min(rt), max(rt)
+        self.mz_full = self.h5['Full_mz_array'][()]
+        self.min_mz, self.max_mz = min(self.mz_full), max(self.mz_full)
     
     def close(self):
         """
@@ -116,10 +118,11 @@ class _MSMSReaderDDA():
         """
         rts, ins = [], []
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
-        for scan, rt in zip(self.ms1_scans, self.metadata.loc[self.ms1_scans, 'RetentionTime']):
-            if rt_bounds is None or (rt >= rt_bounds[0] and rt <= rt_bounds[1]):  # optionally filter to only include specified RT range
-                smz, sin = np.array([self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']])
-                rts.append(rt)
+        for scan, srt in zip(self.ms1_scans, self.metadata.loc[self.ms1_scans, 'RetentionTime']):
+            if rt_bounds is None or (srt >= rt_bounds[0] and srt <= rt_bounds[1]):  # optionally filter to only include specified RT range
+                smzb, sin = np.array([self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']])
+                smz = self.mz_full[smzb.astype(np.int64)]
+                rts.append(srt)
                 ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
         return np.array([rts, ins])
 
@@ -157,7 +160,7 @@ class _MSMSReaderDDA():
         """
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
         # get peak precursor scans
-        peak_pre_scans = self.metadata[(self.metadata['PrecursorScan'] == 0) & (self.metadata['RetentionTime'] >= rt_min) & (self.metadata['RetentionTime'] <= rt_max)].index.to_numpy()
+        peak_pre_scans = self.metadata[(self.metadata['MSLevel'] == 1) & (self.metadata['RetentionTime'] >= rt_min) & (self.metadata['RetentionTime'] <= rt_max)].index.to_numpy()
         # get peak fragmentation scans
         peak_frag_scans = self.metadata[np.isin(self.metadata['PrecursorScan'], peak_pre_scans) & (self.metadata['PrecursorMonoisotopicMz'] >= mz_min) & (self.metadata['PrecursorMonoisotopicMz'] <= mz_max)].index.to_numpy()
         # precursor m/zs and count of MS2 scans
@@ -232,7 +235,7 @@ class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
             a_mz, a_i = np.zeros(shape=(2, scan_mz.size))
             scan_mz.read_direct(a_mz)
             scan_i.read_direct(a_i)
-            self.arrays_mz_cached[scan] = a_mz
+            self.arrays_mz_cached[scan] = self.mz_full[a_mz.astype(np.int64)]
             self.arrays_i_cached[scan] = a_i
 
     def close(self):
@@ -509,7 +512,7 @@ def extract_dda_features(dda_data_file: MzaFilePath,
     # initialize the MSMS reader
     rdr: DdaReader = _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 else _MSMSReaderDDA(dda_data_file, drop_scans)
     # get the list of precursor m/zs
-    pre_mzs: Set[float] = rdr.get_pre_mzs()
+    pre_mzs: Set[float] = rdr.get_pre_mzs()[2000:2100]  # TODO: TEMPORARY SLICE, REMOVE ME!
     debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 
@@ -522,9 +525,9 @@ def extract_dda_features(dda_data_file: MzaFilePath,
                                                                             debug_flag, debug_cb)
     # extract MS2 spectra
     qdata: List[DdaFeature] = _extract_and_fit_ms2_spectra(rdr, 
-                                                         chrom_feats_consolidated, 
-                                                         params.extract_and_fit_ms2_spectra_params, 
-                                                         debug_flag, debug_cb)
+                                                           chrom_feats_consolidated, 
+                                                           params.extract_and_fit_ms2_spectra_params, 
+                                                           debug_flag, debug_cb)
     # do not need the reader anymore
     rdr.close()
     # initialize connection to DDA ids database

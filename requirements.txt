@@ -4,6 +4,6 @@ pandas
 numpy
 scipy
 matplotlib
-yaml
+pyyaml
 mzapy
-lipidlib
+#lipidlib
