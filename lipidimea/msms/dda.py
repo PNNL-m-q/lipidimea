@@ -461,7 +461,10 @@ def _add_features_to_db(cur: ResultsDbCursor,
     """
     pid = os.getpid()
     debug_handler(debug_flag, debug_cb, 'ADDING DDA FEATURES TO DATABASE', pid)
-    qry = 'INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);'
+    qry = """
+        --sqlite3
+        INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);
+    """
     for qd in qdata:
         cur.execute(qry, qd)
 
@@ -621,7 +624,10 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     con: ResultsDbConnection = sqlite3.connect(results_db)
     cur: ResultsDbCursor = con.cursor()
     # step 1, create groups of features based on similar m/z and RT
-    qry_sel = "SELECT dda_feat_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAFeatures"
+    qry_sel = """
+        --sqlite3
+        SELECT dda_feat_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAFeatures;
+    """
     grouped: List[List[Any]] = []
     n_dda_features: int = 0
     for d in cur.execute(qry_sel).fetchall():
@@ -685,7 +691,10 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     n_post: int = n_dda_features - len(drop_fids)                        
     debug_handler(debug_flag, debug_cb, f"CONSOLIDATING DDA FEATURES: {n_dda_features} features -> {n_post} features")
     # step 3, drop features from database
-    qry_drop = "DELETE FROM DDAFeatures WHERE dda_feat_id=?"
+    qry_drop = """
+        --sqlite3
+        DELETE FROM DDAFeatures WHERE dda_feat_id=?;
+    """
     for fid in drop_fids:
         cur.execute(qry_drop, (fid,))
     # commit changes to the database

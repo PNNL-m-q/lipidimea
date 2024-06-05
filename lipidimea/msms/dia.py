@@ -180,7 +180,10 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
     xic_qd = np.array(xic).tobytes() if store_blobs else None
     atd_qd = np.array(atd).tobytes() if store_blobs else None
     ms2_qd = np.array(ms2).tobytes() if store_blobs else None
-    dia_feats_qry = 'INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);'
+    dia_feats_qry = """
+        --sqlite3
+        INSERT INTO _DIAFeatures VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);
+    """
     cur.execute(dia_feats_qry, (None, dda_feat_id, f, ms1_qd, rt, rt_fwhm, rt_pkht, rt_psnr, 
                                 xic_qd, dt, dt_fwhm, dt_pkht, dt_psnr, atd_qd, None, ms2_n_peaks, 
                                 ms2_peaks, ms2_qd))
@@ -188,8 +191,13 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
     dia_feat_id = cur.lastrowid
     # add deconvoluted fragments (if any) to database and associate with this DIA feature
     if decon_frags is not None:
-        decon_frags_qry_1 = 'INSERT INTO DIADeconFragments VALUES (?,?,?,?,?,?);'
-        decon_frags_qry_2 = 'INSERT INTO _DIAFeatsToDeconFrags VALUES (?,?);'
+        decon_frags_qry_1 = """
+            --sqlite3
+            INSERT INTO DIADeconFragments VALUES (?,?,?,?,?,?);
+        """
+        decon_frags_qry_2 = """
+            INSERT INTO _DIAFeatsToDeconFrags VALUES (?,?);
+        """
         for fmz, fxic, fxic_dist, fatd, fatd_dist in decon_frags:
             # convert xic, atd to blobs if store_blobs is True, else make them None
             fxic = np.array(fxic).tobytes() if store_blobs else None
@@ -400,7 +408,10 @@ def extract_dia_features(dia_data_file: MzaFilePath,
     con = connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
     cur = con.cursor()
     # get all of the DDA features, these will be the targets for the DIA data analysis
-    pre_sel_qry = 'SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures'
+    pre_sel_qry = """
+        --sqlite3
+        SELECT dda_feat_id, mz, rt, ms2_peaks FROM DDAFeatures;
+    """
     dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]  
     # extract DIA features for each DDA feature
     n = len(dda_feats)
@@ -504,8 +515,14 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
     con = connect(results_db) 
     cur1, cur2 = con.cursor(), con.cursor()  # one cursor to select data, another to update the db with ccs
     # select out the IDs, m/zs and arrival times of the features
-    sel_qry = "SELECT dia_feat_id, mz, dt FROM _DIAFeatures JOIN DDAFeatures USING(dda_feat_id);"
-    upd_qry = "UPDATE _DIAFeatures SET ccs=? WHERE dia_feat_id=?;"
+    sel_qry = """
+        --sqlite3
+        SELECT dia_feat_id, mz, dt FROM _DIAFeatures JOIN DDAFeatures USING(dda_feat_id);
+    """
+    upd_qry = """
+        --sqlite3
+        UPDATE _DIAFeatures SET ccs=? WHERE dia_feat_id=?;
+    """
     for dia_feat_id, mz, dt in cur1.execute(sel_qry).fetchall():
         cur2.execute(upd_qry, (ccs(mz, dt, t_fix, beta), dia_feat_id))
     # clean up
