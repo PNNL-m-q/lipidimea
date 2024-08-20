@@ -191,16 +191,28 @@ class _MSMSReaderDDA():
         tic_y = self.metadata[self.metadata['PrecursorScan'] == 0].loc[:, 'TIC'].to_numpy()
         return tic_x, tic_y
 
-    def get_pre_mzs(self):
+    def get_pre_mzs(self, max_precursor_mz) :
         """
         returns the set of unique m/z values for all MS/MS scan precursors in this file
+
+        Parameters
+        ----------
+        max_precursor_mz : ``float``
+            maximum precursor m/z to return
 
         Returns
         -------
         pre_mzs : ``set(float)``
             sorted unique precursor m/zs
         """
-        return sorted(set(self.metadata.loc[self.ms2_scans, 'PrecursorMonoisotopicMz'].tolist()))
+        return sorted(
+            set(
+                [
+                    _ for _ in self.metadata.loc[self.ms2_scans, 'PrecursorMonoisotopicMz'].tolist()
+                    if _ <= max_precursor_mz
+                ]
+            )
+        )
 
 
 class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
@@ -512,7 +524,7 @@ def extract_dda_features(dda_data_file: MzaFilePath,
     # initialize the MSMS reader
     rdr: DdaReader = _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 else _MSMSReaderDDA(dda_data_file, drop_scans)
     # get the list of precursor m/zs
-    pre_mzs: Set[float] = rdr.get_pre_mzs()
+    pre_mzs: Set[float] = rdr.get_pre_mzs(params.max_precursor_mz)
     debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 

@@ -60,6 +60,7 @@ _CDF_PARAMS = DdaConsolidateFeaturesParams(
 )
 
 _DDA_PARAMS = DdaParams(
+    1000.,
     _EAFC_PARAMS, 
     _CCF_PARAMS, 
     _EAFMS2_PARAMS, 
@@ -72,7 +73,7 @@ class Test_MSMSReaderDDA(unittest.TestCase):
 
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+        self.assertTrue(False, "no tests implemented yet")
 
 
 class Test_MSMSReaderDDACached(unittest.TestCase):
@@ -80,7 +81,7 @@ class Test_MSMSReaderDDACached(unittest.TestCase):
 
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+        self.assertTrue(False, "no tests implemented yet")
 
 
 class Test_ExtractAndFitChroms(unittest.TestCase):

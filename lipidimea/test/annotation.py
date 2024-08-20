@@ -332,7 +332,7 @@ class TestAnnotateLipids(unittest.TestCase):
 
     def test_AL_not_implemented(self):
         """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+        self.assertTrue(False, "no tests implemented yet")
 
 
 if __name__ == "__main__":

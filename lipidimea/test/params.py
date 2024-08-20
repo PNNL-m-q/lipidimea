@@ -39,7 +39,7 @@ from lipidimea.params import (
     
 #     #def test_NO_TESTS_IMPLEMENTED_YET(self):
 #     #    """ placeholder, remove this function and implement tests """
-#     #    raise NotImplementedError("no tests implemented yet")
+#     #    self.assertTrue(False, "no tests implemented yet")
     
 
 class TestLoadDefaultParams(unittest.TestCase):
