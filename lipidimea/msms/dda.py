@@ -14,6 +14,7 @@ from time import time, sleep
 from itertools import repeat
 import multiprocessing
 import os
+import errno
 
 import h5py
 import hdf5plugin
@@ -518,6 +519,11 @@ def extract_dda_features(dda_data_file: MzaFilePath,
     n_dda_features : ``int``
         number of DDA features extracted
     """
+    # ensure the results database exists
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     pid: int = os.getpid()
     debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
     debug_handler(debug_flag, debug_cb, 'file: {}'.format(dda_data_file), pid)
@@ -631,6 +637,11 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     n_features_post : ``int``
         return the number of features before and after consolidating
     """
+    # ensure the results database exists
+    if not os.path.isfile(results_db):    
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     # no need to get the PID, this should only ever be run in the main process
     # connect to the database
     con: ResultsDbConnection = sqlite3.connect(results_db)

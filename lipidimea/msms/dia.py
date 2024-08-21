@@ -11,6 +11,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 from typing import List, Tuple, Union, Optional, Any, Callable, Dict
 from sqlite3 import connect
 import os
+import errno
 from itertools import repeat
 import multiprocessing
 
@@ -399,6 +400,11 @@ def extract_dia_features(dia_data_file: MzaFilePath,
     n_dia_features : ``int``
         number of DIA features extracted
     """
+    # ensure the results database exists
+    if not os.path.isfile(results_db):    
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     pid = os.getpid()
     debug_handler(debug_flag, debug_cb, 'Extracting DIA FEATURES', pid)
     debug_handler(debug_flag, debug_cb, 'file: {}'.format(dia_data_file), pid)
@@ -505,6 +511,11 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
     beta : ``float``
         single-field DTIMS calibration parameters
     """
+    # ensure the results database exists
+    if not os.path.isfile(results_db):    
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     def ccs(mz, dt, t_fix, beta):
         """ calibrated CCS from m/z, arrival time, and calibration parameters """
         # z = 1, so z can be dropped from the function above

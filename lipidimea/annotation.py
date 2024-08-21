@@ -8,6 +8,8 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 from os import path as op
+import os
+import errno
 from sqlite3 import connect
 from itertools import product
 from typing import Generator, Tuple, List, Optional, Callable
@@ -250,9 +252,10 @@ def remove_lipid_annotations(results_db: ResultsDbPath
         path to DDA-DIA analysis results database
     """
     # ensure results database file exists
-    if not op.isfile(results_db):
-        msg = f"remove_lipid_annotations: results database file: {results_db} not found"
-        raise ValueError(msg)
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
@@ -296,8 +299,9 @@ def _annotate_lipids_sum_composition(results_db: ResultsDbPath,
     """
     # ensure results database file exists
     if not op.isfile(results_db):
-        msg = f"annotate_lipids_sum_composition: results database file: {results_db} not found"
-        raise ValueError(msg)
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     debug_handler(debug_flag, debug_cb, 
                   "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABASE...")
     # remove existing annotations if requested
@@ -369,9 +373,10 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
         number of annotations filtered based on RT ranges
     """
     # ensure results database file exists
-    if not op.isfile(results_db):
-        msg = f"filter_annotations_by_rt_range: results database file: {results_db} not found"
-        raise ValueError(msg)
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     debug_handler(debug_flag, debug_cb, 
                   "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...")
     # ann_rtr_only_keep_defined_classes
@@ -439,9 +444,10 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
         number of feature annotations updated using frag rules
     """
     # ensure results database file exists
-    if not op.isfile(results_db):
-        msg = f"update_lipid_ids_with_frag_rules: results database file: {results_db} not found"
-        raise ValueError(msg)
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     debug_handler(debug_flag, debug_cb, 'UPDATING LIPID ANNOTATIONS USING FRAGMENTATION RULES ...')
     # connect to  results database
     con = connect(results_db) 
