@@ -3,24 +3,15 @@
 -- -- All non "public-facing" tables are named with prepended _ 
 
 
------------ DDA Features --------------
-
--- table with descriptions for columns in DDAFeatures table
-CREATE TABLE _DDAFeatures_COLUMNS (
+-- table with descriptions of columns from all other tables
+CREATE TABLE _TableDescriptions (
+    tab_name TEXT NOT NULL,
     col_name TEXT NOT NULL,
     col_desc TEXT NOT NULL
 );
-INSERT INTO _DDAFeatures_COLUMNS VALUES 
-    ('dda_feat_id', 'unique feature identifier'),
-    ('f', 'raw data file this lipid was identified in'),
-    ('mz', 'precursor m/z'),
-    ('rt', 'observed retention time of chromatographic peak'),
-    ('rt_fwhm', 'FWHM of chromatographic peak'),
-    ('rt_pkht', 'height of chromatographic peak'),
-    ('rt_psnr', 'signal to noise ratio for chromatographic peak'),
-    ('ms2_n_scans', 'number of MS2 scans for this precursor'),
-    ('ms2_n_peaks', 'number of peaks in centroided spectrum'),
-    ('ms2_peaks', 'MS2 spectrum (centroided, unannotated) in single line "{mz}:{intensity} {mz}:{intensity} ..." format');
+
+
+----------- DDA Features --------------
 
 -- table with LC-MS/MS (DDA) features
 CREATE TABLE DDAFeatures (
@@ -36,35 +27,21 @@ CREATE TABLE DDAFeatures (
     ms2_peaks TEXT
 ) STRICT;
 
+-- add table descriptions
+INSERT INTO _TableDescriptions VALUES 
+    ('DDAFeatures', 'dda_feat_id', 'unique feature identifier'),
+    ('DDAFeatures', 'f', 'raw data file this lipid was identified in'),
+    ('DDAFeatures', 'mz', 'precursor m/z'),
+    ('DDAFeatures', 'rt', 'observed retention time of chromatographic peak'),
+    ('DDAFeatures', 'rt_fwhm', 'FWHM of chromatographic peak'),
+    ('DDAFeatures', 'rt_pkht', 'height of chromatographic peak'),
+    ('DDAFeatures', 'rt_psnr', 'signal to noise ratio for chromatographic peak'),
+    ('DDAFeatures', 'ms2_n_scans', 'number of MS2 scans for this precursor'),
+    ('DDAFeatures', 'ms2_n_peaks', 'number of peaks in centroided spectrum'),
+    ('DDAFeatures', 'ms2_peaks', 'MS2 spectrum (centroided, unannotated) in single line "{mz}:{intensity} {mz}:{intensity} ..." format');
+
 
 ----------- DIA Features --------------
-
--- table with descriptions for columns in DIAFeatures table
-CREATE TABLE _DIAFeatures_COLUMNS (
-    col_name TEXT NOT NULL,
-    col_desc TEXT NOT NULL
-);
-INSERT INTO _DIAFeatures_COLUMNS VALUES 
-    ('dia_feat_id', 'unique feature identifier'),
-    ('dda_feat_id', 'reference to corresponding feature in DDAFeatures table'),
-    ('f', 'raw data file this lipid was identified in'),
-    ('mz', 'precursor m/z'),
-    ('ms1', 'partial MS1 spectrum (M-1.5 to M+2.5)'),
-    ('rt', 'observed retention time of chromatographic peak'),
-    ('rt_fwhm', 'FWHM of chromatographic peak'),
-    ('rt_pkht', 'height of chromatographic peak'),
-    ('rt_psnr', 'signal to noise ratio for chromatographic peak'),
-    ('xic', 'raw XIC, numpy.ndarray (as bytes)'),
-    ('dt', 'observed arrival time of ATD peak'),
-    ('dt_fwhm', 'FWHM of ATD peak'),
-    ('dt_pkht', 'height of ATD peak'),
-    ('dt_psnr', 'signal to noise ratio for ATD peak'),
-    ('atd', 'raw ATD, numpy.ndarray (as bytes)'),
-    ('ccs', 'calibrated CCS'),
-    ('ms2_n_peaks', 'number of peaks in centroided spectrum'),
-    ('ms2_peaks', 'MS2 spectrum (centroided, unannotated) in single line "{mz}:{intensity} {mz}:{intensity} ..." format'),
-    ('ms2', 'raw MS2 spectrum, numpy.ndarray (as bytes)'),
-    ('decon_frag_ids', 'identifiers for any deconvoluted fragments, separated by spaces');
 
 -- table with LC-IMS-MS/MS (DIA) features
 -- this is not the public-facing table for querying the data
@@ -90,14 +67,28 @@ CREATE TABLE _DIAFeatures (
     ms2 BLOB
 ) STRICT;
 
--- table with descriptions for columns in DIADeconFragments table
-CREATE TABLE _DIADeconFragments_COLUMNS (
-    col_name TEXT NOT NULL,
-    col_desc TEXT NOT NULL
-);
-INSERT INTO _DIADeconFragments_COLUMNS VALUES 
-    ('decon_frag_id', 'unique fragment identifier'),
-    ('', '');
+-- add table descriptions
+INSERT INTO _TableDescriptions VALUES 
+    ('_DIAFeatures', 'dia_feat_id', 'unique feature identifier'),
+    ('_DIAFeatures', 'dda_feat_id', 'reference to corresponding feature in DDAFeatures table'),
+    ('_DIAFeatures', 'f', 'raw data file this lipid was identified in'),
+    ('_DIAFeatures', 'mz', 'precursor m/z'),
+    ('_DIAFeatures', 'ms1', 'partial MS1 spectrum (M-1.5 to M+2.5)'),
+    ('_DIAFeatures', 'rt', 'observed retention time of chromatographic peak'),
+    ('_DIAFeatures', 'rt_fwhm', 'FWHM of chromatographic peak'),
+    ('_DIAFeatures', 'rt_pkht', 'height of chromatographic peak'),
+    ('_DIAFeatures', 'rt_psnr', 'signal to noise ratio for chromatographic peak'),
+    ('_DIAFeatures', 'xic', 'raw XIC, numpy.ndarray (as bytes)'),
+    ('_DIAFeatures', 'dt', 'observed arrival time of ATD peak'),
+    ('_DIAFeatures', 'dt_fwhm', 'FWHM of ATD peak'),
+    ('_DIAFeatures', 'dt_pkht', 'height of ATD peak'),
+    ('_DIAFeatures', 'dt_psnr', 'signal to noise ratio for ATD peak'),
+    ('_DIAFeatures', 'atd', 'raw ATD, numpy.ndarray (as bytes)'),
+    ('_DIAFeatures', 'ccs', 'calibrated CCS'),
+    ('_DIAFeatures', 'ms2_n_peaks', 'number of peaks in centroided spectrum'),
+    ('_DIAFeatures', 'ms2_peaks', 'MS2 spectrum (centroided, unannotated) in single line "{mz}:{intensity} {mz}:{intensity} ..." format'),
+    ('_DIAFeatures', 'ms2', 'raw MS2 spectrum, numpy.ndarray (as bytes)'),
+    ('_DIAFeatures', 'decon_frag_ids', 'identifiers for any deconvoluted fragments, separated by spaces');
 
 -- table containing data for deconvoluted fragments from DIA features
 CREATE TABLE DIADeconFragments (
@@ -109,13 +100,20 @@ CREATE TABLE DIADeconFragments (
     atd_dist REAL NOT NULL
 ) STRICT;
 
+-- add table descriptions
+INSERT INTO _DIADeconFragments_COLUMNS VALUES 
+    ('DIADeconFragments', 'decon_frag_id', 'unique fragment identifier'),
+    ('DIADeconFragments', 'mz', 'fragment m/z'),
+    ('DIADeconFragments', 'xic', 'raw fragment XIC, numpy.ndarray (as bytes)'),
+    ('DIADeconFragments', 'xic_dist', 'distance metric, relative to precursor XIC'),
+    ('DIADeconFragments', 'atd', 'raw fragment ATD, numpy.ndarray (as bytes)'),
+    ('DIADeconFragments', 'atd_dist', 'distance metric, relative to precursor ATD');
 
 -- table for mapping DIA feature IDs to deconvoluted fragment IDs
 CREATE TABLE _DIAFeatsToDeconFrags (
     dia_feat_id INTEGER NOT NULL,
     decon_frag_id INTEGER NOT NULL
 ) STRICT;
-
 
 -- view FROM _DIAFeatures table that adds a generated column with deconvoluted fragment IDs
 -- this serves as the public-facing table for querying the data
