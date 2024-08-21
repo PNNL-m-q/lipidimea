@@ -11,12 +11,14 @@ import os
 from typing import Optional, Callable
 from sqlite3 import connect
 
+from lipidimea.typing import ResultsDbPath
+
 
 # define path to results DB schema file
 _RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3')
 
 
-def create_results_db(f: str, 
+def create_results_db(results_file: ResultsDbPath, 
                       overwrite: bool = False,
                       strict: bool = True
                       ) -> None:
@@ -27,7 +29,7 @@ def create_results_db(f: str,
 
     Parameters
     ----------
-    f : ``str``
+    results_file : ``ResultsDbPath``
         filename/path of the database
     overwrite : ``bool``, default=False
         if the database file already exists and this flag is True, then overwrite existing database 
@@ -38,19 +40,19 @@ def create_results_db(f: str,
         since 3.12 is the first Python version to support the STRICT mode
     """
     # see if the file exists
-    if os.path.exists(f):
+    if os.path.exists(results_file):
         if overwrite:
-            os.remove(f)
+            os.remove(results_file)
         else:
             msg = 'create_results_db: results database file ({}) already exists'
-            raise RuntimeError(msg.format(f))
+            raise RuntimeError(msg.format(results_file))
     # initial connection creates the DB
-    con = connect(f)  
+    con = connect(results_file)  
     cur = con.cursor()
     # execute SQL script to set up the database
     with open(_RESULTS_DB_SCHEMA, 'r') as sql_f:
         content = sql_f.read()
-        # patch in place to remove STRICT constraints if strict flag set to False
+        # patch schema in-place to remove STRICT constraints if strict flag set to False
         if not strict:
             content = content.replace("STRICT", "")
         cur.executescript(content)
