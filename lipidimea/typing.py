@@ -31,9 +31,11 @@ type Ms2 = Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
 type Spec = Union[Ms1, Ms2]
 type SpecStr = str
 
+type MzaFileId = int
+type DdaPrecursor = Tuple[None, MzaFileId, float, float, float, float, float, int, Optional[int]]
+
 type DdaReader = Union[_MSMSReaderDDA, _MSMSReaderDDA_Cached]  # type: ignore
 type DdaChromFeat = Tuple[float, float, float, float, float]
-type DdaFeature = Tuple[None, MzaFilePath, float, float, float, float, float, int, Optional[int], Optional[str]]
 
 type DiaDeconFragment = Tuple[float, Xic, float, Atd, float]
 

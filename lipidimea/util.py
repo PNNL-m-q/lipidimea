@@ -11,7 +11,9 @@ import os
 from typing import Optional, Callable
 from sqlite3 import connect
 
-from lipidimea.typing import ResultsDbPath
+from lipidimea.typing import (
+    ResultsDbPath, ResultsDbCursor, MzaFilePath, MzaFileId
+)
 
 
 # define path to results DB schema file
@@ -59,6 +61,21 @@ def create_results_db(results_file: ResultsDbPath,
     # save and close the database
     con.commit()
     con.close()
+
+
+def add_data_file_to_db(cur: ResultsDbCursor, 
+                        data_file_type: str,
+                        data_file_path: MzaFilePath
+                        ) -> MzaFileId :
+    """
+    add a data file to the results database (DataFiles table) and return the corresponding 
+    data file identifier (`int`)
+    """
+    qry = """--sqlite3
+        INSERT INTO DataFiles VALUES (?,?,?,?,?)
+    ;"""
+    cur.execute(qry, (None, data_file_type, data_file_path, None, None))
+    return cur.lastrowid
 
 
 def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: str, 

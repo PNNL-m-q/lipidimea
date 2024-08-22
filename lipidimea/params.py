@@ -57,6 +57,7 @@ class DdaConsolidateFeaturesParams:
 @dataclass
 class DdaParams:
     """ class for organizing DDA data processing parameters """
+    min_precursor_mz: float
     max_precursor_mz: float
     extract_and_fit_chrom_params: DdaExtractAndFitChromsParams
     consolidate_chrom_feats_params: DdaConsolidateChromFeatsParams
