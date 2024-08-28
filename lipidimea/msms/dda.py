@@ -395,7 +395,7 @@ def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat],
 
 
 def _extract_and_fit_ms2_spectra(rdr: DdaReader,
-                                 mza_file_id: MzaFileId,
+                                 dda_file_id: MzaFileId,
                                  chrom_feats_consolidated: List[DdaChromFeat],
                                  params: DdaExtractAndFitMs2SpectraParams,
                                  debug_flag: Optional[str], debug_cb: Optional[Callable] 
@@ -408,6 +408,8 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
     ----------
     rdr : ``_MSMSReaderDDA``
         object for accessing DDA MSMS data from MZA
+    dda_file_id : ``int``
+        file ID for DDA data file
     chrom_feats_consolidated : ``list(tuple(...))``
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     params : ``ExtractAndFitMS2SpectraParams``
@@ -454,17 +456,17 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                                          params.fwhm_min, params.fwhm_max, 
                                                          params.peak_min_dist)
             if len(pkmzs) > 0:
-                precursors.append((None, mza_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, len(pkmzs)))
+                precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, len(pkmzs)))
                 spectra.append(np.array([pkmzs, pkhts]))
             else:
-                precursors.append((None, mza_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, 0))
+                precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, 0))
                 spectra.append(None)
             debug_handler(debug_flag, 
                           debug_cb, 
                           msg + f"-> # MS2 peaks: {len(pkmzs)}", 
                           pid)
         else:
-            precursors.append((None, mza_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, None))
+            precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, None))
             spectra.append(None)
             debug_handler(debug_flag, 
                           debug_cb, 
@@ -564,13 +566,13 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
     # check if the dda_data_file is a path (str) or file ID from the results database (int)
     match dda_data_file:
         case int():
-            mza_file_id: int = dda_data_file
+            dda_file_id: int = dda_data_file
         case str():
             # initialize a connection to results database
             con: ResultsDbConnection = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
             cur: ResultsDbCursor = con.cursor()
             # add the MZA data file to the database and get a file identifier for it
-            mza_file_id: int = add_data_file_to_db(cur, "LC-MS/MS (DDA)", dda_data_file)
+            dda_file_id: int = add_data_file_to_db(cur, "LC-MS/MS (DDA)", dda_data_file)
             # close database connection
             con.commit()
             con.close()
@@ -583,6 +585,7 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
             #       so might as well keep the database as free as possible when access is not needed. 
         case _:
             msg = f"extract_dda_features: invalid type for dda_data_file ({type(dda_data_file)})"
+            raise ValueError(msg)
     # initialize the MSMS reader
     rdr: DdaReader = (
         _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 
@@ -602,7 +605,7 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
                                                                             debug_flag, debug_cb)
     # extract MS2 spectra
     precursors, spectra = _extract_and_fit_ms2_spectra(rdr, 
-                                                       mza_file_id,
+                                                       dda_file_id,
                                                        chrom_feats_consolidated, 
                                                        params.extract_and_fit_ms2_spectra_params, 
                                                        debug_flag, debug_cb)
@@ -750,6 +753,12 @@ def consolidate_dda_features(results_db: ResultsDbPath,
                         #                    first conditional checking for features that contain spectra
                         #                    would become unnecessary and everything could be handled in 
                         #                    the else branch below
+                        # TODO (Dylan Ross): P.S. This is not a problem with the current implementation
+                        #                    because all precursors with MS2 spectra are retained, but if 
+                        #                    the above change is made, then there will need to be some logic
+                        #                    for dealing with entries in DDAFragments that no longer point
+                        #                    to an entry in DDAPrecursors after some DDA precursors are 
+                        #                    dropped or merged.
             else:
                 # none of the features have MSMS
                 # only keep the feature with the highest intensity of the group
@@ -789,3 +798,9 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     return n_dda_features, n_post
 
     
+# TODO (Dylan Ross): Add a function that goes through the DDA precursors and drops the ones in the 
+#                    top/bottom X% in terms of the peak FWHMs. The precursor features that have very
+#                    large or very small FWHMs are probably not good features and getting rid of them
+#                    early will lead to less noise features being included in downstream analyses.
+
+

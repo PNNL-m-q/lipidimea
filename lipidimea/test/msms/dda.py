@@ -369,6 +369,9 @@ class Test_AddPrecursorsAndFragmentsToDb(unittest.TestCase):
 class TestExtractDdaFeatures(unittest.TestCase):
     """ tests for the extract_dda_features function """
 
+    # TODO (Dylan Ross): Add a method to test cases where dda_data_file is provided as a path, an 
+    #                    integer file ID, or some invalid value.
+
     def test_EDF_with_peaks(self):
         """ test extracting DDA features from mock data with peaks """
         # make a fake XIC with two peaks
