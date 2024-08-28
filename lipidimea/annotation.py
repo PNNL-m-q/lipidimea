@@ -532,7 +532,7 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                         if rule.static:
                             rmz = rule.mz(pmz)
                             if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                                fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
+                                fragments_str += f"{rule.label()}->{rmz:.4f};"
                                 updt = True
                                 print('\trule:', rule.label(), rmz)
                                 print("\t\tmatches fragment:", fmz)
@@ -540,7 +540,7 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                             for c, u in sorted(c_u_combos):
                                 rmz = rule.mz(pmz, c, u)
                                 if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                                    fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
+                                    fragments_str += f"{rule.label(c, u)}->{rmz:.4f};"
                                     updt = True
                                     print('\trule:', rule.label(c, u), rmz)
                                     print("\t\tmatches fragment:", fmz)
@@ -553,7 +553,7 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     # clean up
     con.commit()
     con.close()
-    debug_handler(debug_flag, debug_cb, 'UPDATED: {} / {} annotations using fragmentation rules'.format(n_updt, n_anns))
+    debug_handler(debug_flag, debug_cb, f"UPDATED: {n_updt} / {n_anns} annotations using fragmentation rules")
     return n_updt
 
 

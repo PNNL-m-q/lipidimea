@@ -412,7 +412,7 @@ def extract_dia_features(dia_data_file: MzaFilePath,
                                 results_db)
     pid = os.getpid()
     debug_handler(debug_flag, debug_cb, 'Extracting DIA FEATURES', pid)
-    debug_handler(debug_flag, debug_cb, 'file: {}'.format(dia_data_file), pid)
+    debug_handler(debug_flag, debug_cb, f"file: {dia_data_file}", pid)
     # initialize connection to the database
     # increase timeout to avoid errors from database locked by another process
     con = sqlite3.connect(results_db, timeout=120)  

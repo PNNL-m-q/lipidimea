@@ -311,7 +311,7 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
                                 results_db)
     pid: int = os.getpid()
     debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
-    debug_handler(debug_flag, debug_cb, 'file: {}'.format(dda_data_file), pid)
+    debug_handler(debug_flag, debug_cb, f"file: {dda_data_file}", pid)
     # check if the dda_data_file is a path (str) or file ID from the results database (int)
     match dda_data_file:
         case int():

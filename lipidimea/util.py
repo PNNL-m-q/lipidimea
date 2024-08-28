@@ -46,8 +46,8 @@ def create_results_db(results_file: ResultsDbPath,
         if overwrite:
             os.remove(results_file)
         else:
-            msg = 'create_results_db: results database file ({}) already exists'
-            raise RuntimeError(msg.format(results_file))
+            msg = f"create_results_db: results database file ({results_file}) already exists"
+            raise RuntimeError(msg)
     # initial connection creates the DB
     con = connect(results_file)  
     cur = con.cursor()
@@ -108,11 +108,11 @@ def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: 
     """
     if debug_flag is not None:
         pid_flag = 'pid' in debug_flag
-        lbl = '<pid: {}> '.format(pid) if pid_flag else ''
-        msg = lbl + 'DEBUG: ' + msg
-        if debug_flag in ['text', 'text_pid']:
+        lbl = f"<pid: {pid}> " if pid_flag else ""
+        msg = lbl + "DEBUG: " + msg
+        if debug_flag in ["text", "text_pid"]:
             print(msg, flush=True)
-        if debug_flag in ['textcb', 'textcb_pid']:
+        if debug_flag in ["textcb", "textcb_pid"]:
             if debug_cb is not None:
                 debug_cb(msg)
             else:

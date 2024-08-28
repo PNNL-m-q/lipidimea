@@ -44,7 +44,7 @@ def ms2_to_str(mzs: npt.NDArray[np.float64], iis: npt.NDArray[np.float64]
         raise ValueError(msg)        
     s = ''
     for mz, i in zip(mzs, iis):
-        s += '{:.4f}:{:.0f} '.format(mz, i)
+        s += f"{mz:.4f}:{i:.0f} "
     return s.rstrip()
 
 
