@@ -16,10 +16,8 @@ import multiprocessing
 import os
 import errno
 
-import h5py
-import hdf5plugin
 import numpy as np
-import pandas as pd
+from mzapy.dda import MsmsReaderDda, MsmsReaderDdaCachedMs1
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
 from lipidimea.typing import (
@@ -34,255 +32,6 @@ from lipidimea.params import (
     DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMs2SpectraParams,
     DdaParams
 )
-
-
-class _MSMSReaderDDA():
-    """
-    object for accessing DDA MSMS data from MZA (HDF5) formatted files
-
-    The MZA files created from qTOF DDA data have some peculiarities so a
-    small, purpose-built reader is better than shoehorning the main MZA object for
-    this purpose
-
-    Attributes
-    ----------
-    h5 : ``h5py.File``
-        interface to MZA file (HDF5)
-    f : ``str``
-        path to MZA file
-    metadata : ``pandas.DataFrame``
-        metadata dataframe
-    arrays_mz : ``pandas.DataFrame``
-        m/z dataframe
-    arrays_i : ``pandas.DataFrame``
-        intensity dataframe
-    ms1_scans : ``numpy.ndarray(int)``
-        array of MS1 scans
-    min_rt, max_rt : ``float``
-        minimum/maximum retention time
-    """
-
-    def __init__(self, mza_file, drop_scans):
-        """
-        initialize the reader
-    
-        Parameters
-        ----------
-        mza_file : ``str``
-            path to MZA file
-        drop_scans : ``list(int)``
-            list of scans to drop from the file, can be None if there are not any to drop
-        """
-        self.h5 = h5py.File(mza_file, 'r')
-        self.f = mza_file
-        self.metadata = pd.DataFrame(self.h5['Metadata'][:]).set_index('Scan')
-        self.arrays_mz = pd.DataFrame(self.h5['Arrays_mz'].items(), columns=['Scan', 'Data']).set_index('Scan')
-        self.arrays_mz.index = self.arrays_mz.index.astype('int64')
-        self.arrays_i = pd.DataFrame(self.h5['Arrays_intensity'].items(), columns=['Scan', 'Data']).set_index('Scan')
-        self.arrays_i.index = self.arrays_i.index.astype('int64')
-        if drop_scans is not None:
-            print('dropping scans:', drop_scans)
-            self.metadata.drop(drop_scans, inplace=True)
-            self.arrays_mz.drop(drop_scans, inplace=True)
-            self.arrays_i.drop(drop_scans, inplace=True)
-        self.ms1_scans = self.metadata[self.metadata['PrecursorScan'] == 0].index.to_numpy()
-        self.ms2_scans = self.metadata[self.metadata['PrecursorScan'] != 0].index.to_numpy()
-        rt = self.metadata[self.metadata['PrecursorScan'] == 0].loc[:, 'RetentionTime'].to_numpy()
-        self.min_rt, self.max_rt = min(rt), max(rt)
-    
-    def close(self):
-        """
-        close connection to the MZA file
-        """
-        self.h5.close()
-        
-    def get_chrom(self, mz, mz_tol, rt_bounds=None):
-        """
-        Select a chromatogram (MS1 only) for a target m/z with specified tolerance
-
-        Parameters
-        ----------
-        mz : ``float``
-            target m/z
-        mz_tol : ``float``
-            m/z tolerance
-        rt_bounds : ``tuple(float)``, optional
-            min, max RT range to extract chromatogram
-
-        Returns
-        -------
-        chrom_rts : ``np.ndarray(float)``
-        chrom_ins : ``np.ndarray(float)``
-            chromatogram retention time and intensity components 
-        """
-        rts, ins = [], []
-        mz_min, mz_max = mz - mz_tol, mz + mz_tol
-        for scan, rt in zip(self.ms1_scans, self.metadata.loc[self.ms1_scans, 'RetentionTime']):
-            # optionally filter to only include specified RT range
-            if rt_bounds is None or (rt >= rt_bounds[0] and rt <= rt_bounds[1]):  
-                smz, sin = np.array([self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']])
-                rts.append(rt)
-                ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
-        return np.array([rts, ins])
-
-    def get_msms_spectrum(self, mz, mz_tol, rt_min, rt_max, mz_bin_min, mz_bin_max, mz_bin_size):
-        """
-        Selects all MS2 scans with precursor m/z within tolerance of a target value and retention time 
-        between specified bounds, sums spectra together returning the accumulated spectrum and some 
-        metadata about how many scans were included and what precursor m/zs were included
-        
-        Parameters
-        ----------
-        mz : ``float``
-            target m/z for precursor
-        mz_tol : ``float``
-            m/z tolerance for precursor
-        rt_min : ``float``
-            minimum RT for precursor
-        rt_max : ``float``
-            maximum RT for precursor
-        mz_bin_min : ``float``
-            minimum m/z for m/z binning
-        mz_bin_max : ``float``
-            maximum m/z for m/z binning
-        mz_bin_size : ``float``
-            size of bins for m/z binning
-            
-        Returns
-        -------
-        ms2_mz, ms2_i : ``np.ndarray(float)``
-            mass spectrum
-        n_ms2_scans : ``int``
-            number of ms2 scans in spectrum
-        scan_pre_mzs : ``list(float)``
-            list of precursor m/zs for selected MS/MS spectrum
-        """
-        mz_min, mz_max = mz - mz_tol, mz + mz_tol
-        # get peak precursor scans
-        peak_pre_scans = self.metadata[(self.metadata['PrecursorScan'] == 0) & (self.metadata['RetentionTime'] >= rt_min) & (self.metadata['RetentionTime'] <= rt_max)].index.to_numpy()
-        # get peak fragmentation scans
-        peak_frag_scans = self.metadata[np.isin(self.metadata['PrecursorScan'], peak_pre_scans) & (self.metadata['PrecursorMonoisotopicMz'] >= mz_min) & (self.metadata['PrecursorMonoisotopicMz'] <= mz_max)].index.to_numpy()
-        # precursor m/zs and count of MS2 scans
-        scan_pre_mzs = self.metadata.loc[peak_frag_scans, 'PrecursorMonoisotopicMz'].tolist()
-        # m/z binning parameters
-        mz_bin_range = mz_bin_max - mz_bin_min
-        n_bins = int((mz_bin_max - mz_bin_min) / mz_bin_size) + 1
-        mz_bins = np.linspace(mz_bin_min, mz_bin_max, n_bins)
-        i_bins = np.zeros(mz_bins.shape)
-        mz_to_bin_idx = lambda mz: int(round((mz - mz_bin_min) / mz_bin_range * n_bins, 0))
-        # accumulate MS2 scans together
-        for scan in peak_frag_scans:
-            for m, i in zip(self.arrays_mz.loc[scan, 'Data'], self.arrays_i.loc[scan, 'Data']):
-                idx = mz_to_bin_idx(m)
-                if idx >= 0 and idx < n_bins:
-                    i_bins[idx] += i
-        # return accumulated spectrum
-        return mz_bins, i_bins, len(scan_pre_mzs), scan_pre_mzs
-
-    def get_tic(self):
-        """
-        TIC
-
-        Returns
-        -------
-        tic_rts : ``np.ndarray(float)``
-        tic_ins : ``np.ndarray(float)``
-            TIC retention time and intensity components 
-        """
-        tic_x = self.metadata[self.metadata['PrecursorScan'] == 0].loc[:, 'RetentionTime'].to_numpy()
-        tic_y = self.metadata[self.metadata['PrecursorScan'] == 0].loc[:, 'TIC'].to_numpy()
-        return tic_x, tic_y
-
-    def get_pre_mzs(self, min_precursor_mz, max_precursor_mz) :
-        """
-        returns the set of unique m/z values for all MS/MS scan precursors in this file
-
-        Parameters
-        ----------
-        min_precursor_mz : ``float``
-            minimum precursor m/z to return
-        max_precursor_mz : ``float``
-            maximum precursor m/z to return
-
-        Returns
-        -------
-        pre_mzs : ``set(float)``
-            sorted unique precursor m/zs
-        """
-        return sorted(
-            set(
-                [
-                    _ for _ in self.metadata.loc[self.ms2_scans, 'PrecursorMonoisotopicMz'].tolist()
-                    if _ >= min_precursor_mz and _ <= max_precursor_mz
-                ]
-            )
-        )
-
-
-class _MSMSReaderDDA_Cached(_MSMSReaderDDA):
-    """
-    _MSMSReaderDDA with all arrays_mz and arrays_i data pre-read into memory to reduce 
-    disk access, applicable primarily to extracting chromatograms (MS1) since that takes 
-    much longer than MS2 spectra
-
-    This takes up too much memory when there are multiple processes...
-    """
-
-    def __init__(self, mza_file, drop_scans):
-        """
-        initialize the reader
-    
-        Parameters
-        ----------
-        mza_file : ``str``
-            path to MZA file
-        drop_scans : ``list(int)``
-            list of scans to drop from the file, can be None if there are not any to drop
-        """
-        super().__init__(mza_file, drop_scans)
-        self.arrays_mz_cached = {}
-        self.arrays_i_cached = {}
-        for scan in self.ms1_scans:
-            scan_mz = self.arrays_mz.loc[scan, 'Data']
-            scan_i = self.arrays_i.loc[scan, 'Data']
-            a_mz, a_i = np.zeros(shape=(2, scan_mz.size))
-            scan_mz.read_direct(a_mz)
-            scan_i.read_direct(a_i)
-            self.arrays_mz_cached[scan] = a_mz
-            self.arrays_i_cached[scan] = a_i
-
-    def close(self):
-        """
-        free up memory from cached data then close connection to the MZA file
-        """
-        del self.arrays_mz_cached
-        del self.arrays_i_cached
-        super().close()
-
-    def get_chrom(self, mz, mz_tol):
-        """
-        Select a chromatogram (MS1 only) for a target m/z with specified tolerance
-
-        Parameters
-        ----------
-        mz : ``float``
-            target m/z
-        mz_tol : ``float``
-            m/z tolerance
-
-        Returns
-        -------
-        chrom_rts : ``np.ndarray(float)``
-        chrom_ins : ``np.ndarray(float)``
-            chromatogram retention time and intensity components 
-        """
-        rts, ins = [], []
-        mz_min, mz_max = mz - mz_tol, mz + mz_tol
-        for scan, rt in zip(self.ms1_scans, self.metadata.loc[self.ms1_scans, 'RetentionTime']):
-            smz, sin = self.arrays_mz_cached[scan], self.arrays_i_cached[scan]
-            rts.append(rt)
-            ins.append(np.sum(sin[(smz >= mz_min) & (smz <= mz_max)]))
-        return np.array([rts, ins])
 
 
 def _extract_and_fit_chroms(rdr: DdaReader, 
@@ -448,7 +197,7 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
         ms2 = rdr.get_msms_spectrum(fmz, tol_from_ppm(fmz, params.pre_mz_ppm), rt_min, rt_max, 
                                     params.mz_bin_min, mz_bin_max, params.mz_bin_size)
         mz_bins, i_bins, n_scan_pre_mzs, scan_pre_mzs = ms2
-        msg += '# MS2 scans: {} '.format(n_scan_pre_mzs)
+        msg += f"# MS2 scans: {n_scan_pre_mzs}"
         if n_scan_pre_mzs > 0:
             # find peaks
             pkmzs, pkhts, pkwts = find_peaks_1d_localmax(mz_bins, i_bins,
@@ -588,12 +337,13 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
             raise ValueError(msg)
     # initialize the MSMS reader
     rdr: DdaReader = (
-        _MSMSReaderDDA_Cached(dda_data_file, drop_scans) if cache_ms1 
-        else _MSMSReaderDDA(dda_data_file, drop_scans)
+        MsmsReaderDdaCachedMs1(dda_data_file, drop_scans=drop_scans) 
+        if cache_ms1 
+        else MsmsReaderDda(dda_data_file, drop_scans=drop_scans)
     )
     # get the list of precursor m/zs
     pre_mzs: Set[float] = rdr.get_pre_mzs(params.min_precursor_mz, params.max_precursor_mz)
-    debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
+    debug_handler(debug_flag, debug_cb, f"# precursor m/zs: {len(pre_mzs)}")
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 
                                                               pre_mzs, 

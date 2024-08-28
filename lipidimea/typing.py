@@ -12,7 +12,7 @@ import sqlite3
 
 import numpy as np
 import numpy.typing as npt
-
+from mzapy.dda import MsmsReaderDda, MsmsReaderDdaCachedMs1
 
 # TODO (Dylan Ross): add some descriptions for all of these
 
@@ -34,7 +34,7 @@ type SpecStr = str
 type MzaFileId = int
 type DdaPrecursor = Tuple[None, MzaFileId, float, float, float, float, float, int, Optional[int]]
 
-type DdaReader = Union[_MSMSReaderDDA, _MSMSReaderDDA_Cached]  # type: ignore
+type DdaReader = Union[MsmsReaderDda, MsmsReaderDdaCachedMs1]
 type DdaChromFeat = Tuple[float, float, float, float, float]
 
 type DiaDeconFragment = Tuple[float, Xic, float, Atd, float]
