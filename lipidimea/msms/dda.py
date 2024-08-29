@@ -318,7 +318,8 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
             dda_file_id: int = dda_data_file
         case str():
             # initialize a connection to results database
-            con: ResultsDbConnection = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
+            # increase timeout to avoid errors from database locked by another process
+            con: ResultsDbConnection = sqlite3.connect(results_db, timeout=60)  
             cur: ResultsDbCursor = con.cursor()
             # add the MZA data file to the database and get a file identifier for it
             dda_file_id: int = add_data_file_to_db(cur, "LC-MS/MS (DDA)", dda_data_file)
@@ -342,7 +343,9 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
         else MsmsReaderDda(dda_data_file, drop_scans=drop_scans)
     )
     # get the list of precursor m/zs
-    pre_mzs: Set[float] = rdr.get_pre_mzs(params.min_precursor_mz, params.max_precursor_mz)
+    pre_mzs: Set[float] = rdr.get_pre_mzs()
+    # limit to a specified range 
+    pre_mzs = set([_ for _ in pre_mzs if (_ >= params.min_precursor_mz and _ <= params.max_precursor_mz)])
     debug_handler(debug_flag, debug_cb, f"# precursor m/zs: {len(pre_mzs)}")
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 
