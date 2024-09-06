@@ -36,6 +36,21 @@ from lipidimea.typing import (
 )
 
 
+# TODO: Centralize all of the queries throughout the package into their own module.
+
+# TODO: Use named bindings in queries (especially INSERTs) so that the query data can
+#       be specified using dictionaries. This would make it easier to understand what
+#       information is going into what columns of the database tables without having
+#       to refer to the database schema to determine the order, as is the case now with
+#       the default tuple syntax for doing bindings.
+
+
+# general query for inserting data into the Raw table of the results DB
+_RAW_INSERT_QRY = """--sqlite3
+    INSERT INTO Raw VALUES (?,?,?,?,?,?)
+;"""
+
+
 def _select_xic_peak(target_rt: float, 
                      target_rt_tol: float, 
                      pkrts: List[float], 
@@ -179,7 +194,7 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
                                      dt_fwhm: float, 
                                      dt_pkht: float, 
                                      dt_psnr: float, 
-                                     pre_raws: Tuple[Ms1, Xic, Atd, Ms2],
+                                     pre_raws: Tuple[Ms1, Xic, Atd],
                                      sel_ms2_mzs: List[float], 
                                      sel_ms2_ints: List[float], 
                                      deconvoluted: List[Tuple[bool, Optional[float], Optional[float]]],
@@ -187,29 +202,74 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
                                      store_blobs: bool
                                      ) -> None :
     """ add all of the DIA data to DB for single target """
-    ms2_n_peaks = len(sel_ms2_mzs)
+    ms2_n_peaks: Optional[int] = npks if (npks := len(sel_ms2_mzs)) > 0 else None
     # add the precursor info to the DB
     dia_precursors_qry = """--sqlite3
         INSERT INTO DIAPrecursors VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     ;"""
-    cur.execute(dia_precursors_qry, (None, dda_pre_id, dia_file_id, mz, 
-                                     rt, rt_fwhm, rt_pkht, rt_psnr, 
-                                     dt, dt_fwhm, dt_pkht, dt_psnr,
-                                     None, ms2_n_peaks))
+    dia_pre_qdata = (
+        None,                           # dia_pre_id will be automatically generated
+        dda_pre_id,                     # DDA precursor identifier
+        dia_file_id,                    # DIA file identifier
+        mz,                             # precursor m/z
+        rt, rt_fwhm, rt_pkht, rt_psnr,  # XIC peak parameters (from fit)
+        dt, dt_fwhm, dt_pkht, dt_psnr,  # ATD peak parameters (from fit)
+        None,                           # no CCS for now, that can be added later using calibration
+        ms2_n_peaks                     # number of peaks in the centroided spectrum (can be None if no peaks selected)
+    )
+    cur.execute(dia_precursors_qry, dia_pre_qdata)
     # fetch the DIA feature ID that we just added
-    dia_feat_id = cur.lastrowid
+    dia_pre_id: int = cur.lastrowid
     # add the fragments to the db
     dia_frag_qry = """--sqlite3
         INSERT INTO DIAFragments VALUES (?,?,?,?,?,?,?)
     ;"""
-    for fmz, fint, (decon_flag, xic_dist, atd_dist) in zip(sel_ms2_mzs, sel_ms2_ints, deconvoluted):
-        cur.execute(dia_frag_qry, (None, dia_feat_id, fmz, fint, int(decon_flag), xic_dist, atd_dist))
+    for fmz, fint, (decon_flag, xic_dist, atd_dist), (fxic, fatd) in zip(
+        sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws
+    ):
+        # add the fragment info
+        frag_qdata = (
+            None,               # fragment identifier gets generated automatically
+            dia_pre_id,         # DIA precursor identifier
+            fmz,                # fragment m/z
+            fint,               # fragment intensity
+            int(decon_flag),    # deconvoluted flag, converted from bool to int to store in DB
+            xic_dist,           # xic distance metric (rel. to precursor), can be None
+            atd_dist            # atd distance metric (rel. to precursor), can be None
+        )
+        cur.execute(dia_frag_qry, frag_qdata)
+        # optionally add some raw data
+        if store_blobs:
+            # grab the fragment identifier
+            dia_frag_id: int = cur.lastrowid
+            for farr, raw_type in [(fxic, "DIA_FRAG_XIC"), (fatd, "DIA_FRAG_ATD")]:
+                if farr is not None:
+                    fblob: bytes = np.array(farr).tobytes()
+                    fn: int = len(farr[0])
+                    raw_qdata = (
+                        None,           # raw_id will be automatically generated
+                        raw_type,       # type of raw data being stored (like MS1, XIC, etc.)   
+                        "dia_frag_id",  # type of feature identifier to associate with this raw data
+                        dia_frag_id,    # feature identifier (DIA fragment)
+                        fn,             # number of points in the 2 arrays, makes unpacking easier later on
+                        fblob,          # binary data for the arrays (BLOB)
+                    )
+                    cur.execute(_RAW_INSERT_QRY, raw_qdata)
     # if specified, add raw data to the database
-    # # convert xic, atd, ms2 to blobs if store_blobs is True, else make them None
-    # ms1_qd = np.array(ms1).tobytes() if store_blobs else None
-    # xic_qd = np.array(xic).tobytes() if store_blobs else None
-    # atd_qd = np.array(atd).tobytes() if store_blobs else None
-    # ms2_qd = np.array(ms2).tobytes() if store_blobs else None
+    if store_blobs:
+        # unpack and convert precursor raw data to blobs
+        for pre_arr, raw_type in zip(pre_raws, ["DIA_PRE_MS1", "DIA_PRE_XIC", "DIA_PRE_ATD"]):
+            pre_blob: bytes = np.array(pre_arr).tobytes()
+            pre_n: int = len(pre_arr[0])
+            raw_qdata = (
+                None,           # raw_id will be automatically generated
+                raw_type,       # type of raw data being stored (like MS1, XIC, etc.)   
+                "dia_pre_id",   # type of feature identifier to associate with this raw data
+                dia_pre_id,     # feature identifier (DIA precursor)
+                pre_n,          # number of points in the 2 arrays, makes unpacking easier later on
+                pre_blob,       # binary data for the arrays (BLOB)
+            )
+            cur.execute(_RAW_INSERT_QRY, raw_qdata)
    
 
 # TODO (Dylan Ross): This function could probably benefit from being broken up into a couple
@@ -265,6 +325,9 @@ def _single_target_analysis(n: int,
     n_features : ``int``
         number of features extracted
     """
+    qry_sel_min_max_dda_frags = """--sqlite3
+        SELECT MIN(fmz), MAX(fmz) FROM DDAFragments WHERE dda_pre_id=?
+    ;"""
     qry_sel_dda_frags = """--sqlite3
         SELECT fmz, fint FROM DDAFragments WHERE dda_pre_id=?
     ;"""
@@ -328,10 +391,16 @@ def _single_target_analysis(n: int,
             if dda_ms2_n_peaks is not None and dda_ms2_n_peaks > 0:
                 # extract MS2 spectrum (before deconvolution)
                 # only if there are MS/MS peaks from DDA spectrum
-                # use those as targets
+                # use those as targets? Not really. Currently we are just extracting the whole
+                # MS2 spectrum then doing peak picking and trying to match those up with the DDA
+                # MS2 peaks. So, not really a targeted approach.
+                # one thing we can do though is grab the min/max mz from the DDA MS2 spectrum peaks
+                # and only extract from that range. Could really reduce the amount of data we need 
+                # to pull out of the DIA file, therefore speeding things up.
+                min_fmz, max_fmz = cur.execute(qry_sel_min_max_dda_frags, (dda_pid,)).fetchall()[0]
                 ms2 = rdr.collect_ms2_arrays_by_rt_dt(xic_rt - xic_wt, xic_rt + xic_wt, 
                                                       atd_dt - atd_wt, atd_dt + atd_wt, 
-                                                      mz_bounds=[rdr.min_mz, dda_mz + 25])
+                                                      mz_bounds=[min_fmz - 1, max_fmz + 1])
                 dia_ms2_peaks = find_peaks_1d_localmax(*ms2,
                                                        params.ms2_fit_params.min_rel_height,
                                                        params.ms2_fit_params.min_abs_height,
@@ -359,12 +428,17 @@ def _single_target_analysis(n: int,
                         dtmsg += f" -> deconvoluted: {len([_ for _ in deconvoluted if _[0]])}"
             debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
+            # NOTE: No need to store the full MS2 spectrum as a blob, as it may only be a partial spectrum anyways
+            #       because the data extraction is semi-targeted based on fragments from the DDA MS2 spectrum.
+            #       The fragment info that already gets stored is more than sufficient. Plus at a conceptual level
+            #       we are only dealing in centroided MS2 spectra in this package as a whole, so it does not make
+            #       sense to store the profile data as well (plus plus it takes up a ton of space).
             _add_single_target_results_to_db(cur, 
                                              dda_pid, dia_file_id,
                                              dda_mz,
                                              xic_rt, xic_wt, xic_ht, xic_psnr, 
                                              atd_dt, atd_wt, atd_ht, atd_psnr, 
-                                             (ms1, pre_xic, pre_atd, ms2),
+                                             (ms1, pre_xic, pre_atd),
                                              sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws,
                                              params.store_blobs)
             n_features += 1
@@ -435,7 +509,7 @@ def extract_dia_features(dia_data_file: MzaFilePath,
     pre_sel_qry = """--sqlite3
         SELECT dda_pre_id, mz, rt, ms2_n_peaks FROM DDAPrecursors
     ;"""
-    dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]  
+    dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]
     # extract DIA features for each DDA feature
     n = len(dda_feats)
     n_dia_features: int = 0
