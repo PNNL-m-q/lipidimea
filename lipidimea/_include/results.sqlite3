@@ -95,7 +95,7 @@ INSERT INTO _TableDescriptions VALUES
 -- table with LC-IMS-MS/MS (DIA) precursors
 CREATE TABLE DIAPrecursors (
     dia_pre_id INTEGER PRIMARY KEY,
-    dda_pre_id INT NOT NULL,
+    dda_pre_id INT,
     dfile_id INT NOT NULL,
     mz REAL NOT NULL,
     rt REAL NOT NULL,
@@ -111,7 +111,7 @@ CREATE TABLE DIAPrecursors (
 ) STRICT;
 INSERT INTO _TableDescriptions VALUES 
     ('DIAPrecursors', 'dia_pre_id', 'unique DIA precursor identifier'),
-    ('DIAPrecursors', 'dda_pre_id', 'reference to corresponding precursor in DDAPrecursors table'),
+    ('DIAPrecursors', 'dda_pre_id', 'reference to corresponding precursor in DDAPrecursors table, can be NULL before mapping between DDA/DIA precursors is performed'),
     ('DIAPrecursors', 'dfile_id', 'identifier for the raw data file this feature was extracted from'),
     ('DIAPrecursors', 'mz', 'precursor m/z'),
     ('DIAPrecursors', 'rt', 'observed retention time of chromatographic peak'),
