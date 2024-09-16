@@ -538,10 +538,9 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     n_post: int = n_dda_features - len(drop_fids)                        
     debug_handler(debug_flag, debug_cb, f"CONSOLIDATING DDA FEATURES: {n_dda_features} features -> {n_post} features")
     # step 3, drop features from database
-    qry_drop = """
-        --sqlite3
-        DELETE FROM DDAPrecursors WHERE dda_pre_id=?;
-    """
+    qry_drop = """--sqlite3
+        DELETE FROM DDAPrecursors WHERE dda_pre_id=?
+    ;"""
     for fid in drop_fids:
         cur.execute(qry_drop, (fid,))
     # commit changes to the database
