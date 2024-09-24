@@ -86,7 +86,7 @@ class SumCompLipidDB():
         """
         if c < 16:
             return 2
-        elif c < 20:
+        elif c <= 20:
             return 4
         else:
             return 6
