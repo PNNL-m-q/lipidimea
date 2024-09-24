@@ -252,12 +252,12 @@ def _add_precursors_and_fragments_to_db(cur: ResultsDbCursor,
     """
     pid = os.getpid()
     debug_handler(debug_flag, debug_cb, f'ADDING {len(precursors)} DDA FEATURES TO DATABASE', pid)
-    qry_pre = """--sqlite3
+    qry_pre = """--beginsql
         INSERT INTO DDAPrecursors VALUES (?,?,?,?,?,?,?,?,?)
-    ;"""
-    qry_frag = """--sqlite3
+    --endsql"""
+    qry_frag = """--beginsql
         INSERT INTO DDAFragments VALUES (?,?,?,?)
-    ;"""
+    --endsql"""
     for pre, spec in zip(precursors, spectra):
         cur.execute(qry_pre, pre)
         pre_id = cur.lastrowid
@@ -466,9 +466,9 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     con: ResultsDbConnection = sqlite3.connect(results_db)
     cur: ResultsDbCursor = con.cursor()
     # step 1, create groups of features based on similar m/z and RT
-    qry_sel = """--sqlite3
+    qry_sel = """--beginsql
         SELECT dda_pre_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAPrecursors
-    ;"""
+    --endsql"""
     grouped: List[List[Any]] = []
     n_dda_features: int = 0
     for d in cur.execute(qry_sel).fetchall():
@@ -538,9 +538,9 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     n_post: int = n_dda_features - len(drop_fids)                        
     debug_handler(debug_flag, debug_cb, f"CONSOLIDATING DDA FEATURES: {n_dda_features} features -> {n_post} features")
     # step 3, drop features from database
-    qry_drop = """--sqlite3
+    qry_drop = """--beginsql
         DELETE FROM DDAPrecursors WHERE dda_pre_id=?
-    ;"""
+    --endsql"""
     for fid in drop_fids:
         cur.execute(qry_drop, (fid,))
     # commit changes to the database

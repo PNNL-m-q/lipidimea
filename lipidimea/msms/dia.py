@@ -46,9 +46,9 @@ from lipidimea.typing import (
 
 
 # general query for inserting data into the Raw table of the results DB
-_RAW_INSERT_QRY = """--sqlite3
+_RAW_INSERT_QRY = """--beginsql
     INSERT INTO Raw VALUES (?,?,?,?,?,?)
-;"""
+--endsql"""
 
 
 def _select_xic_peak(target_rt: float, 
@@ -204,9 +204,9 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
     """ add all of the DIA data to DB for single target """
     ms2_n_peaks: Optional[int] = npks if (npks := len(sel_ms2_mzs)) > 0 else None
     # add the precursor info to the DB
-    dia_precursors_qry = """--sqlite3
+    dia_precursors_qry = """--beginsql
         INSERT INTO DIAPrecursors VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    ;"""
+    --endsql"""
     dia_pre_qdata = (
         None,                           # dia_pre_id will be automatically generated
         dda_pre_id,                     # DDA precursor identifier
@@ -221,9 +221,9 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
     # fetch the DIA feature ID that we just added
     dia_pre_id: int = cur.lastrowid
     # add the fragments to the db
-    dia_frag_qry = """--sqlite3
+    dia_frag_qry = """--beginsql
         INSERT INTO DIAFragments VALUES (?,?,?,?,?,?,?)
-    ;"""
+    --endsql"""
     for fmz, fint, (decon_flag, xic_dist, atd_dist), (fxic, fatd) in zip(
         sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws
     ):
@@ -327,12 +327,12 @@ def _single_target_analysis(n: int,
     """
     # TODO: If ignoring the DDA precursor RT works, then get rid of all of the RT-related stuff left over in
     #       this function. Things like unused parameters, the whole RT peak selecting logic, etc.
-    qry_sel_min_max_dda_frags = """--sqlite3
+    qry_sel_min_max_dda_frags = """--beginsql
         SELECT MIN(fmz), MAX(fmz) FROM DDAFragments WHERE dda_pre_id IN ({})
-    ;"""
-    qry_sel_dda_frags = """--sqlite3
+    --endsql"""
+    qry_sel_dda_frags = """--beginsql
         SELECT fmz, fint FROM DDAFragments WHERE dda_pre_id IN ({})
-    ;"""
+    --endsql"""
     n_features: int = 0
     pid = os.getpid()
     msg = f"({i + 1}/{n}) DDA precursor ID: {dda_pid}, m/z: {dda_mz:.4f}, RT: {dda_rt} min -> "
@@ -527,7 +527,7 @@ def extract_dia_features(dia_data_file: MzaFilePath,
     #       matches a particular DDA feature RT we just consider all XIC peaks for the DIA feature
     #       separately and a mapping between the DDA and DIA features can be done later based on 
     #       m/z and RT of the DDA and DIA features.
-    pre_sel_qry = """--sqlite3
+    pre_sel_qry = """--beginsql
         SELECT 
             GROUP_CONCAT(dda_pre_id) AS dda_pre_ids, 
             mz, 
@@ -537,7 +537,7 @@ def extract_dia_features(dia_data_file: MzaFilePath,
             DDAPrecursors
         GROUP BY
             mz
-    ;"""
+    --endsql"""
     dda_feats = [_ for _ in cur.execute(pre_sel_qry).fetchall()]
     # extract DIA features for each DDA feature
     n = len(dda_feats)
@@ -649,12 +649,12 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
     con = sqlite3.connect(results_db) 
     cur1, cur2 = con.cursor(), con.cursor()  # one cursor to select data, another to update the db with ccs
     # select out the IDs, m/zs and arrival times of the features
-    sel_qry = """--sqlite3
+    sel_qry = """--beginsql
         SELECT dia_feat_id, mz, dt FROM _DIAFeatures JOIN DDAFeatures USING(dda_feat_id)
-    ;"""
-    upd_qry = """--sqlite3
+    --endsql"""
+    upd_qry = """--beginsql
         UPDATE _DIAFeatures SET ccs=? WHERE dia_feat_id=?
-    ;"""
+    --endsql"""
     for dia_feat_id, mz, dt in cur1.execute(sel_qry).fetchall():
         cur2.execute(upd_qry, (ccs(mz, dt, t_fix, beta), dia_feat_id))
     # clean up

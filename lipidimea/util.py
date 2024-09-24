@@ -71,9 +71,9 @@ def add_data_file_to_db(cur: ResultsDbCursor,
     add a data file to the results database (DataFiles table) and return the corresponding 
     data file identifier (`int`)
     """
-    qry = """--sqlite3
+    qry = """--beginsql
         INSERT INTO DataFiles VALUES (?,?,?,?,?)
-    ;"""
+    --endsql"""
     cur.execute(qry, (None, data_file_type, data_file_path, None, None))
     return cur.lastrowid
 

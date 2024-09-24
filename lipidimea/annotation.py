@@ -49,7 +49,7 @@ class SumCompLipidDB():
     def _init_db(self
                  ) -> None :
         """ initialize DB in memory and set up SumCompLipids table """
-        create_qry = """--sqlite3
+        create_qry = """--beginsql
         CREATE TABLE SumCompLipids (
             lmid_prefix TEXT NOT NULL, 
             sum_c INT NOT NULL,
@@ -58,7 +58,7 @@ class SumCompLipidDB():
             adduct TEXT NOT NULL,
             mz REAL NOT NULL
         ) STRICT
-        ;"""
+        --endsql"""
         # create the database in memory
         self._con = connect(':memory:')
         self._cur = self._con.cursor()
@@ -187,9 +187,9 @@ class SumCompLipidDB():
         # TODO (Dylan Ross): validate the structure of the data from the YAML config file
         # iterate over the lipid classes specified in the config and generate m/zs
         # then add to db
-        insert_qry = """--sqlite3
+        insert_qry = """--beginsql
             INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?)
-        ;"""
+        --endsql"""
         for lmaps_prefix, adducts in cnf.items():
             # adjust min unsaturation level for sphingolipids
             max_u = 2 if lmaps_prefix[:4] == 'LMSP' else None
@@ -225,9 +225,9 @@ class SumCompLipidDB():
         """
         mz_tol = tol_from_ppm(mz, ppm)
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
-        qry = """--sqlite3
+        qry = """--beginsql
             SELECT lmid_prefix, name, adduct, mz FROM SumCompLipids WHERE mz>=? AND mz<=?
-        ;"""
+        --endsql"""
         return [_ for _ in self._cur.execute(qry, (mz_min, mz_max)).fetchall()]
 
     def close(self
@@ -314,12 +314,12 @@ def _annotate_lipids_sum_composition(results_db: ResultsDbPath,
     con = connect(results_db) 
     cur = con.cursor()
     # iterate through DIA features and get putative annotations
-    qry_sel = """--sqlite3
-        SELECT dia_feat_id, mz FROM CombinedFeatures
-    ;"""
-    qry_ins = """--sqlite3
+    qry_sel = """--beginsql
+        SELECT dia_pre_id, mz FROM CombinedFeatures
+    --endsql"""
+    qry_ins = """--beginsql
         INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)
-    ;"""
+    --endsql"""
     n_feats, n_feats_annotated, n_anns = 0, 0, 0
     for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
         n_feats += 1
@@ -387,9 +387,9 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
     cur = con.cursor()
     # iterate through annotations, check if the RT is within specified range 
     anns_to_del = []  # track annotation IDs to delete
-    qry_sel = """--sqlite3
+    qry_sel = """--beginsql
         SELECT ann_id, lmaps_id_prefix, rt FROM Lipids JOIN _DIAFeatures USING(dia_feat_id)
-    ;"""
+    --endsql"""
     n_anns = 0
     for ann_id, lmid_prefix, rt in cur.execute(qry_sel).fetchall():
         n_anns += 1
@@ -400,9 +400,9 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
         else:
             anns_to_del.append(ann_id)
     # delete any annotations not within specified RT range
-    qry_del = """--sqlite3
+    qry_del = """--beginsql
         DELETE FROM Lipids WHERE ann_id=?
-    ;"""
+    --endsql"""
     for ann_id in anns_to_del:
         cur.execute(qry_del, (ann_id,))
     # clean up
@@ -449,7 +449,7 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     n_anns = cur.execute('SELECT COUNT(*) FROM Lipids;').fetchall()[0][0]
     # iterate through annotations, see if there are annotatable fragments
     # only select out the annotations that have NULL fragments
-    qry_sel1 = """--sqlite3
+    qry_sel1 = """--beginsql
         SELECT 
             ann_id, 
             lmaps_id_prefix, 
@@ -464,11 +464,11 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             JOIN DDAFeatures USING(dda_feat_id) 
         WHERE 
             fragments IS NULL
-    ;"""
+    --endsql"""
     n_updt = 0
-    qry_upd = """--sqlite3
+    qry_upd = """--beginsql
         UPDATE Lipids SET fragments=? WHERE ann_id=?
-    ;"""
+    --endsql"""
     for ann_id, lmid_prefix, lipid_name, pmz, dia_feat_id, dda_ms2_pks, dia_ms2_pks in cur.execute(qry_sel1).fetchall():
         updt = False
         print(ann_id, lmid_prefix, lipid_name, dia_feat_id)
