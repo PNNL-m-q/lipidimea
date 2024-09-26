@@ -28,16 +28,8 @@ from lipidimea.typing import (
 from lipidimea.util import debug_handler
 from lipidimea.msms._util import tol_from_ppm, str_to_ms2
 from lipidimea.params import (
-    SumCompAnnotationParams, FragRuleAnnParams, AnnotationParams
+    AnnotationParams
 )
-
-
-# define paths to default sum composition lipid DB config files
-DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/pos.yml')
-DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/neg.yml')
-
-# define path to default RT ranges config
-DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/rt_ranges/RP.yml')
 
 
 class SumCompLipidDB():
@@ -247,7 +239,7 @@ def remove_lipid_annotations(results_db: ResultsDbPath
     Parameters
     ----------
     results_db : ``str``
-        path to DDA-DIA analysis results database
+        path to LipidIMEA analysis results database
     """
     # ensure results database file exists
     if not os.path.isfile(results_db):
@@ -278,7 +270,7 @@ def add_lmaps_ont(results_db: ResultsDbPath,
     Parameters
     ----------
     results_db : ``str``
-        path to DDA-DIA analysis results database
+        path to LipidIMEA analysis results database
     """
     # connect to  results database
     con = connect(results_db) 
@@ -296,8 +288,7 @@ def add_lmaps_ont(results_db: ResultsDbPath,
 
 
 def annotate_lipids_sum_composition(results_db: ResultsDbPath, 
-                                    scdb_config_yml: YamlFilePath, 
-                                    params: SumCompAnnotationParams,
+                                    params: AnnotationParams,
                                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                                     ) -> Tuple[int, int] :
     """
@@ -307,12 +298,9 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     Parameters
     ----------
     results_db : ``str``
-        path to DDA-DIA analysis results database
-    scdb_config_yml : ``str``
-        path to lipid class config file for generating lipid database
-        use DEFAULT_POS_SCDB_CONFIG or DEFAULT_NEG_SCDB_CONFIG for built in default config files
-    params : ``SumCompAnnotationParams``
-        parameters for lipid annotation by sum composition
+        path to LipidIMEA analysis results database
+    params : ``AnnotationParams``
+        parameters for lipid annotation
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -335,7 +323,10 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
                   "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABASE...")
     # create the sum composition lipid database
     scdb = SumCompLipidDB()
-    scdb.fill_db_from_config(scdb_config_yml, params.fa_min_c, params.fa_max_c, params.fa_odd_c)
+    scdb.fill_db_from_config(params.SumCompAnnParams.config, 
+                             params.SumCompAnnParams.fa_min_c, 
+                             params.SumCompAnnParams.fa_max_c, 
+                             params.SumCompAnnParams.fa_odd_c)
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
@@ -353,7 +344,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
         n_feats += 1
         annotated = False
-        for clmidp, cname, csumc, csumu, cchains, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.mz_ppm):
+        for clmidp, cname, csumc, csumu, cchains, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.SumCompAnnParams.mz_ppm):
             annotated = True
             qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None)
             # add the Lipids entry
@@ -375,7 +366,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
 
 
 def filter_annotations_by_rt_range(results_db: ResultsDbPath, 
-                                   rt_range_config_yml: YamlFilePath,
+                                   params: AnnotationParams,
                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                                    ) -> int :
     """
@@ -385,9 +376,9 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     Parameters
     ----------
     results_db : ``ResultsDbPath``
-        path to DDA-DIA analysis results database
-    rt_ranges_config : ``str``
-        path to YAML config file with lipid class RT ranges, None to use built-in default
+        path to LipidIMEA analysis results database
+    params : ``AnnotationParams``
+        parameters for lipid annotation
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -408,9 +399,7 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
                   "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...")
     # ann_rtr_only_keep_defined_classes
     # load RT ranges
-    rtr_path = op.join(op.dirname(op.dirname(op.abspath(__file__))), "_include/rt_ranges/default_RP.yml")
-    rt_range_config_yml = rtr_path if rt_range_config_yml is None else rt_range_config_yml
-    with open(rt_range_config_yml, 'r') as yf:
+    with open(params.rt_range_config, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
     # TODO (Dylan Ross): validate the structure of the data from the YAML config file
     con = connect(results_db) 
@@ -446,7 +435,7 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
 
 
 def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
-                                     params: FragRuleAnnParams,
+                                     params: AnnotationParams,
                                      debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                                      ) -> None :
     """
@@ -455,7 +444,9 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     Parameters
     ----------
     results_db : ``ResultsDbPath``
-        path to DDA-DIA analysis results database
+        path to LipidIMEA analysis results database
+    params : ``AnnotationParams``
+        parameters for lipid annotation
     debug_flag : ``str``, optional
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``, optional
@@ -507,20 +498,23 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             # load fragmentation rules
             lipid = parse_lipid_name(lipid_name)
             found, rules = load_rules(lipid.lmaps_id_prefix, 'POS')
-            c_u_combos = [_ for _ in get_c_u_combos(lipid, params.fa_min_c, params.fa_max_c, params.fa_odd_c,
+            c_u_combos = [_ for _ in get_c_u_combos(lipid, 
+                                                    params.FragRuleAnnParams.fa_min_c, 
+                                                    params.FragRuleAnnParams.fa_max_c, 
+                                                    params.FragRuleAnnParams.fa_odd_c,
                                                     max_u=SumCompLipidDB.max_u)]
             for ffmz, ffid in zip(map(float, fmzs.split(",")), map(int, fids.split(","))):
                 for rule in rules:
                     if rule.static:
                         rmz = rule.mz(pmz)
                         ppm = _ppm_error(rmz, ffmz)
-                        if abs(ppm) <= params.mz_ppm:
+                        if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
                             cur.execute(qry_add_frag, (lipid_id, ffid, rule.label(), rmz, ppm, None))
                     else:
                         for c, u in sorted(c_u_combos):
                             rmz = rule.mz(pmz, c, u)
                             ppm = _ppm_error(rmz, ffmz)
-                            if abs(ppm) <= params.mz_ppm:
+                            if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
                                 cur.execute(qry_add_frag, (lipid_id, ffid, rule.label(c, u), rmz, ppm, f"{c}:{u}"))
                                 updt = True
                                 #print('\trule:', rule.label(c, u), rmz)
@@ -552,15 +546,21 @@ def annotate_lipids(results_db: ResultsDbPath,
     
     Parameters
     ----------
-
+    results_db : ``ResultsDbPath``
+        path to LipidIMEA analysis results database
+    params : ``AnnotationParams``
+        parameters for lipid annotation
+    scdb_config_yml
     """
     remove_lipid_annotations(results_db)
     add_lmaps_ont(results_db)
-    n_feats_annotated, n_anns = annotate_lipids_sum_composition(results_db, scdb_config_yml, 
-                                                                 params.sum_comp_annotation_params, 
-                                                                 debug_flag=debug_flag, debug_cb=debug_cb)
-    n_feats_filtered = filter_annotations_by_rt_range(results_db, rt_range_config_yml, 
+    n_feats_annotated, n_anns = annotate_lipids_sum_composition(results_db, 
+                                                                scdb_config_yml,
+                                                                params, 
+                                                                debug_flag=debug_flag, debug_cb=debug_cb)
+    n_feats_filtered = filter_annotations_by_rt_range(results_db, 
+                                                      params, 
                                                       debug_flag=debug_flag, debug_cb=debug_cb)
-    n_anns_updated = update_lipid_ids_with_frag_rules(results_db, params.frag_rule_ann_params,
+    n_anns_updated = update_lipid_ids_with_frag_rules(results_db, 
+                                                      params,
                                                       debug_flag=debug_flag, debug_cb=debug_cb)
-    pass

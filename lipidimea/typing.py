@@ -32,11 +32,14 @@ type Spec = Union[Ms1, Ms2]
 type SpecStr = str
 
 type MzaFileId = int
+# (, , , , , , , ,)
 type DdaPrecursor = Tuple[None, MzaFileId, float, float, float, float, float, int, Optional[int]]
 
 type DdaReader = Union[MsmsReaderDda, MsmsReaderDdaCachedMs1]
+# (, , , ,)
 type DdaChromFeat = Tuple[float, float, float, float, float]
 
+# (, , , ,)
 type DiaDeconFragment = Tuple[float, Xic, float, Atd, float]
 
 # (LMID_prefix, lipid_name, sum_c, sum_u, n_chains, adduct, mz)

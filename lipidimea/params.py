@@ -10,8 +10,19 @@ Dylan Ross (dylan.ross@pnnl.gov)
 from typing import Dict, Any, Tuple
 from dataclasses import dataclass
 import os
+from os import path as op
 
 import yaml
+
+from lipidimea.typing import YamlFilePath
+
+
+# define paths to default sum composition lipid DB config files
+DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/pos.yml')
+DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/neg.yml')
+
+# define path to default RT ranges config
+DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/rt_ranges/RP.yml')
 
 
 @dataclass
@@ -126,12 +137,13 @@ class DiaParams:
 
 
 @dataclass
-class SumCompAnnotationParams:
+class SumCompAnnParams:
     """ parameters for initial annotation based on sum composition """
     fa_min_c: int
     fa_max_c: int
     fa_odd_c: bool
     mz_ppm: float
+    config: YamlFilePath
     
 
 @dataclass
@@ -146,8 +158,10 @@ class FragRuleAnnParams:
 @dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
-    sum_comp_annotation_params: SumCompAnnotationParams
-    frag_rule_ann_params: FragRuleAnnParams
+    SumCompAnnParams: SumCompAnnParams
+    rt_range_config: YamlFilePath
+    FragRuleAnnParams: FragRuleAnnParams
+    ionization: str
 
 
 def load_default_params(
