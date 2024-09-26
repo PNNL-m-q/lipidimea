@@ -315,7 +315,7 @@ def _annotate_lipids_sum_composition(results_db: ResultsDbPath,
     cur = con.cursor()
     # iterate through DIA features and get putative annotations
     qry_sel = """--beginsql
-        SELECT dia_pre_id, mz FROM CombinedFeatures
+        SELECT dia_pre_id, mz FROM DIAPrecursors
     --endsql"""
     qry_ins = """--beginsql
         INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)
@@ -388,7 +388,7 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
     # iterate through annotations, check if the RT is within specified range 
     anns_to_del = []  # track annotation IDs to delete
     qry_sel = """--beginsql
-        SELECT ann_id, lmaps_id_prefix, rt FROM Lipids JOIN _DIAFeatures USING(dia_feat_id)
+        SELECT lipid_id, lmid_prefix, rt FROM Lipids JOIN DIAPrecursors USING(dia_pre_id)
     --endsql"""
     n_anns = 0
     for ann_id, lmid_prefix, rt in cur.execute(qry_sel).fetchall():
@@ -401,7 +401,7 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
             anns_to_del.append(ann_id)
     # delete any annotations not within specified RT range
     qry_del = """--beginsql
-        DELETE FROM Lipids WHERE ann_id=?
+        DELETE FROM Lipids WHERE lipid_id=?
     --endsql"""
     for ann_id in anns_to_del:
         cur.execute(qry_del, (ann_id,))
@@ -451,36 +451,33 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     # only select out the annotations that have NULL fragments
     qry_sel1 = """--beginsql
         SELECT 
-            ann_id, 
-            lmaps_id_prefix, 
+            lipid_id, 
+            lmid_prefix, 
             lipid, 
             mz, 
-            dia_feat_id,
-            DDAFeatures.ms2_peaks, 
-            _DIAFeatures.ms2_peaks
+            dia_pre_id,
+            GROUP_CONCAT(fmz)
         FROM 
             Lipids 
-            JOIN _DIAFeatures USING(dia_feat_id) 
-            JOIN DDAFeatures USING(dda_feat_id) 
-        WHERE 
-            fragments IS NULL
+            JOIN DIAPrecursors USING(dia_pre_id) 
+            LEFT JOIN DIAFragments USING(dia_pre_id)
+        GROUP BY 
+            dia_pre_id
     --endsql"""
     n_updt = 0
     qry_upd = """--beginsql
-        UPDATE Lipids SET fragments=? WHERE ann_id=?
+        UPDATE Lipids SET fragments=? WHERE lipid_id=?
     --endsql"""
-    for ann_id, lmid_prefix, lipid_name, pmz, dia_feat_id, dda_ms2_pks, dia_ms2_pks in cur.execute(qry_sel1).fetchall():
+    for lipid_id, lmid_prefix, lipid_name, pmz, dia_pre_id, fmzs in cur.execute(qry_sel1).fetchall():
         updt = False
-        print(ann_id, lmid_prefix, lipid_name, dia_feat_id)
+        print(lipid_id, lmid_prefix, lipid_name, dia_pre_id)
         # TODO (Dylan Ross): Maybe we should just consider all DIA fragments, regardless of whether they 
         #                    are deconvoluted or not?
         # get fragment m/zs
         # qry_sel2 = ("SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags "
         #             "USING(decon_frag_id) WHERE dia_feat_id=?")
         # res = cur.execute(qry_sel2, (dia_feat_id,)).fetchall()
-        dda_fmzs = str_to_ms2(dda_ms2_pks)[0].tolist() if dda_ms2_pks is not None else None
-        dia_fmzs = str_to_ms2(dia_ms2_pks)[0].tolist() if dia_ms2_pks is not None else None
-        if dda_fmzs is not None and dia_fmzs is not None:
+        if fmzs is not None:
             fragments_str = ''
             new_names = set()
             # load fragmentation rules
@@ -511,37 +508,28 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             #     cur.execute(qry_upd, (fragments_str, ann_id))
             # if updt:
             #     n_updt += 1
-            for fmz in dia_fmzs:
-                is_in_dda = False
-                for dda_fmz in dda_fmzs:
-                    if _ppm_error(dda_fmz, fmz) <= params.mz_ppm:
-                        is_in_dda = True
-                        break
-                    elif dda_fmz > fmz + 1:
-                        break
-                if is_in_dda:
-                    for rule in rules:
-                        if rule.static:
-                            rmz = rule.mz(pmz)
-                            if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                                fragments_str += f"{rule.label()}->{rmz:.4f};"
+            for ffmz in map(float, fmzs.split(",")):
+                for rule in rules:
+                    if rule.static:
+                        rmz = rule.mz(pmz)
+                        if abs(rmz - ffmz) <= tol_from_ppm(rmz, params.mz_ppm):
+                            fragments_str += f"{rule.label()}->{rmz:.4f};"
+                            updt = True
+                            print('\trule:', rule.label(), rmz)
+                            print("\t\tmatches fragment:", ffmz)
+                    else:
+                        for c, u in sorted(c_u_combos):
+                            rmz = rule.mz(pmz, c, u)
+                            if abs(rmz - ffmz) <= tol_from_ppm(rmz, params.mz_ppm):
+                                fragments_str += f"{rule.label(c, u)}->{rmz:.4f};"
                                 updt = True
-                                print('\trule:', rule.label(), rmz)
-                                print("\t\tmatches fragment:", fmz)
-                        else:
-                            for c, u in sorted(c_u_combos):
-                                rmz = rule.mz(pmz, c, u)
-                                if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                                    fragments_str += f"{rule.label(c, u)}->{rmz:.4f};"
-                                    updt = True
-                                    print('\trule:', rule.label(c, u), rmz)
-                                    print("\t\tmatches fragment:", fmz)
-                                    # TODO (Dylan Ross): need some logic here to figure out new names
+                                print('\trule:', rule.label(c, u), rmz)
+                                print("\t\tmatches fragment:", ffmz)
+                                # TODO (Dylan Ross): need some logic here to figure out new names
             if fragments_str != '':
-                cur.execute(qry_upd, (fragments_str, ann_id))
+                cur.execute(qry_upd, (fragments_str, lipid_id))
             if updt:
                 n_updt += 1
-
     # clean up
     con.commit()
     con.close()
