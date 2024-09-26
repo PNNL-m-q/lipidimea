@@ -39,4 +39,5 @@ type DdaChromFeat = Tuple[float, float, float, float, float]
 
 type DiaDeconFragment = Tuple[float, Xic, float, Atd, float]
 
-type ScdbLipidId = Tuple[str, str, str, float]
+# (LMID_prefix, lipid_name, sum_c, sum_u, n_chains, adduct, mz)
+type ScdbLipidId = Tuple[str, str, int, int, int, str, float]

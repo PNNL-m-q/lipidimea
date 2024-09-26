@@ -54,6 +54,7 @@ class SumCompLipidDB():
             lmid_prefix TEXT NOT NULL, 
             sum_c INT NOT NULL,
             sum_u INT NOT NULL, 
+            n_chains INT NOT NULL,
             name TEXT NOT NULL,
             adduct TEXT NOT NULL,
             mz REAL NOT NULL
@@ -131,15 +132,15 @@ class SumCompLipidDB():
                 for n_u in range(0, self.max_u(n_c) + 1):
                     fas.append((n_c, n_u))
         # permute over acyl chains
-        sum_comp = {}
+        sum_comp = set()
         for combo in product(fas, repeat=n_chains):
             c, u = 0, 0
             for fac, fau in combo:
                 c += fac
                 u += fau
             comp = (c, u)
-            if sum_comp.get(comp) is None:
-                sum_comp[comp] = comp
+            if comp not in sum_comp:
+                sum_comp.add(comp)
                 yield comp
 
     def __init__(self
@@ -188,7 +189,7 @@ class SumCompLipidDB():
         # iterate over the lipid classes specified in the config and generate m/zs
         # then add to db
         insert_qry = """--beginsql
-            INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?)
+            INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?)
         --endsql"""
         for lmaps_prefix, adducts in cnf.items():
             # adjust min unsaturation level for sphingolipids
@@ -198,7 +199,7 @@ class SumCompLipidDB():
                 lpd = Lipid(lmaps_prefix, sumc, sumu)
                 for adduct in adducts:
                     mz = ms_adduct_mz(lpd.formula, adduct)
-                    qdata = (lpd.lmaps_id_prefix, sumc, sumu, str(lpd), adduct, mz)
+                    qdata = (lpd.lmaps_id_prefix, sumc, sumu, n_chains, str(lpd), adduct, mz)
                     self._cur.execute(insert_qry, qdata)
             
     def get_sum_comp_lipid_ids(self, 
@@ -226,7 +227,7 @@ class SumCompLipidDB():
         mz_tol = tol_from_ppm(mz, ppm)
         mz_min, mz_max = mz - mz_tol, mz + mz_tol
         qry = """--beginsql
-            SELECT lmid_prefix, name, adduct, mz FROM SumCompLipids WHERE mz>=? AND mz<=?
+            SELECT lmid_prefix, name, sum_c, sum_u, n_chains, adduct, mz FROM SumCompLipids WHERE mz>=? AND mz<=?
         --endsql"""
         return [_ for _ in self._cur.execute(qry, (mz_min, mz_max)).fetchall()]
 
@@ -257,17 +258,48 @@ def remove_lipid_annotations(results_db: ResultsDbPath
     con = connect(results_db) 
     cur = con.cursor()
     # drop any existing annotations
-    cur.execute('DELETE FROM Lipids;')
+    cur.execute("DELETE FROM Lipids;")
+    # drop existing sum composition entries for annotations
+    cur.execute("DELETE FROM LipidSumComp;")
     # clean up
     con.commit()
     con.close()
 
 
-def _annotate_lipids_sum_composition(results_db: ResultsDbPath, 
-                                     scdb_config_yml: YamlFilePath, 
-                                     params: SumCompAnnotationParams,
-                                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                     ) -> Tuple[int, int] :
+def add_lmaps_ont(results_db: ResultsDbPath,
+                  ) -> None :
+    """
+    Add category/class/subclass from LipidMAPS ontology (as defined in lipidlib)
+    
+    .. note:: 
+
+        This is necessary for the `LipidMapsLong` view to be populated
+
+    Parameters
+    ----------
+    results_db : ``str``
+        path to DDA-DIA analysis results database
+    """
+    # connect to  results database
+    con = connect(results_db) 
+    cur = con.cursor()
+    # drop any existing entries
+    cur.execute("DELETE FROM _LipidMapsPrefixToLong;")
+    qry = """--beginsql
+        INSERT INTO _LipidMapsPrefixToLong VALUES (?,?,?,?)
+    --endsql"""
+    for k, v in LMAPS.items():
+        cur.execute(qry, (k,) + tuple(v["classification"]))
+    # clean up
+    con.commit()
+    con.close()
+
+
+def annotate_lipids_sum_composition(results_db: ResultsDbPath, 
+                                    scdb_config_yml: YamlFilePath, 
+                                    params: SumCompAnnotationParams,
+                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                    ) -> Tuple[int, int] :
     """
     annotate features from a DDA-DIA data analysis using a generated database of lipids
     at the level of sum composition
@@ -301,12 +333,6 @@ def _annotate_lipids_sum_composition(results_db: ResultsDbPath,
                                 results_db)
     debug_handler(debug_flag, debug_cb, 
                   "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABASE...")
-    # remove existing annotations if requested
-    if params.overwrite:
-        debug_handler(debug_flag, debug_cb, 'removing any existing lipid annotations')
-        remove_lipid_annotations(results_db)
-    else:
-        debug_handler(debug_flag, debug_cb, 'appending new lipid annotations to any existing annotations')
     # create the sum composition lipid database
     scdb = SumCompLipidDB()
     scdb.fill_db_from_config(scdb_config_yml, params.fa_min_c, params.fa_max_c, params.fa_odd_c)
@@ -318,16 +344,22 @@ def _annotate_lipids_sum_composition(results_db: ResultsDbPath,
         SELECT dia_pre_id, mz FROM DIAPrecursors
     --endsql"""
     qry_ins = """--beginsql
-        INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)
+        INSERT INTO Lipids VALUES (?,?,?,?,?,?,?)
+    --endsql"""
+    qry_ins2 = """--beginsql
+        INSERT INTO LipidSumComp VALUES (?,?,?,?)
     --endsql"""
     n_feats, n_feats_annotated, n_anns = 0, 0, 0
     for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
         n_feats += 1
         annotated = False
-        for clmidp, cname, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.mz_ppm):
+        for clmidp, cname, csumc, csumu, cchains, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.mz_ppm):
             annotated = True
-            qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None, None)
+            qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None)
+            # add the Lipids entry
             cur.execute(qry_ins, qdata)
+            # add the LipidSumComp entry
+            cur.execute(qry_ins2, (cur.lastrowid, csumc, csumu, cchains))
             n_anns += 1
         if annotated:
             n_feats_annotated += 1
@@ -342,10 +374,10 @@ def _annotate_lipids_sum_composition(results_db: ResultsDbPath,
     return n_feats_annotated, n_anns
 
 
-def _filter_annotations_by_rt_range(results_db: ResultsDbPath, 
-                                    rt_range_config_yml: YamlFilePath,
-                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                    ) -> int :
+def filter_annotations_by_rt_range(results_db: ResultsDbPath, 
+                                   rt_range_config_yml: YamlFilePath,
+                                   debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                   ) -> int :
     """
     filter feature annotations based on their retention times vs. expected retention time ranges
     by lipid class for a specified chromatographic method
@@ -381,8 +413,6 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
     with open(rt_range_config_yml, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
     # TODO (Dylan Ross): validate the structure of the data from the YAML config file
-    # connect to  results database
-    # TODO (Dylan Ross): check that the results DB exists first
     con = connect(results_db) 
     cur = con.cursor()
     # iterate through annotations, check if the RT is within specified range 
@@ -415,10 +445,10 @@ def _filter_annotations_by_rt_range(results_db: ResultsDbPath,
     return n_anns_filtered 
 
 
-def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
-                                      params: FragRuleAnnParams,
-                                      debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                      ) -> None :
+def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
+                                     params: FragRuleAnnParams,
+                                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                     ) -> None :
     """
     update lipid annotations based on MS/MS spectra and fragmentation rules
 
@@ -456,6 +486,7 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             lipid, 
             mz, 
             dia_pre_id,
+            GROUP_CONCAT(dia_frag_id),
             GROUP_CONCAT(fmz)
         FROM 
             Lipids 
@@ -465,69 +496,36 @@ def _update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             dia_pre_id
     --endsql"""
     n_updt = 0
-    qry_upd = """--beginsql
-        UPDATE Lipids SET fragments=? WHERE lipid_id=?
+    qry_add_frag = """--beginsql
+        INSERT INTO LipidFragments VALUES (?,?,?,?,?,?)
     --endsql"""
-    for lipid_id, lmid_prefix, lipid_name, pmz, dia_pre_id, fmzs in cur.execute(qry_sel1).fetchall():
+    for lipid_id, lmid_prefix, lipid_name, pmz, dia_pre_id, fids, fmzs in cur.execute(qry_sel1).fetchall():
         updt = False
-        print(lipid_id, lmid_prefix, lipid_name, dia_pre_id)
-        # TODO (Dylan Ross): Maybe we should just consider all DIA fragments, regardless of whether they 
-        #                    are deconvoluted or not?
-        # get fragment m/zs
-        # qry_sel2 = ("SELECT mz FROM DIADeconFragments JOIN _DIAFeatsToDeconFrags "
-        #             "USING(decon_frag_id) WHERE dia_feat_id=?")
-        # res = cur.execute(qry_sel2, (dia_feat_id,)).fetchall()
+        #print(lipid_id, lmid_prefix, lipid_name, dia_pre_id)
         if fmzs is not None:
-            fragments_str = ''
             new_names = set()
             # load fragmentation rules
             lipid = parse_lipid_name(lipid_name)
             found, rules = load_rules(lipid.lmaps_id_prefix, 'POS')
             c_u_combos = [_ for _ in get_c_u_combos(lipid, params.fa_min_c, params.fa_max_c, params.fa_odd_c,
                                                     max_u=SumCompLipidDB.max_u)]
-            # for rule in rules:
-            #     if rule.static:
-            #         rmz = rule.mz(pmz)
-            #         for fmz in dia_fmzs:
-            #             if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-            #                 fragments_str += '{}->{:.4f};'.format(rule.label(), rmz)
-            #                 updt = True
-            #                 print('\trule:', rule.label(), rmz)
-            #                 print("\t\tmatches fragment:", fmz)
-            #     else:
-            #         for c, u in sorted(c_u_combos):
-            #             rmz = rule.mz(pmz, c, u)
-            #             for fmz in dia_fmzs:
-            #                 if abs(rmz - fmz) <= tol_from_ppm(rmz, params.mz_ppm):
-            #                     fragments_str += '{}->{:.4f};'.format(rule.label(c, u), rmz)
-            #                     updt = True
-            #                     print('\trule:', rule.label(c, u), rmz)
-            #                     print("\t\tmatches fragment:", fmz)
-            #                     # TODO (Dylan Ross): need some logic here to figure out new names
-            # if fragments_str != '':
-            #     cur.execute(qry_upd, (fragments_str, ann_id))
-            # if updt:
-            #     n_updt += 1
-            for ffmz in map(float, fmzs.split(",")):
+            for ffmz, ffid in zip(map(float, fmzs.split(",")), map(int, fids.split(","))):
                 for rule in rules:
                     if rule.static:
                         rmz = rule.mz(pmz)
-                        if abs(rmz - ffmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                            fragments_str += f"{rule.label()}->{rmz:.4f};"
-                            updt = True
-                            print('\trule:', rule.label(), rmz)
-                            print("\t\tmatches fragment:", ffmz)
+                        ppm = _ppm_error(rmz, ffmz)
+                        if abs(ppm) <= params.mz_ppm:
+                            cur.execute(qry_add_frag, (lipid_id, ffid, rule.label(), rmz, ppm, None))
                     else:
                         for c, u in sorted(c_u_combos):
                             rmz = rule.mz(pmz, c, u)
-                            if abs(rmz - ffmz) <= tol_from_ppm(rmz, params.mz_ppm):
-                                fragments_str += f"{rule.label(c, u)}->{rmz:.4f};"
+                            ppm = _ppm_error(rmz, ffmz)
+                            if abs(ppm) <= params.mz_ppm:
+                                cur.execute(qry_add_frag, (lipid_id, ffid, rule.label(c, u), rmz, ppm, f"{c}:{u}"))
                                 updt = True
-                                print('\trule:', rule.label(c, u), rmz)
-                                print("\t\tmatches fragment:", ffmz)
+                                #print('\trule:', rule.label(c, u), rmz)
+                                #print("\t\tmatches fragment:", ffmz)
                                 # TODO (Dylan Ross): need some logic here to figure out new names
-            if fragments_str != '':
-                cur.execute(qry_upd, (fragments_str, lipid_id))
             if updt:
                 n_updt += 1
     # clean up
@@ -543,11 +541,26 @@ def annotate_lipids(results_db: ResultsDbPath,
                     rt_range_config_yml: YamlFilePath,
                     debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                     ) -> None :
-    n_feats_annotated, n_anns = _annotate_lipids_sum_composition(results_db, scdb_config_yml, 
+    """
+    Perform the full lipid annotation workflow:
+    
+    - remove existing lipid annotations
+    - populate the LipidMAPS ontology info (from lipidlib)
+    - generate initial lipid annotation at the level of sum composition
+    - filter annotations based on retention time ranges
+    - update lipid annotations using fragmentation rules
+    
+    Parameters
+    ----------
+
+    """
+    remove_lipid_annotations(results_db)
+    add_lmaps_ont(results_db)
+    n_feats_annotated, n_anns = annotate_lipids_sum_composition(results_db, scdb_config_yml, 
                                                                  params.sum_comp_annotation_params, 
                                                                  debug_flag=debug_flag, debug_cb=debug_cb)
-    n_feats_filtered = _filter_annotations_by_rt_range(results_db, rt_range_config_yml, 
-                                                       debug_flag=debug_flag, debug_cb=debug_cb)
-    n_anns_updated = _update_lipid_ids_with_frag_rules(results_db, params.frag_rule_ann_params,
-                                                       debug_flag=debug_flag, debug_cb=debug_cb)
+    n_feats_filtered = filter_annotations_by_rt_range(results_db, rt_range_config_yml, 
+                                                      debug_flag=debug_flag, debug_cb=debug_cb)
+    n_anns_updated = update_lipid_ids_with_frag_rules(results_db, params.frag_rule_ann_params,
+                                                      debug_flag=debug_flag, debug_cb=debug_cb)
     pass

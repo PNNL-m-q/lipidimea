@@ -128,7 +128,6 @@ class DiaParams:
 @dataclass
 class SumCompAnnotationParams:
     """ parameters for initial annotation based on sum composition """
-    overwrite: bool
     fa_min_c: int
     fa_max_c: int
     fa_odd_c: bool

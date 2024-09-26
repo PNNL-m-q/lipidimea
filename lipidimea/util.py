@@ -23,7 +23,7 @@ _RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_
 def create_results_db(results_file: ResultsDbPath, 
                       overwrite: bool = False,
                       strict: bool = True
-                      ) -> None:
+                      ) -> None :
     """
     creates a sqlite database for results from DDA/DDA data analysis
 
