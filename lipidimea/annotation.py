@@ -253,6 +253,8 @@ def remove_lipid_annotations(results_db: ResultsDbPath
     cur.execute("DELETE FROM Lipids;")
     # drop existing sum composition entries for annotations
     cur.execute("DELETE FROM LipidSumComp;")
+    # drop existing fragment annotations
+    cur.execute("DELETE FROM LipidFragments;")
     # clean up
     con.commit()
     con.close()
@@ -474,53 +476,58 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
         SELECT 
             lipid_id, 
             lmid_prefix, 
-            lipid, 
+            carbon,
+            unsat,
+            chains, 
             mz, 
-            dia_pre_id,
-            GROUP_CONCAT(dia_frag_id),
+            GROUP_CONCAT(dia_frag_id) AS frag_ids,
             GROUP_CONCAT(fmz)
         FROM 
             Lipids 
+            JOIN LipidSumComp USING(lipid_id)
             JOIN DIAPrecursors USING(dia_pre_id) 
             LEFT JOIN DIAFragments USING(dia_pre_id)
         GROUP BY 
-            dia_pre_id
+            lipid_id
+        HAVING
+            frag_ids IS NOT NULL
     --endsql"""
     n_updt = 0
     qry_add_frag = """--beginsql
         INSERT INTO LipidFragments VALUES (?,?,?,?,?,?)
     --endsql"""
-    for lipid_id, lmid_prefix, lipid_name, pmz, dia_pre_id, fids, fmzs in cur.execute(qry_sel1).fetchall():
-        updt = False
-        #print(lipid_id, lmid_prefix, lipid_name, dia_pre_id)
+    for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
+        update = False
         if fmzs is not None:
             new_names = set()
             # load fragmentation rules
-            lipid = parse_lipid_name(lipid_name)
-            found, rules = load_rules(lipid.lmaps_id_prefix, 'POS')
-            c_u_combos = [_ for _ in get_c_u_combos(lipid, 
-                                                    params.FragRuleAnnParams.fa_min_c, 
-                                                    params.FragRuleAnnParams.fa_max_c, 
-                                                    params.FragRuleAnnParams.fa_odd_c,
-                                                    max_u=SumCompLipidDB.max_u)]
-            for ffmz, ffid in zip(map(float, fmzs.split(",")), map(int, fids.split(","))):
-                for rule in rules:
-                    if rule.static:
-                        rmz = rule.mz(pmz)
+            c_u_combos = list(get_c_u_combos(n_chains, 
+                                             sum_c, 
+                                             sum_u, 
+                                             params.FragRuleAnnParams.fa_min_c, 
+                                             params.FragRuleAnnParams.fa_max_c, 
+                                             params.FragRuleAnnParams.fa_odd_c,
+                                             max_u=SumCompLipidDB.max_u))
+            ffmzs = list(map(float, fmzs.split(",")))
+            ifids = list(map(int, fids.split(",")))
+            _, rules = load_rules(lmid_prefix, params.ionization)
+            for rule in rules:
+                if rule.static:
+                    rmz = rule.mz(pmz)
+                    for ffmz, ifid in zip(ffmzs, ifids):
                         ppm = _ppm_error(rmz, ffmz)
                         if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                            cur.execute(qry_add_frag, (lipid_id, ffid, rule.label(), rmz, ppm, None))
-                    else:
-                        for c, u in sorted(c_u_combos):
-                            rmz = rule.mz(pmz, c, u)
+                            cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, None))
+                else:
+                    for c, u in sorted(c_u_combos):
+                        rmz = rule.mz(pmz, c, u)
+                        for ffmz, ifid in zip(ffmzs, ifids):
                             ppm = _ppm_error(rmz, ffmz)
                             if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                                cur.execute(qry_add_frag, (lipid_id, ffid, rule.label(c, u), rmz, ppm, f"{c}:{u}"))
-                                updt = True
-                                #print('\trule:', rule.label(c, u), rmz)
-                                #print("\t\tmatches fragment:", ffmz)
+                                cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, f"{c}:{u}"))
+                                update = True
                                 # TODO (Dylan Ross): need some logic here to figure out new names
-            if updt:
+            if update:
                 n_updt += 1
     # clean up
     con.commit()

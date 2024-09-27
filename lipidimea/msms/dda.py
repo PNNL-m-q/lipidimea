@@ -34,6 +34,12 @@ from lipidimea.params import (
 )
 
 
+# TODO (Dylan Ross): Change the behavior of the DDA data extraction functions to be more like 
+#                    the lipid annotation functions: pass around one big DdaParams dataclass
+#                    instance and let the functions fetch the parameters they need from it rather
+#                    than passing around different parameter subsets.
+
+
 def _extract_and_fit_chroms(rdr: DdaReader, 
                             pre_mzs: Set[float], 
                             params: DdaExtractAndFitChromsParams,

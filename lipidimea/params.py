@@ -65,6 +65,8 @@ class DdaConsolidateFeaturesParams:
     drop_if_no_ms2: bool
 
 
+# TODO (Dylan Ross): Refactor parameter dataclasses to work more like AnnotationParams
+
 @dataclass
 class DdaParams:
     """ class for organizing DDA data processing parameters """
@@ -123,6 +125,8 @@ class DiaDeconvoluteMs2PeaksParams:
     xic_dist_metric: str
     atd_dist_metric: str
 
+
+# TODO (Dylan Ross): Refactor parameter dataclasses to work more like AnnotationParams
 
 @dataclass
 class DiaParams:

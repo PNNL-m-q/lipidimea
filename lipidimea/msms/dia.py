@@ -36,13 +36,10 @@ from lipidimea.typing import (
 )
 
 
-# TODO: Centralize all of the queries throughout the package into their own module.
-
-# TODO: Use named bindings in queries (especially INSERTs) so that the query data can
-#       be specified using dictionaries. This would make it easier to understand what
-#       information is going into what columns of the database tables without having
-#       to refer to the database schema to determine the order, as is the case now with
-#       the default tuple syntax for doing bindings.
+# TODO (Dylan Ross): Change the behavior of the DDA data extraction functions to be more like 
+#                    the lipid annotation functions: pass around one big DdaParams dataclass
+#                    instance and let the functions fetch the parameters they need from it rather
+#                    than passing around different parameter subsets.
 
 
 # general query for inserting data into the Raw table of the results DB
