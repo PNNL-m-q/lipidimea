@@ -168,7 +168,7 @@ INSERT INTO _TableDescriptions VALUES
     ('Lipids', 'lmaps_id_prefix', 'LipidMAPS ID prefix (reflects lipid category, class, and sub-class)'),
     ('Lipids', 'adduct', 'MS adduct/ionization state'),
     ('Lipids', 'mz_ppm_err', 'mass error in ppm relative to theoretical monoisotopic mass'),
-    ('Lipids', 'ccs_rel_err', 'relative CCS error in percent');
+    ('Lipids', 'ccs_rel_err', 'relative CCS error (from class trend) in percent');
 
 -- map LMID prefix to long versions of LipidMaps category/class/subclass 
 -- populate from lipidlib.lipids.LMAPS
@@ -234,6 +234,7 @@ CREATE TABLE LipidFragments (
     frag_rule TEXT NOT NULL,
     rule_mz REAL NOT NULL,
     ppm REAL NOT NULL,
+    diagnostic INT NOT NULL,
     supports_fa TEXT
 );
 INSERT INTO _TableDescriptions VALUES 
@@ -242,5 +243,6 @@ INSERT INTO _TableDescriptions VALUES
     ('LipidFragments', 'frag_rule', 'description of fragmentation rule'),
     ('LipidFragments', 'rule_mz', 'fragmentation rule m/z'),
     ('LipidFragments', 'ppm', 'ppm error of fragment m/z relative to rule m/z'),
+    ('LipidFragments', 'diagnostic', 'indicates if the fragment is diagnostic for this class (treat as boolean)'),
     ('LipidFragments', 'supports_fa', 'if the fragment annotation supports presence of a particular FA, include it as C:U');
 

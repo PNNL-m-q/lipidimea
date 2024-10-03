@@ -494,7 +494,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     --endsql"""
     n_updt = 0
     qry_add_frag = """--beginsql
-        INSERT INTO LipidFragments VALUES (?,?,?,?,?,?)
+        INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
     for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
         update = False
@@ -517,14 +517,14 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                     for ffmz, ifid in zip(ffmzs, ifids):
                         ppm = _ppm_error(rmz, ffmz)
                         if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                            cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, None))
+                            cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, int(rule.diagnostic), None))
                 else:
                     for c, u in sorted(c_u_combos):
                         rmz = rule.mz(pmz, c, u)
                         for ffmz, ifid in zip(ffmzs, ifids):
                             ppm = _ppm_error(rmz, ffmz)
                             if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                                cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, f"{c}:{u}"))
+                                cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, int(rule.diagnostic), f"{c}:{u}"))
                                 update = True
                                 # TODO (Dylan Ross): need some logic here to figure out new names
             if update:
