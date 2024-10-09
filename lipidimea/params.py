@@ -18,11 +18,18 @@ from lipidimea.typing import YamlFilePath
 
 
 # define paths to default sum composition lipid DB config files
-DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/pos.yml')
-DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/scdb/neg.yml')
+DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                '_include/scdb/pos.yml')
+DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                '_include/scdb/neg.yml')
 
 # define path to default RT ranges config
-DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), '_include/rt_ranges/RP.yml')
+DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                   '_include/rt_ranges/RP.yml')
+
+# define path to literature CCS trends file
+LITERATURE_CCS_TREND_PARAMS: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                    '_include/literature_ccs_trend_params.yml')
 
 
 @dataclass
@@ -164,6 +171,7 @@ class AnnotationParams:
     """ class for organizing lipid annotation parameters """
     SumCompAnnParams: SumCompAnnParams
     rt_range_config: YamlFilePath
+    ccs_trend_percent: float
     FragRuleAnnParams: FragRuleAnnParams
     ionization: str
 

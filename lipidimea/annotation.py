@@ -17,6 +17,9 @@ from typing import Generator, Tuple, List, Optional, Callable
 from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
 import yaml
+import numpy as np
+import numpy.typing as npt
+from scipy.optimize import curve_fit
 
 from lipidlib.lipids import LMAPS, get_c_u_combos, Lipid
 from lipidlib.parser import parse_lipid_name
@@ -28,7 +31,7 @@ from lipidimea.typing import (
 from lipidimea.util import debug_handler
 from lipidimea.msms._util import tol_from_ppm, str_to_ms2
 from lipidimea.params import (
-    AnnotationParams
+    AnnotationParams, LITERATURE_CCS_TREND_PARAMS
 )
 
 
@@ -85,11 +88,11 @@ class SumCompLipidDB():
             return 6
 
     def gen_sum_compositions(self, 
-                             n_chains, 
-                             min_c, 
-                             max_c, 
-                             odd_c, 
-                             max_u=None
+                             n_chains: int, 
+                             min_c: int, 
+                             max_c: int, 
+                             odd_c: bool, 
+                             max_u: Optional[int] = None
                              ) -> Generator[Tuple[int, int], None, None] :
         """ 
         yields all unique sum compositions from combinations of fatty acids that are iterated over
@@ -337,7 +340,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
         SELECT dia_pre_id, mz FROM DIAPrecursors
     --endsql"""
     qry_ins = """--beginsql
-        INSERT INTO Lipids VALUES (?,?,?,?,?,?,?)
+        INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)
     --endsql"""
     qry_ins2 = """--beginsql
         INSERT INTO LipidSumComp VALUES (?,?,?,?)
@@ -348,7 +351,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
         annotated = False
         for clmidp, cname, csumc, csumu, cchains, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.SumCompAnnParams.mz_ppm):
             annotated = True
-            qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None)
+            qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None, None)
             # add the Lipids entry
             cur.execute(qry_ins, qdata)
             # add the LipidSumComp entry
@@ -370,9 +373,9 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
 def filter_annotations_by_rt_range(results_db: ResultsDbPath, 
                                    params: AnnotationParams,
                                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                   ) -> int :
+                                   ) -> Tuple[int, int] :
     """
-    filter feature annotations based on their retention times vs. expected retention time ranges
+    filter lipid annotations based on their retention times vs. expected retention time ranges
     by lipid class for a specified chromatographic method
 
     Parameters
@@ -389,8 +392,9 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
 
     Returns
     -------
-    n_anns_filtered : ``int``
-        number of annotations filtered based on RT ranges
+    n_kept : ``int``
+    n_filt : ``int``
+        number of annotations kept or filtered based on RT ranges
     """
     # ensure results database file exists
     if not os.path.isfile(results_db):
@@ -411,15 +415,19 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     qry_sel = """--beginsql
         SELECT lipid_id, lmid_prefix, rt FROM Lipids JOIN DIAPrecursors USING(dia_pre_id)
     --endsql"""
-    n_anns = 0
+    # track annotations kept and filtered
+    n_kept, n_filt = 0, 0
     for ann_id, lmid_prefix, rt in cur.execute(qry_sel).fetchall():
-        n_anns += 1
         if lmid_prefix in rt_ranges:
             rtmin, rtmax = rt_ranges[lmid_prefix]
             if rt <= rtmin or rt >= rtmax:
                 anns_to_del.append(ann_id)
+                n_filt += 1
+            else: 
+                n_kept += 1
         else:
             anns_to_del.append(ann_id)
+            n_filt += 1
     # delete any annotations not within specified RT range
     qry_del = """--beginsql
         DELETE FROM Lipids WHERE lipid_id=?
@@ -429,11 +437,206 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     # clean up
     con.commit()
     con.close()
-    n_anns_filtered = len(anns_to_del)
     debug_handler(debug_flag, debug_cb, 
-                  f"FILTERED: {n_anns_filtered} / {n_anns} annotations based on lipid class RT ranges")
-    # return the number of annotations that were filtered out
-    return n_anns_filtered 
+                  f"kept: {n_kept}, filtered: {n_filt}")
+    # return the number of annotations that were kept and filtered out
+    return n_kept, n_filt
+
+
+def _fpow(x, a, b, c):
+    """ simple power function for CCS trends """
+    return a * x ** b + c
+
+
+def _fit_observed_trend(mzs: npt.ArrayLike, 
+                        ccss: npt.ArrayLike
+                        ) -> Tuple[Optional[Tuple[float, float, float]], Optional[Exception]] :
+    """
+    fit a m/z vs. CCS trend using `_fpow`
+
+    Returns the fit parameters if fitting was successful, `None` otherwise. 
+    """
+    try:
+        opt, _ = curve_fit(_fpow, mzs, ccss, 
+                           maxfev=int(1e6), 
+                           p0=(10., 0.5, 0.), 
+                           bounds=([0, 0, -np.inf], [np.inf, 1., np.inf])) 
+        return opt, None
+    except Exception as e:
+        return None, e
+
+
+def _point_in_trend(mz: float, 
+                    ccs: float, 
+                    trend_params: Tuple[float, float, float], 
+                    percent: float
+                    ) -> Optional[float] :
+    """
+    test if a point (`mz`, `ccs`) is within `percent` of a trend defined by `trend_params`
+
+    Returns the percent error from the trend if so, otherwise `None`
+    """
+    trend_ccs = _fpow(mz, *trend_params)
+    trend_err = 100 * (ccs - trend_ccs) / trend_ccs
+    if abs(trend_err) <= percent:
+        # point is within trend
+        return trend_err
+    else:
+        # point is outside of trend
+        return None
+
+
+def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath, 
+                                             params: AnnotationParams,
+                                             debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                                             ) -> int :
+    """
+    filter lipid annotations based on their CCS values vs. overall subclass trends
+
+    Lipid annotations are grouped by LipidMAPS subclass, then a m/z vs. CCS trend (based on literature 
+    CCS values) is fetched for that subclass and the annotations are filtered according to whether the 
+    CCS is within `AnnotationParams.ccs_trend_percent` of the trend. If trend parameters are not 
+    already present for a lipid subclass, a trend is instead constructed based only on the annotations
+    themselves and outliers from this trend (using the same percent tolerance) are filtered out.
+
+    Parameters
+    ----------
+    results_db : ``ResultsDbPath``
+        path to LipidIMEA analysis results database
+    params : ``AnnotationParams``
+        parameters for lipid annotation
+    debug_flag : ``str``, optional
+        specifies how to dispatch debugging messages, None to do nothing
+    debug_cb : ``func``, optional
+        callback function that takes the debugging message as an argument, can be None if
+        debug_flag is not set to 'textcb' or 'textcb_pid'
+
+    Returns
+    -------
+    n_kept_lit : ``int``
+    n_filt_lit : ``int``
+        numbers of features kept or filtered out based on literature CCS trends
+    n_kept_obs : ``int``
+    n_filt_obs : ``int``
+        numbers of features kept or filtered out based on observed CCS trends
+    """
+    # ensure results database file exists
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
+    debug_handler(debug_flag, debug_cb, 
+                  "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS CCS TRENDS ...")
+    con = connect(results_db) 
+    cur = con.cursor()
+    # queries
+    lm_sub_qry = """--beginsql
+        SELECT DISTINCT
+            lm_sub, adduct 
+        FROM 
+            LipidMapsShort 
+            JOIN Lipids USING(lipid_id) 
+            JOIN DIAPrecursors USING(dia_pre_id)
+        WHERE 
+            ccs IS NOT NULL
+    --endsql"""
+    ann_qry = """--beginsql
+        SELECT 
+            lipid_id, mz, ccs
+        FROM 
+            Lipids 
+            JOIN LipidMapsShort USING(lipid_id) 
+            JOIN DIAPrecursors USING(dia_pre_id)
+        WHERE 
+            lm_sub=?
+            AND adduct=?
+            AND ccs IS NOT NULL
+    --endsql"""
+    update_qry = """--beginsql
+        UPDATE Lipids SET ccs_rel_err=?, ccs_lit_trend=? WHERE lipid_id=?
+    --endsql"""
+    # load the lipid subclass ccs trends 
+    with open(LITERATURE_CCS_TREND_PARAMS, "r") as yf:
+        lit_ccs_trends = yaml.safe_load(yf)
+    # track lipid annotation IDs to drop
+    drop_lids = []
+    # track the number of annotations kept vs. filtered
+    n_kept_lit, n_filt_lit, n_kept_obs, n_filt_obs = 0, 0, 0, 0
+    # iterate through each lipid subclass from among the annotations
+    for lm_sub, adduct in cur.execute(lm_sub_qry).fetchall():
+        # fetch the lipid IDs, m/zs, and CCS values from all annotations of this subclass
+        res = cur.execute(ann_qry, (lm_sub, adduct)).fetchall()
+        # fetch the CCS trend parameters for this subclass (if available)
+        if (sub_params := lit_ccs_trends.get(lm_sub)) is not None and (trend_params := sub_params.get(adduct)) is not None:
+            debug_handler(debug_flag, debug_cb, 
+                          f"literature CCS trend for subclass {lm_sub} and adduct {adduct} FOUND ({trend_params=})")
+            # filter each annotation based on whether the the m/z and CCS are within
+            # X % of the lipid subclass trend
+            for lid, mz, ccs in res:
+                if (trend_err := _point_in_trend(mz, ccs, 
+                                                trend_params, 
+                                                params.ccs_trend_percent)) is not None:
+                    # update Lipids entry with lipids subclass CCS trend error
+                    # ccs_lit_trend is 1 (True)
+                    cur.execute(update_qry, (trend_err, 1, lid))
+                    n_kept_lit += 1
+                else:
+                    # drop the Lipids entry
+                    drop_lids.append(lid)
+                    n_filt_lit += 1
+        else:
+            debug_handler(debug_flag, debug_cb, 
+                          f"literature CCS trend for subclass {lm_sub} and adduct {adduct} NOT FOUND")
+            # no trend parameters found for this subclass
+            # try to fit a new trend
+            min_points = 5
+            # only proceed if there were actual annotations returned in the last query
+            if len(res) < min_points:
+                # move on to next subclass
+                debug_handler(debug_flag, debug_cb, 
+                              "\t\ttoo few values to fit observed trend")
+                continue
+            mzs, ccss = np.array([_[1:] for _ in res]).T
+            trend_params, trend_err = _fit_observed_trend(mzs, ccss)
+            if trend_params is not None:
+                # success
+                debug_handler(debug_flag, debug_cb, 
+                              f"\t\tfit observed trend ({trend_params=})")
+                for lid, mz, ccs in res:
+                    if (trend_err := _point_in_trend(mz, ccs, 
+                                                    trend_params, 
+                                                    params.ccs_trend_percent)) is not None:
+                        # update Lipids entry with lipids class CCS trend error
+                        # ccs_lit_trend is 0 (False)
+                        cur.execute(update_qry, (trend_err, 0, lid))
+                        n_kept_obs += 1
+                    else:
+                        # drop the Lipids entry
+                        drop_lids.append(lid)
+                        n_filt_obs += 1
+            else:
+                # failure
+                debug_handler(debug_flag, debug_cb, 
+                              f"\t\tfailed to fit trend using observed values ({trend_err})")
+                # drop all associated Lipid IDs
+                to_drop = [_[0] for _ in res]
+                drop_lids += to_drop
+                n_filt_obs += len(to_drop)
+            # report running total of filtering stats after each subclass
+            debug_handler(debug_flag, debug_cb, 
+                          f"\t\tkept:     {n_kept_lit + n_kept_obs} (lit: {n_kept_lit}, obs: {n_kept_obs})")
+            debug_handler(debug_flag, debug_cb, 
+                          f"\t\tfiltered: {n_filt_lit + n_filt_obs} (lit: {n_filt_lit}, obs: {n_filt_obs})")
+    # drop annotations from DB
+    qry_del = """--beginsql
+        DELETE FROM Lipids WHERE lipid_id=?
+    --endsql"""
+    for lid in drop_lids:
+        cur.execute(qry_del, (lid,))
+    # clean up
+    con.commit()
+    con.close()
+    return n_kept_lit, n_filt_lit, n_kept_obs, n_filt_obs
 
 
 def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
@@ -561,13 +764,15 @@ def annotate_lipids(results_db: ResultsDbPath,
     """
     remove_lipid_annotations(results_db)
     add_lmaps_ont(results_db)
-    n_feats_annotated, n_anns = annotate_lipids_sum_composition(results_db, 
-                                                                scdb_config_yml,
-                                                                params, 
-                                                                debug_flag=debug_flag, debug_cb=debug_cb)
-    n_feats_filtered = filter_annotations_by_rt_range(results_db, 
-                                                      params, 
-                                                      debug_flag=debug_flag, debug_cb=debug_cb)
-    n_anns_updated = update_lipid_ids_with_frag_rules(results_db, 
-                                                      params,
-                                                      debug_flag=debug_flag, debug_cb=debug_cb)
+    sum_comp_results = annotate_lipids_sum_composition(results_db,
+                                                       params, 
+                                                       debug_flag=debug_flag, debug_cb=debug_cb)
+    rt_filter_results = filter_annotations_by_rt_range(results_db, 
+                                                       params, 
+                                                       debug_flag=debug_flag, debug_cb=debug_cb)
+    ccs_filter_results = filter_annotations_by_ccs_subclass_trend(results_db,
+                                                                  params,
+                                                                  debug_flag=debug_flag, debug_cb=debug_cb)
+    frag_rule_results = update_lipid_ids_with_frag_rules(results_db, 
+                                                         params,
+                                                         debug_flag=debug_flag, debug_cb=debug_cb)

@@ -159,7 +159,8 @@ CREATE TABLE Lipids (
     lipid TEXT NOT NULL,
     adduct TEXT NOT NULL,
     mz_ppm_err REAL NOT NULL,
-    ccs_rel_err REAL
+    ccs_rel_err REAL,
+    ccs_lit_trend INT
 ) STRICT;
 INSERT INTO _TableDescriptions VALUES 
     ('Lipids', 'lipid_id', 'lipid annotation identifier'),
@@ -168,7 +169,8 @@ INSERT INTO _TableDescriptions VALUES
     ('Lipids', 'lmaps_id_prefix', 'LipidMAPS ID prefix (reflects lipid category, class, and sub-class)'),
     ('Lipids', 'adduct', 'MS adduct/ionization state'),
     ('Lipids', 'mz_ppm_err', 'mass error in ppm relative to theoretical monoisotopic mass'),
-    ('Lipids', 'ccs_rel_err', 'relative CCS error (from class trend) in percent');
+    ('Lipids', 'ccs_rel_err', 'relative CCS error (from class trend) in percent, NULL if no CCS filtering performed'),
+    ('Lipids', 'ccs_lit_trend', 'flag indicating whether a literature trend was used for CCS filtering or not (0=False, 1=True), NULL if no CCS filtering performed');
 
 -- map LMID prefix to long versions of LipidMaps category/class/subclass 
 -- populate from lipidlib.lipids.LMAPS

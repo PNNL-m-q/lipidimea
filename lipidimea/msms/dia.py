@@ -647,13 +647,13 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
     cur1, cur2 = con.cursor(), con.cursor()  # one cursor to select data, another to update the db with ccs
     # select out the IDs, m/zs and arrival times of the features
     sel_qry = """--beginsql
-        SELECT dia_feat_id, mz, dt FROM _DIAFeatures JOIN DDAFeatures USING(dda_feat_id)
+        SELECT dia_pre_id, mz, dt FROM DIAPrecursors
     --endsql"""
     upd_qry = """--beginsql
-        UPDATE _DIAFeatures SET ccs=? WHERE dia_feat_id=?
+        UPDATE DIAPrecursors SET ccs=? WHERE dia_pre_id=?
     --endsql"""
-    for dia_feat_id, mz, dt in cur1.execute(sel_qry).fetchall():
-        cur2.execute(upd_qry, (ccs(mz, dt, t_fix, beta), dia_feat_id))
+    for dia_pre_id, mz, dt in cur1.execute(sel_qry).fetchall():
+        cur2.execute(upd_qry, (ccs(mz, dt, t_fix, beta), dia_pre_id))
     # clean up
     con.commit()
     con.close()
