@@ -340,7 +340,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
         SELECT dia_pre_id, mz FROM DIAPrecursors
     --endsql"""
     qry_ins = """--beginsql
-        INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?)
+        INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?,?)
     --endsql"""
     qry_ins2 = """--beginsql
         INSERT INTO LipidSumComp VALUES (?,?,?,?)
@@ -351,7 +351,11 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
         annotated = False
         for clmidp, cname, csumc, csumu, cchains, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.SumCompAnnParams.mz_ppm):
             annotated = True
-            qdata = (None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), None, None)
+            qdata = (
+                None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), 
+                # ccs_rel_err, ccs_lit_trend, chains (NULL for unknown)
+                None, None, None
+            )
             # add the Lipids entry
             cur.execute(qry_ins, qdata)
             # add the LipidSumComp entry
@@ -681,7 +685,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             lmid_prefix, 
             carbon,
             unsat,
-            chains, 
+            n_chains, 
             mz, 
             GROUP_CONCAT(dia_frag_id) AS frag_ids,
             GROUP_CONCAT(fmz)

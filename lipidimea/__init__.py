@@ -7,7 +7,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 # release.major_version.minor_version
-__version__ = '0.12.19'
+__version__ = '0.12.20'
 
 
 # TODO (Dylan Ross): When migrating to GitHub, convert TODOs across the package into issues.
@@ -28,9 +28,6 @@ __version__ = '0.12.19'
 #                    info out of and putting info into the results database. This would also make
 #                    changing implementation details for the database easier and breaks less stuff 
 #                    throughout the codebase as a result.
-
-
-# TODO: Centralize all of the queries throughout the package into their own module.
 
 
 # TODO: Use named bindings in queries (especially INSERTs) so that the query data can

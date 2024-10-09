@@ -160,7 +160,8 @@ CREATE TABLE Lipids (
     adduct TEXT NOT NULL,
     mz_ppm_err REAL NOT NULL,
     ccs_rel_err REAL,
-    ccs_lit_trend INT
+    ccs_lit_trend INT,
+    chains TEXT
 ) STRICT;
 INSERT INTO _TableDescriptions VALUES 
     ('Lipids', 'lipid_id', 'lipid annotation identifier'),
@@ -170,7 +171,8 @@ INSERT INTO _TableDescriptions VALUES
     ('Lipids', 'adduct', 'MS adduct/ionization state'),
     ('Lipids', 'mz_ppm_err', 'mass error in ppm relative to theoretical monoisotopic mass'),
     ('Lipids', 'ccs_rel_err', 'relative CCS error (from class trend) in percent, NULL if no CCS filtering performed'),
-    ('Lipids', 'ccs_lit_trend', 'flag indicating whether a literature trend was used for CCS filtering or not (0=False, 1=True), NULL if no CCS filtering performed');
+    ('Lipids', 'ccs_lit_trend', 'flag indicating whether a literature trend was used for CCS filtering or not (0=False, 1=True), NULL if no CCS filtering performed'),
+    ('Lipids', 'chains', 'flag indicating degree to which acyl chain composition is known, levels: NULL, "partial", "inferred", "complete"');
 
 -- map LMID prefix to long versions of LipidMaps category/class/subclass 
 -- populate from lipidlib.lipids.LMAPS
@@ -221,13 +223,13 @@ CREATE TABLE LipidSumComp (
     lipid_id INT NOT NULL,
     carbon INT NOT NULL,
     unsat INT NOT NULL,
-    chains INT NOT NULL
+    n_chains INT NOT NULL
 );
 INSERT INTO _TableDescriptions VALUES 
     ('LipidSumComp', 'lipid_id', 'lipid annotation identifier'),
     ('LipidSumComp', 'carbon', 'total carbon count for FAs'),
     ('LipidSumComp', 'unsat', 'total unsaturation count for FAs'),
-    ('LipidSumComp', 'chains', 'number of FAs');
+    ('LipidSumComp', 'n_chains', 'number of FAs');
 
 -- table for tracking annotated lipid fragments
 CREATE TABLE LipidFragments (
