@@ -10,7 +10,7 @@ LMSP0301: [16, 28]  # SM
 LMSP0201: [20, 30]  # Cer
 LMSP0501AA: [19, 29]  # HexCer
 LMSP0501AB: [20, 27]  # Hex2Cer
-LMGP0101: [18, 26]  # PC
+LMGP0101: [16, 26]  # PC
 LMGP0102: [21, 28]  # PC (O-)
 LMGP0103: [21, 28]  # PC (P-)
 LMGP0105: [5, 15]  # PC (lyso)

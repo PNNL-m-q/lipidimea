@@ -12,7 +12,7 @@ import os
 import errno
 from sqlite3 import connect
 from itertools import product
-from typing import Generator, Tuple, List, Optional, Callable
+from typing import Generator, Tuple, List, Optional, Callable, Dict, Iterable
 
 from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
@@ -21,15 +21,15 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
 
-from lipidlib.lipids import LMAPS, get_c_u_combos, Lipid
+from lipidlib.lipids import LMAPS, get_c_u_combos, Lipid, LipidWithChains
 from lipidlib.parser import parse_lipid_name
 from lipidlib._fragmentation_rules import load_rules
 
 from lipidimea.typing import (
-    ScdbLipidId, ResultsDbPath, YamlFilePath
+    ScdbLipidId, ResultsDbPath, ResultsDbCursor, YamlFilePath
 )
 from lipidimea.util import debug_handler
-from lipidimea.msms._util import tol_from_ppm, str_to_ms2
+from lipidimea.msms._util import tol_from_ppm
 from lipidimea.params import (
     AnnotationParams, LITERATURE_CCS_TREND_PARAMS
 )
@@ -351,10 +351,13 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
         annotated = False
         for clmidp, cname, csumc, csumu, cchains, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.SumCompAnnParams.mz_ppm):
             annotated = True
+            # special case: lipids with single chains automatically have inferred acyl chain 
+            # composition instead of unknown
+            chains_flag = "inferred" if cchains == 1 else None
             qdata = (
                 None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), 
-                # ccs_rel_err, ccs_lit_trend, chains (NULL for unknown)
-                None, None, None
+                # ccs_rel_err, ccs_lit_trend, chains 
+                None, None, chains_flag
             )
             # add the Lipids entry
             cur.execute(qry_ins, qdata)
@@ -417,7 +420,13 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     # iterate through annotations, check if the RT is within specified range 
     anns_to_del = []  # track annotation IDs to delete
     qry_sel = """--beginsql
-        SELECT lipid_id, lmid_prefix, rt FROM Lipids JOIN DIAPrecursors USING(dia_pre_id)
+        SELECT 
+            lipid_id, 
+            lmid_prefix, 
+            rt 
+        FROM 
+            Lipids 
+            JOIN DIAPrecursors USING(dia_pre_id)
     --endsql"""
     # track annotations kept and filtered
     n_kept, n_filt = 0, 0
@@ -643,6 +652,156 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
     return n_kept_lit, n_filt_lit, n_kept_obs, n_filt_obs
 
 
+def _copy_lipid_entry_with_new_name_and_chains_flag(results_cur: ResultsDbCursor,
+                                                    lipid_id: int, 
+                                                    lipid_name: str,
+                                                    chains: str) -> int :
+    """
+    make a copy of an entry from the Lipids table with a different name and chains flag
+    return the lipid_id of the newly added entry
+    """
+    qd = list(results_cur.execute("SELECT * FROM Lipids WHERE lipid_id=?", (lipid_id,)).fetchone())
+    qd[0] = None
+    qd[3] = lipid_name
+    qd[-1] = chains
+    results_cur.execute("INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?,?)", qd)
+    return results_cur.lastrowid
+
+
+def _copy_lipid_frag_entries_with_new_lipid_id(results_cur: ResultsDbCursor,
+                                              dia_frag_ids: Iterable[int],
+                                              lipid_id: int
+                                              ) -> None :
+    """
+    make a copy of an entry from the LipidFragments table with a different lipid_id
+    """
+    for dia_frag_id in dia_frag_ids:
+        # loop in case there are more than one?
+        for qd in results_cur.execute("SELECT * FROM LipidFragments WHERE dia_frag_id=?", (dia_frag_id,)).fetchall():
+            qd = list(qd)
+            qd[0] = lipid_id
+            results_cur.execute("INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)", qd)
+
+
+def _update_lipid_with_chain_info(results_cur: ResultsDbCursor
+                                  ) -> None :
+    """
+    Update entries in Lipids based on annotated fragments supporting the presence
+    of specified acyl chains
+
+    Parameters
+    ----------
+    results_cur : ``ResultsDbCursor``
+    """
+    qry_sel = """--beginsql
+        SELECT 
+            lipid_id, 
+            lipid, 
+            GROUP_CONCAT(dia_frag_id),
+            GROUP_CONCAT(supports_fa) 
+        FROM 
+            Lipids 
+            JOIN LipidFragments USING(lipid_id) 
+        WHERE 
+            supports_fa IS NOT NULL 
+        GROUP BY 
+            lipid_id
+    --endsql"""
+    qry_updt_chains_flag = """--beginsql
+        UPDATE Lipids SET chains=? WHERE lipid_id=?
+    --endsql"""
+    # iterate through lipid annotations that also have annotated fragments supporting specific acyl chains
+    for lipid_id, lipid_name, frag_ids, supported_fas in results_cur.execute(qry_sel).fetchall():
+        if (lipid := parse_lipid_name(lipid_name)) is not None:
+            # unpack the FAs
+            # keys: FA -> tuple(n_carbons, n_unsaturations)
+            # values: fragment IDs -> set(int)
+            fas = {}
+            for fa, fid in zip([tuple(map(int, _.split(":"))) for _ in supported_fas.split(",")], map(int, frag_ids.split(","))):
+                if fa not in fas:
+                    fas[fa] = {fid}
+                else:
+                    fas[fa].add(fid)
+            # keep track of new lipid names for this entry, as well as the chains flag and any fragment IDs 
+            # that need to be remapped
+            # keys: new lipid name -> str
+            # values: {"chains_flag": str, "frag_ids": set(int)} 
+            new_lipid_names = {}
+            match lipid.n_chains:
+                case 1:
+                    # monoacyl
+                    for (c, u) in fas.keys():
+                        if c == lipid.fa_carbon and u == lipid.fa_unsat:
+                            # no need for a new name
+                            # update the lipid entry with "confirmed" chains flag in place
+                            results_cur.execute(qry_updt_chains_flag, ("confirmed", lipid_id))
+                            # no need to check more fragments
+                            # just move on to the next lipid annotation
+                            continue
+                case 2:
+                    # diacyl 
+                    for (c1, u1), fids in fas.items():
+                        # calculate the remaining sum composition
+                        c2_exp, u2_exp = lipid.fa_carbon - c1, lipid.fa_unsat - u1
+                        if c2_exp > 0 and u2_exp >= 0:
+                            # we have found 1 valid chain, chains flag is "inferred"
+                            flag = "inferred"
+                            # see if we can match another chain
+                            for (c2, u2), fids2 in fas.items():
+                                if c2 == c2_exp and u2 == u2_exp:
+                                    flag = "confirmed"
+                                    fids |= fids2
+                            # generate the new lipid name 
+                            new_lipid_name = str(LipidWithChains(lipid.lmaps_id_prefix, [c1, c2_exp], [u1, u2_exp]))
+                            if new_lipid_name not in new_lipid_names:
+                                new_lipid_names[new_lipid_name] = {"chains_flag": flag, "frag_ids": fids}
+                            else:
+                                new_lipid_names[new_lipid_name]["chains_flag"] = flag
+                                new_lipid_names[new_lipid_name]["frag_ids"] |= fids
+                case 3:
+                    # triacyl
+                    for (c1, u1), fids in fas.items():
+                        # calculate the remaining sum composition
+                        c2_exp, u2_exp = lipid.fa_carbon - c1, lipid.fa_unsat - u1
+                        if c2_exp > 0 and u2_exp >= 0:
+                            # we have found 1 valid chain, chains flag is "partial"
+                            flag = "partial"
+                            # see if we can match another chain
+                            for (c2, u2), fids2 in fas.items():
+                                # calculate the remaining sum composition
+                                c3_exp, u3_exp = c2_exp - c2, u2_exp - u2
+                                if c3_exp > 0 and u3_exp >= 0:
+                                    # see if we can match the last chain
+                                    for (c3, u3), fids3 in fas.items():
+                                        if c3 == c3_exp and u3 == u3_exp:
+                                            flag = "confirmed"
+                                            # generate the new lipid name
+                                            new_lipid_name = str(LipidWithChains(lipid.lmaps_id_prefix, [c1, c2, c3], [u1, u2, u3]))
+                                            if new_lipid_name not in new_lipid_names:
+                                                new_lipid_names[new_lipid_name] = {"chains_flag": flag, "frag_ids": fids | fids2 | fids3}
+                                            else:
+                                                new_lipid_names[new_lipid_name]["chains_flag"] = flag
+                                                new_lipid_names[new_lipid_name]["frag_ids"] |= fids | fids2 | fids3
+                            # if flag is still partial go ahead an update the lipid annotation in place
+                            if flag == "partial":
+                                results_cur.execute(qry_updt_chains_flag, (flag, lipid_id))
+                case 4:
+                    # 4-acyl
+                    assert False, "updating acyl chains for 4-acyl lipids not implemented yet"
+            # if there were new names generated, update the database with them
+            if len(new_lipid_names) > 0:
+                # deal with all of the new lipid names
+                for new_lipid_name, v in new_lipid_names.items():
+                    chains_flag = v["chains_flag"]
+                    frag_ids = v["frag_ids"]
+                    # first make a copy of the Lipids entry
+                    new_lipid_id = _copy_lipid_entry_with_new_name_and_chains_flag(results_cur, lipid_id, new_lipid_name, chains_flag)
+                    # then make copies of the fragment annotations
+                    _copy_lipid_frag_entries_with_new_lipid_id(results_cur, frag_ids, new_lipid_id)
+                # delete the old lipid annotation
+                results_cur.execute("DELETE FROM Lipids WHERE lipid_id=?", (lipid_id,))
+
+
 def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                                      params: AnnotationParams,
                                      debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
@@ -682,6 +841,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     qry_sel1 = """--beginsql
         SELECT 
             lipid_id, 
+            dia_pre_id,
             lmid_prefix, 
             carbon,
             unsat,
@@ -699,14 +859,15 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
         HAVING
             frag_ids IS NOT NULL
     --endsql"""
-    n_updt = 0
+    # track number of lipids that are updated
+    n_diagnostic = 0
+    n_update_chains = 0
     qry_add_frag = """--beginsql
         INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
-    for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
+    for lipid_id, dia_pre_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
         update = False
         if fmzs is not None:
-            new_names = set()
             # load fragmentation rules
             c_u_combos = list(get_c_u_combos(n_chains, 
                                              sum_c, 
@@ -718,29 +879,36 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             ffmzs = list(map(float, fmzs.split(",")))
             ifids = list(map(int, fids.split(",")))
             _, rules = load_rules(lmid_prefix, params.ionization)
+            diag_flag = 0
+            # go through each rule and see if it matches any fragments
             for rule in rules:
+                diag_flag = int(rule.diagnostic)
                 if rule.static:
                     rmz = rule.mz(pmz)
                     for ffmz, ifid in zip(ffmzs, ifids):
                         ppm = _ppm_error(rmz, ffmz)
                         if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                            cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, int(rule.diagnostic), None))
+                            cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, diag_flag, None))
                 else:
                     for c, u in sorted(c_u_combos):
                         rmz = rule.mz(pmz, c, u)
                         for ffmz, ifid in zip(ffmzs, ifids):
                             ppm = _ppm_error(rmz, ffmz)
                             if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                                cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, int(rule.diagnostic), f"{c}:{u}"))
+                                cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, diag_flag, f"{c}:{u}"))
                                 update = True
-                                # TODO (Dylan Ross): need some logic here to figure out new names
+            # update counters
             if update:
-                n_updt += 1
+                n_update_chains += 1
+            n_diagnostic += diag_flag
+    # go through annotated fragments and update lipid annotations if there is evidence for 
+    # presence of specific acyl chains
+    _update_lipid_with_chain_info(cur)
     # clean up
     con.commit()
     con.close()
-    debug_handler(debug_flag, debug_cb, f"UPDATED: {n_updt} / {n_anns} annotations using fragmentation rules")
-    return n_updt
+    debug_handler(debug_flag, debug_cb, f"UPDATED: {n_update_chains} / {n_anns} annotations using fragmentation rules")
+    return n_update_chains
 
 
 def annotate_lipids(results_db: ResultsDbPath,

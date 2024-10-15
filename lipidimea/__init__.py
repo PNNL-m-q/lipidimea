@@ -6,8 +6,9 @@ Dylan Ross (dylan.ross@pnnl.gov)
     lipidimea - Lipidomics Integrated Multi-Experiment Analysis tool
 """
 
+
 # release.major_version.minor_version
-__version__ = '0.12.20'
+__version__ = '0.12.21'
 
 
 # TODO (Dylan Ross): When migrating to GitHub, convert TODOs across the package into issues.

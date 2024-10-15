@@ -607,11 +607,14 @@ def extract_dia_features_multiproc(dia_data_files: List[MzaFilePath],
 
 
 def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath, 
+                                       dfile_id: int,
                                        t_fix: float, 
                                        beta: float
                                        ) -> None :
     """
     Uses calibration parameters to calculate calibrated CCS values from m/z and arrival times of DIA features
+
+    Applies calibration to a features from a single DIA data file (specified by dfile_id)
 
     Calibration is for single-field DTIMS measurements and the function is of the form:
 
@@ -647,12 +650,12 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
     cur1, cur2 = con.cursor(), con.cursor()  # one cursor to select data, another to update the db with ccs
     # select out the IDs, m/zs and arrival times of the features
     sel_qry = """--beginsql
-        SELECT dia_pre_id, mz, dt FROM DIAPrecursors
+        SELECT dia_pre_id, mz, dt FROM DIAPrecursors WHERE dfile_id=?
     --endsql"""
     upd_qry = """--beginsql
         UPDATE DIAPrecursors SET ccs=? WHERE dia_pre_id=?
     --endsql"""
-    for dia_pre_id, mz, dt in cur1.execute(sel_qry).fetchall():
+    for dia_pre_id, mz, dt in cur1.execute(sel_qry, (dfile_id,)).fetchall():
         cur2.execute(upd_qry, (ccs(mz, dt, t_fix, beta), dia_pre_id))
     # clean up
     con.commit()
