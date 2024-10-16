@@ -675,6 +675,7 @@ def _copy_lipid_frag_entries_with_new_lipid_id(results_cur: ResultsDbCursor,
     """
     make a copy of an entry from the LipidFragments table with a different lipid_id
     """
+    # TODO: This results in a lot of duplicate entries, need to filter those down somehow
     for dia_frag_id in dia_frag_ids:
         # loop in case there are more than one?
         for qd in results_cur.execute("SELECT * FROM LipidFragments WHERE dia_frag_id=?", (dia_frag_id,)).fetchall():
@@ -841,7 +842,6 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     qry_sel1 = """--beginsql
         SELECT 
             lipid_id, 
-            dia_pre_id,
             lmid_prefix, 
             carbon,
             unsat,
@@ -865,7 +865,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     qry_add_frag = """--beginsql
         INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
-    for lipid_id, dia_pre_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
+    for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
         update = False
         if fmzs is not None:
             # load fragmentation rules
