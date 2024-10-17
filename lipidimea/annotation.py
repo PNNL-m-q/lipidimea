@@ -439,6 +439,7 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
             else: 
                 n_kept += 1
         else:
+            # any annotations for which no RT bounds exist automatically get filtered out
             anns_to_del.append(ann_id)
             n_filt += 1
     # delete any annotations not within specified RT range

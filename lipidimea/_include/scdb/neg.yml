@@ -1,26 +1,13 @@
 # These defaults come from lipids identified from NIST SRM1950 plasma
-LMFA0101: ["[M-H]-"]  # FA (sat)
-LMFA0103: ["[M-H]-"]  # FA (unsat)
-LMGP0101: ["[M+CH3COO]-", "[M+HCOO]-"]  # PC
-LMGP0102: ["[M+CH3COO]-", "[M+HCOO]-"]  # PC O-
-LMGP0103: ["[M+CH3COO]-", "[M+HCOO]-"]  # PC P-
-LMGP0105: ["[M+CH3COO]-", "[M+HCOO]-"]  # LPC 
-LMGP0106: ["[M+CH3COO]-", "[M+HCOO]-"]  # LPC O-
-LMGP0107: ["[M+CH3COO]-", "[M+HCOO]-"]  # LPC P-
-LMGP0201: ["[M-H]-"]  # PE
-LMGP0202: ["[M-H]-"]  # PE O-
-LMGP0203: ["[M-H]-"]  # PE P-
-LMGP0205: ["[M-H]-"]  # LPE 
-LMGP0206: ["[M-H]-"]  # LPE O-
-LMGP0207: ["[M-H]-"]  # LPE P-
-LMGP0401: ["[M-H]-"]  # PG
-LMGP0405: ["[M-H]-"]  # LPG 
-LMGP0601: ["[M-H]-"]  # PI
-LMGP0605: ["[M-H]-"]  # LPI 
-LMGP0701: ["[M-H]-"]  # PIP
-LMGP0801: ["[M-H]-"]  # PIP2
-LMGP0901: ["[M-H]-"]  # PIP3
-LMGP1001: ["[M-H]-"]  # PA
-LMGP1005: ["[M-H]-"]  # LPA 
-LMSP0201: ["[M+CH3COO]-", "[M+HCOO]-"]  # Cer
-LMSP0301: ["[M+CH3COO]-", "[M+HCOO]-"]  # SM
+LMFA0101: ["[M-H]-"]                  # FA (sat)
+LMFA0103: ["[M-H]-"]                  # FA (unsat)
+LMGP0201: ["[M-H]-"]                  # PE
+LMGP0202: ["[M-H]-"]                  # PE O-
+LMGP0205: ["[M-H]-"]                  # LPE 
+LMGP0206: ["[M-H]-"]                  # LPE O-
+LMGP0401: ["[M-H]-"]                  # PG
+LMGP0405: ["[M-H]-"]                  # LPG 
+LMGP0601: ["[M-H]-"]                  # PI
+LMGP0605: ["[M-H]-"]                  # LPI 
+LMGP1001: ["[M-H]-"]                  # PA
+LMSP0201: ["[M+CH3COO]-", "[M-H]-"]   # Cer

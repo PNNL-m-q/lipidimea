@@ -1,25 +1,31 @@
 # these default RT ranges correspond to our usual RP gradient for lipidomics 
-# on this platform (Agilent LC-DTIMS-MS)
+# on our usual platform (Agilent LC-DTIMS-MS)
+# ranges determined as average +/- 2 SD from Lumos data
 # key is the lm_id_prefix (reflects lipid category, class, and sub-class)
 # value is [rt_min, rt_max] for the class
-LMFA0707: [0, 10]  # CAR
-LMGL0301: [28, 35]  # TG
-LMGL0302: [28, 35]  # TG (O-)
-LMGL0201: [24, 29]  # DG
-LMSP0301: [16, 28]  # SM
-LMSP0201: [20, 30]  # Cer
-LMSP0501AA: [19, 29]  # HexCer
-LMSP0501AB: [20, 27]  # Hex2Cer
-LMGP0101: [16, 26]  # PC
-LMGP0102: [21, 28]  # PC (O-)
-LMGP0103: [21, 28]  # PC (P-)
-LMGP0105: [5, 15]  # PC (lyso)
-LMGP0106: [5, 15]  # PC (lyso, O-)
-LMGP0107: [5, 15]  # PC (lyso, P-)
-LMGP0201: [23, 26]  # PE
-LMGP0202: [23, 26]  # PE (O-)
-LMGP0203: [23, 26]  # PE (P-)
-LMGP0205: [5, 15]  # PE (lyso)
-LMGP0206: [5, 15]  # PE (lyso, O-)
-LMGP0207: [5, 15]  # PE (lyso, P-)
-LMST0102: [25, 35]  # CE
+LMFA0101: [5.6, 14.9]     # FA (sat)
+LMFA0103: [5.6, 14.9]     # FA (unsat)
+LMFA0707: [1.8, 17.6]     # CAR
+LMGL0201: [23.9, 28.3]    # DG
+LMGL0301: [27.1, 34.1]    # TG
+LMGL0302: [30.7, 32.8]    # TG (O-)
+LMGP0101: [18.5, 26.0]    # PC
+LMGP0102: [20.3, 28.4]    # PC (O-)
+LMGP0105: [3.5, 18.3]     # LPC
+LMGP0106: [8.3, 15.0]     # LPC (O-)
+LMGP0201: [18.8, 29.0]    # PE
+LMGP0202: [22.2, 27.9]    # PE (O-)
+LMGP0205: [4.7, 17.4]     # LPE
+LMGP0206: [9.0, 15.9]     # LPE (O-)
+LMGP0301: [18.6, 23.5]    # PS
+LMGP0305: [3.8, 14.5]     # LPS
+LMGP0401: [17.3, 23.0]    # PG
+LMGP0405: [6.1, 10.9]     # LPG
+LMGP0601: [17.0, 24.3]    # PI
+LMGP0605: [5.2, 11.3]     # LPI
+LMGP1001: [19.6, 24.3]    # PA
+LMSP0201: [22.3, 31.5]    # Cer
+LMSP0301: [18.2, 31.0]    # SM
+LMSP0501AA: [21.4, 30.7]  # HexCer
+LMSP0501AB: [19.8, 29.7]  # Hex2Cer
+LMST0102: [30.4, 33.1]    # CE

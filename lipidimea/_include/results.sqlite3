@@ -180,7 +180,7 @@ CREATE TABLE _LipidMapsPrefixToLong (
     lmid_prefix TEXT NOT NULL,
     lm_cat_long TEXT NOT NULL,
     lm_cls_long TEXT NOT NULL,
-    lm_sub_long TEXT NOT NULL,
+    lm_sub_long TEXT NOT NULL
 ) STRICT;
 
 -- view with LipidMAPS ontology info (category/class/subclass) for lipid
@@ -191,7 +191,7 @@ AS SELECT
     lipid_id,
     SUBSTR(lmid_prefix, 3, 2) AS lm_cat,
     SUBSTR(lmid_prefix, 3, 4) AS lm_cls,
-    SUBSTR(lmid_prefix, 3, 6) AS lm_sub,
+    SUBSTR(lmid_prefix, 3, 6) AS lm_sub
 FROM 
     Lipids;
 INSERT INTO _TableDescriptions VALUES 
