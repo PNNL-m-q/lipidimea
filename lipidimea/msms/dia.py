@@ -500,7 +500,7 @@ def extract_dia_features(dia_data_file: MzaFilePath,
     debug_handler(debug_flag, debug_cb, f"file: {dia_data_file}", pid)
     # initialize connection to the database
     # increase timeout to avoid errors from database locked by another process
-    con = sqlite3.connect(results_db, timeout=120)  
+    con = sqlite3.connect(results_db, timeout=300)  
     cur = con.cursor()
     # check if the dia_data_file is a path (str) or file ID from the results database (int)
     match dia_data_file:

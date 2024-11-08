@@ -636,11 +636,11 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
                 to_drop = [_[0] for _ in res]
                 drop_lids += to_drop
                 n_filt_obs += len(to_drop)
-            # report running total of filtering stats after each subclass
-            debug_handler(debug_flag, debug_cb, 
-                          f"\t\tkept:     {n_kept_lit + n_kept_obs} (lit: {n_kept_lit}, obs: {n_kept_obs})")
-            debug_handler(debug_flag, debug_cb, 
-                          f"\t\tfiltered: {n_filt_lit + n_filt_obs} (lit: {n_filt_lit}, obs: {n_filt_obs})")
+        # report running total of filtering stats after each subclass
+        debug_handler(debug_flag, debug_cb, 
+                        f"\t\tkept:     {n_kept_lit + n_kept_obs} (lit: {n_kept_lit}, obs: {n_kept_obs})")
+        debug_handler(debug_flag, debug_cb, 
+                        f"\t\tfiltered: {n_filt_lit + n_filt_obs} (lit: {n_filt_lit}, obs: {n_filt_obs})")
     # drop annotations from DB
     qry_del = """--beginsql
         DELETE FROM Lipids WHERE lipid_id=?
