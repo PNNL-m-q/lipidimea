@@ -8,8 +8,13 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import os
-from typing import Optional, Callable
-from sqlite3 import connect
+import errno
+from typing import (
+    Optional, Callable, Dict, Union, Tuple, List, Generator, Any, Literal
+)
+import sqlite3
+
+import polars as pl
 
 from lipidimea.typing import (
     ResultsDbPath, ResultsDbCursor, MzaFilePath, MzaFileId
@@ -20,7 +25,7 @@ from lipidimea.typing import (
 _RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3')
 
 
-def create_results_db(results_file: ResultsDbPath, 
+def create_results_db(results_file: ResultsDbPath,
                       overwrite: bool = False,
                       strict: bool = True
                       ) -> None :
@@ -34,7 +39,7 @@ def create_results_db(results_file: ResultsDbPath,
     results_file : ``ResultsDbPath``
         filename/path of the database
     overwrite : ``bool``, default=False
-        if the database file already exists and this flag is True, then overwrite existing database 
+        if the database file already exists and this flag is True, then overwrite existing database
         and do not raise the RuntimeError
     strict : ``bool``, default=True
         use STRICT constraint on all data tables in results database, set this to False to exclude
@@ -49,7 +54,7 @@ def create_results_db(results_file: ResultsDbPath,
             msg = f"create_results_db: results database file ({results_file}) already exists"
             raise RuntimeError(msg)
     # initial connection creates the DB
-    con = connect(results_file)  
+    con = sqlite3.connect(results_file)
     cur = con.cursor()
     # execute SQL script to set up the database
     with open(_RESULTS_DB_SCHEMA, 'r') as sql_f:
@@ -63,37 +68,42 @@ def create_results_db(results_file: ResultsDbPath,
     con.close()
 
 
-def add_data_file_to_db(cur: ResultsDbCursor, 
+def add_data_file_to_db(cur: ResultsDbCursor,
                         data_file_type: str,
                         data_file_path: MzaFilePath
                         ) -> MzaFileId :
     """
-    add a data file to the results database (DataFiles table) and return the corresponding 
+    add a data file to the results database (DataFiles table) and return the corresponding
     data file identifier (`int`)
     """
     qry = """--beginsql
         INSERT INTO DataFiles VALUES (?,?,?,?,?)
     --endsql"""
     cur.execute(qry, (None, data_file_type, data_file_path, None, None))
-    return cur.lastrowid
+    rowid = cur.lastrowid
+    # lastrowid can be None, but that should not happen because we run an insert
+    # query first. lastrowid should only be None if something goes wrong with the
+    # insert, so go ahead and get mad if that is the case
+    assert type(rowid) is int
+    return rowid
 
 
-def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: str, 
+def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: str,
                   pid: Optional[int] = None
                   ) -> None :
     """
-    deal with different debugging states automatically 
-    
+    deal with different debugging states automatically
+
     debug_flag:
 
     - ``None``: do nothing
     - ``'text'``: prints text debugging messages only
-    - ``'text_pid'``: prints text debugging messages, with PID prepended on the DEBUG label 
-    - ``'textcb'``: produces text debugging messages but instead of printing it calls the 
+    - ``'text_pid'``: prints text debugging messages, with PID prepended on the DEBUG label
+    - ``'textcb'``: produces text debugging messages but instead of printing it calls the
       debug_cb callback with the message as an argument
-    - ``'textcb_pid'``: produces text debugging messages but instead of printing it calls 
-      the debug_cb callback with the message as an argument, with PID prepended on the DEBUG label 
-    
+    - ``'textcb_pid'``: produces text debugging messages but instead of printing it calls
+      the debug_cb callback with the message as an argument, with PID prepended on the DEBUG label
+
     Parameters
     ----------
     debug_flag : ``str``
@@ -119,3 +129,252 @@ def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: 
                 ve = '_debug_handler: debug_flag was set to "textcb" or "textcb_pid" but no debug_cb was provided'
                 raise ValueError(ve)
 
+
+def _map_dfile_names_to_ids(data_file_names: List[str],
+                            cur: ResultsDbCursor
+                            ) -> List[int] :
+    """ take a list of data file names and return a list of their corresponding IDs """
+    mapping = {
+        dfile_name: dfile_id
+        for (dfile_name, dfile_id) in cur.execute("SELECT dfile_name, dfile_id FROM DataFiles")
+    }
+    return [mapping[name] for name in data_file_names]
+
+
+def _get_included_dfile_ids(select_data_files: Optional[Union[List[str], List[int]]],
+                            cur: ResultsDbCursor,
+                            ) -> List[int] :
+    """ 
+    There are different ways the selected data files may be specified (or not specified),
+    so whatever the case is convert to a list of data file IDs 
+    """
+    include_dfile_ids: List[int]
+    if select_data_files is not None:
+        # list cannot be empty, gotta check the type of the first element to decide what to do
+        assert len(select_data_files) > 0
+        if type(select_data_files[0]) is str:
+            # map the datafile names to data file IDs
+            include_dfile_ids = _map_dfile_names_to_ids(select_data_files, cur)  # type: ignore
+        else:
+            # otherwise it had better be a list of ints
+            assert type(select_data_files[0]) is int
+            include_dfile_ids = select_data_files  # type: ignore
+    else:
+        # default to all data files
+        include_dfile_ids = [
+            dfid for (dfid,) in cur.execute("SELECT DISTINCT dfile_id FROM DIAPrecursors").fetchall()
+        ]
+    return include_dfile_ids
+
+
+def _fetch_dia_precursors(cur: ResultsDbCursor,
+                          include_unknowns: bool,
+                          include_dfile_ids: List[int],
+                          limit_precursor_mz_ppm: float,
+                          ) -> Generator[Any, Any, Any] : 
+    """ 
+    construct a query and fetch the DIA precursors from the database, 
+    yields results one row at a time 
+    """
+    # collect/aggregate the DIA precursors
+    qry_sel_precursors = """--beginsql
+    SELECT 
+        dia_pre_id, 
+        dfile_id,
+        mz, 
+        rt, 
+        dt, 
+        ccs, 
+        dt_pkht, 
+        dt_pkht * dt_fwhm * 1.064467 AS dt_area,
+        GROUP_CONCAT(lipid || "_" || adduct, "|") AS annotations
+    FROM
+        DIAPrecursors
+        {incl_unk} JOIN Lipids USING(dia_pre_id)
+    WHERE
+        dfile_id IN ({dfids})
+        AND ABS(mz_ppm_err) <= {ppmlim}
+    GROUP BY
+        dia_pre_id
+    --endsql""".format(
+        incl_unk="LEFT" if include_unknowns else "",
+        dfids=",".join(map(str, include_dfile_ids)),
+        ppmlim=limit_precursor_mz_ppm
+    )
+    for row in cur.execute(qry_sel_precursors):
+        yield row
+
+
+def _precursor_match(one: Union[Tuple[float, float, float], List[float]], 
+                     another: Union[Tuple[float, float, float], List[float]],
+                     tols: Union[Tuple[float, float, float], List[float]]
+                     ) -> bool :
+    """ returns bool indicating if one precursor matches another (within specified tolerances) """
+    # unpack
+    one_mz, one_rt, one_dt = one
+    another_mz, another_rt, another_dt = another
+    tol_mz, tol_rt, tol_dt = tols
+    return (
+        abs(one_mz - another_mz) <= tol_mz
+        and abs(one_rt - another_rt) <= tol_rt
+        and abs(one_dt - another_dt) <= tol_dt
+    )
+
+
+# TODO: This is a pretty well-defined data structure, maybe it would be
+#       worth it to just implement an internal dataclass or something like
+#       that? It would make it unecessary to have this type alias and could
+#       also support some hinting and stuff from the text editor. Plus the 
+#       actual specifications for the data structure would be more apparent
+#       and better documented.
+
+# placeholder type alias for grouped results, the intermediate data structure 
+# from exporting a results table that has the layout:
+#       grouped = [
+#             {
+#                 "dia_pre_ids": list(int)
+#                 "mz_rt_dt": (
+#                     678.9012,
+#                     12.34,
+#                     34.56
+#                 ),
+#                 "ccs": 234.5 or None,
+#                 "annotations": set(str),
+#                 "abundance": {
+#                     dfile_id: peak area or peak height,
+#                     ...
+#                 }
+#             }, 
+#             ...
+#       ]
+type _GroupedResults = Any
+
+
+def _export_results_table_first_half(results_db: ResultsDbPath,
+                                     tolerances: Tuple[float, float, float],
+                                     select_data_files: Optional[Union[List[int], List[str]]],
+                                     abundance_value: Literal["dt_area", "dt_height"],
+                                     include_unknowns: bool,
+                                     limit_precursor_mz_ppm: float,
+                                     ) -> _GroupedResults :
+    """
+    Moved the first half of the data export process into this internal function
+    for easier development/debugging. This performs all the steps for extracting
+    and aggregating data from the results database using the supplied selections
+    and filters and returns an intermediate data structure (type alias _GroupedResults)
+    from which the data may be assembled into actual tabular format and exported. 
+    It is useful to have this part of the process in a separate function so that 
+    various selection and filtering parameters can be tested out and this intermediate
+    data structure can be inspected instead of the results always being written all
+    the way into a .csv file.
+    """
+    # ensure results database file exists
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT,
+                                os.strerror(errno.ENOENT),
+                                results_db)
+    # connect to results database
+    con = sqlite3.connect(results_db)
+    cur = con.cursor()
+    # determine the set of data files to include
+    include_dfile_ids = _get_included_dfile_ids(select_data_files, cur)
+    # group the precursors based on m/z, RT, and DT
+    grouped = [
+        # {
+        #     "dia_pre_ids": list(int)
+        #     "mz_rt_dt": (
+        #         678.9012,
+        #         12.34,
+        #         34.56
+        #     ),
+        #     "ccs": 234.5 or None,
+        #     "annotations": set(str),
+        #     "abundance": {
+        #         dfile_id: peak area or peak height,
+        #         ...
+        #     }
+        # }, 
+        # ...
+    ]
+    # iterate through the DIA precursors and group them
+    for dia_pre_id, dfile_id, *mz_rt_dt, ccs, dt_pkht, dt_area, annotations in _fetch_dia_precursors(
+        cur, include_unknowns, include_dfile_ids, limit_precursor_mz_ppm
+    ):
+        # flag indicating if this entry was matched with an entry in the grouped list
+        matched = False
+        abundance = {"dt_area": dt_area, "dt_height": dt_pkht}[abundance_value]
+        anns = set(annotations.split("|"))
+        # NOTE: This is a slow way to do this O(N^2), but probably OK for now
+        for group in grouped:
+            if _precursor_match(group["mz_rt_dt"], mz_rt_dt, tolerances):
+                matched = True
+                group["dia_pre_ids"].append(dia_pre_id)
+                group["annotations"] |= anns   # take the union of all possible annotations
+                if dfile_id in group["abundance"]:
+                    group["abundance"][dfile_id] += abundance
+                else:
+                    group["abundance"][dfile_id] = abundance
+                break
+        if not matched:
+            grouped.append({
+                "dia_pre_ids": [dia_pre_id],
+                "mz_rt_dt": mz_rt_dt,
+                "ccs": ccs,
+                "annotations": anns,
+                "abundance": {dfile_id: abundance}
+            })
+    return grouped
+
+
+def export_results_table(results_db: ResultsDbPath,
+                         out_csv: str,
+                         tolerances: Tuple[float, float, float],
+                         select_data_files: Optional[Union[List[int], List[str]]] = None,
+                         abundance_value: Literal["dt_area", "dt_height"] = "dt_area",
+                         include_unknowns: bool = False,
+                         limit_precursor_mz_ppm: float = 40.,
+                         data_file_aliases: Optional[Dict[Union[int, str], str]] = None,
+                         ) -> Any :
+    """
+    Aggregate the results (DIA) from the database and output in a tabular format (.csv).
+
+    Aligns features across samples (data files) based on m/z, RT, and arrival time using specified
+    tolerances. If more than one feature from a single data file falls within the specified tolerances,
+    the features are combined (summed). Annotations for the features from the different DIA data files
+    are aggregated by taking the intersection. The feature intensities will be output in separate columns
+    for each data file. The column names will be the data file names by default, but this can be
+    overridden using the optional data_file_aliases parameter, which maps either data file name (str) or
+    data file ID (int) to an alias (str). The intensities will be the arrival time peak areas by default,
+    but this can be changed to arrival time peak heights by setting abundance_value="dt_height".
+
+    Parameters
+    ----------
+    results_db
+        results database with annotated DIA features
+    out_csv
+        output results file (.csv)
+    tolerances
+        tuple of tolerances (m/z, RT, arrival time) for combining DIA precursors
+    select_data_files, optional
+        If provided, restrict the results to only include the specified list of data files, by data 
+        file name if list of str or by data file ID if list of int
+    abundance_value : default="dt_area"
+        "dt_area" = use arrival time peak area for abundance values (default) or "dt_height" = use 
+        arrival time peak heights instead
+    include_unknowns : default=False
+        flag indicating whether to include DIA features that do not have any associated annotations
+    limit_precursor_mz_ppm : default=40.
+        limit the absolute m/z ppm error when selecting lipid annotations 
+    data_file_aliases : optional
+        If provided, map data file names to specified aliases. The mapping may be defined as data
+        file name (str) to alias (str) or data file ID (int) to alias (str)
+    """
+    # perform the first half of the process to get the _GroupedResults
+    # intermediate datastructure
+    grouped = _export_results_table_first_half(results_db,
+                                               tolerances, 
+                                               select_data_files, 
+                                               abundance_value, 
+                                               include_unknowns, 
+                                               limit_precursor_mz_ppm)
+    # unroll the intermediate datastructure into tabular format (as a polars dataframe)

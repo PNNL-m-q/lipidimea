@@ -503,7 +503,7 @@ def _point_in_trend(mz: float,
 def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath, 
                                              params: AnnotationParams,
                                              debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                             ) -> int :
+                                             ) -> Tuple[int, int, int, int] :
     """
     filter lipid annotations based on their CCS values vs. overall subclass trends
 
@@ -666,7 +666,12 @@ def _copy_lipid_entry_with_new_name_and_chains_flag(results_cur: ResultsDbCursor
     qd[3] = lipid_name
     qd[-1] = chains
     results_cur.execute("INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?,?)", qd)
-    return results_cur.lastrowid
+    # lastrowid can be None, but that should not happen because we run an insert
+    # query first. lastrowid should only be None if something goes wrong with the
+    # insert, so go ahead and get mad if that is the case
+    rowid = results_cur.lastrowid
+    assert type(rowid) is int
+    return rowid
 
 
 def _copy_lipid_frag_entries_with_new_lipid_id(results_cur: ResultsDbCursor,
@@ -807,7 +812,7 @@ def _update_lipid_with_chain_info(results_cur: ResultsDbCursor
 def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                                      params: AnnotationParams,
                                      debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
-                                     ) -> None :
+                                     ) -> int :
     """
     update lipid annotations based on MS/MS spectra and fragmentation rules
 
@@ -885,18 +890,18 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             for rule in rules:
                 diag_flag = int(rule.diagnostic)
                 if rule.static:
-                    rmz = rule.mz(pmz)
+                    rmz = rule.mz(pmz)  # type: ignore
                     for ffmz, ifid in zip(ffmzs, ifids):
                         ppm = _ppm_error(rmz, ffmz)
                         if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                            cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, diag_flag, None))
+                            cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, diag_flag, None))  # type: ignore
                 else:
                     for c, u in sorted(c_u_combos):
-                        rmz = rule.mz(pmz, c, u)
+                        rmz = rule.mz(pmz, c, u) # type: ignore
                         for ffmz, ifid in zip(ffmzs, ifids):
                             ppm = _ppm_error(rmz, ffmz)
                             if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
-                                cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, diag_flag, f"{c}:{u}"))
+                                cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, diag_flag, f"{c}:{u}"))  # type: ignore
                                 update = True
             # update counters
             if update:
