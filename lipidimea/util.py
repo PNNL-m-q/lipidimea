@@ -136,7 +136,9 @@ def _map_dfile_names_to_ids(data_file_names: List[str],
     """ take a list of data file names and return a list of their corresponding IDs """
     mapping = {
         dfile_name: dfile_id
-        for (dfile_name, dfile_id) in cur.execute("SELECT dfile_name, dfile_id FROM DataFiles")
+        for (dfile_name, dfile_id) in cur.execute(
+            "SELECT dfile_name, dfile_id FROM DataFiles WHERE dfile_type='LC-IMS-MS/MS (DIA)'"
+        )
     }
     return [mapping[name] for name in data_file_names]
 
@@ -187,7 +189,7 @@ def _fetch_dia_precursors(cur: ResultsDbCursor,
         ccs, 
         dt_pkht, 
         dt_pkht * dt_fwhm * 1.064467 AS dt_area,
-        GROUP_CONCAT(lipid || "_" || adduct, "|") AS annotations
+        GROUP_CONCAT(lipid || "@" || adduct, "|") AS annotations
     FROM
         DIAPrecursors
         {incl_unk} JOIN Lipids USING(dia_pre_id)
@@ -196,6 +198,8 @@ def _fetch_dia_precursors(cur: ResultsDbCursor,
         AND ABS(mz_ppm_err) <= {ppmlim}
     GROUP BY
         dia_pre_id
+    ORDER BY
+        annotations
     --endsql""".format(
         incl_unk="LEFT" if include_unknowns else "",
         dfids=",".join(map(str, include_dfile_ids)),
@@ -250,34 +254,23 @@ def _precursor_match(one: Union[Tuple[float, float, float], List[float]],
 type _GroupedResults = Any
 
 
-def _export_results_table_first_half(results_db: ResultsDbPath,
-                                     tolerances: Tuple[float, float, float],
-                                     select_data_files: Optional[Union[List[int], List[str]]],
-                                     abundance_value: Literal["dt_area", "dt_height"],
-                                     include_unknowns: bool,
-                                     limit_precursor_mz_ppm: float,
-                                     ) -> _GroupedResults :
+def _extract_intermediate_data(cur: ResultsDbCursor,
+                               include_dfile_ids: List[int],
+                               tolerances: Tuple[float, float, float],
+                               abundance_value: Literal["dt_area", "dt_height"],
+                               include_unknowns: bool,
+                               limit_precursor_mz_ppm: float,
+                               annotation_combine_strategy: Literal["union", "intersection"]
+                               ) -> _GroupedResults :
     """
-    Moved the first half of the data export process into this internal function
-    for easier development/debugging. This performs all the steps for extracting
-    and aggregating data from the results database using the supplied selections
-    and filters and returns an intermediate data structure (type alias _GroupedResults)
-    from which the data may be assembled into actual tabular format and exported. 
-    It is useful to have this part of the process in a separate function so that 
-    various selection and filtering parameters can be tested out and this intermediate
-    data structure can be inspected instead of the results always being written all
-    the way into a .csv file.
+    Performs all the steps for extracting and aggregating data from the results database 
+    using the supplied selections and filters and returns an intermediate data structure 
+    (type alias _GroupedResults) from which the data may be assembled into actual tabular 
+    format and exported. It is useful to have this part of the process in a separate 
+    function so that various selection and filtering parameters can be tested out and 
+    this intermediate data structure can be inspected instead of the results always being 
+    written all the way into a .csv file.
     """
-    # ensure results database file exists
-    if not os.path.isfile(results_db):
-        raise FileNotFoundError(errno.ENOENT,
-                                os.strerror(errno.ENOENT),
-                                results_db)
-    # connect to results database
-    con = sqlite3.connect(results_db)
-    cur = con.cursor()
-    # determine the set of data files to include
-    include_dfile_ids = _get_included_dfile_ids(select_data_files, cur)
     # group the precursors based on m/z, RT, and DT
     grouped = [
         # {
@@ -309,7 +302,12 @@ def _export_results_table_first_half(results_db: ResultsDbPath,
             if _precursor_match(group["mz_rt_dt"], mz_rt_dt, tolerances):
                 matched = True
                 group["dia_pre_ids"].append(dia_pre_id)
-                group["annotations"] |= anns   # take the union of all possible annotations
+                # take the intersection or union of all possible annotations
+                match annotation_combine_strategy:
+                    case "intersection":
+                        group["annotations"] &= anns
+                    case "union":
+                        group["annotations"] |= anns
                 if dfile_id in group["abundance"]:
                     group["abundance"][dfile_id] += abundance
                 else:
@@ -326,6 +324,74 @@ def _export_results_table_first_half(results_db: ResultsDbPath,
     return grouped
 
 
+def _setup_alias_mapping(cur: ResultsDbCursor,
+                         data_file_aliases: Optional[Dict[Union[int, str], str]],
+                         ) -> Dict[int, str] :
+    """ set up the mapping between data file aliases and data file names/IDs """
+    out_aliases: Dict[int, str]
+    # convert whatever was provided into mapping between alias and data file ID
+    # (it can be None which means use file names, or dict(str: str) which needs to be converted)
+    if data_file_aliases is None: 
+        out_aliases = {
+            dfile_id: dfile_name
+            for (dfile_name, dfile_id) in cur.execute("SELECT dfile_name, dfile_id FROM DataFiles")
+        }
+    elif type(list(data_file_aliases.keys())[0]) is str:  # type: ignore
+        # map the file names to IDs, then IDs to aliases
+        name_to_id = {
+            dfile_name: dfile_id
+            for (dfile_name, dfile_id) in cur.execute("SELECT dfile_name, dfile_id FROM DataFiles")
+        }
+        out_aliases = {
+            name_to_id[dfile_name]: alias
+            for dfile_name, alias in data_file_aliases.items()
+        }
+    else:
+        # already correct mapping
+        out_aliases = data_file_aliases  # type: ignore
+    return out_aliases
+    
+
+def _unpack_intermediate_results(grouped: _GroupedResults,
+                                 alias_mapping: Dict[int, str],
+                                 include_unknowns: bool
+                                 ) -> pl.DataFrame :
+    """
+    unpack all of the info from the intermediate grouped results data structure into
+    tabular format and return it in a polars dataframe
+    """
+    # data dictionary
+    # column name: column data
+    data = {
+        "precursor IDs": [], 
+        "m/z": [], 
+        "RT (min)": [], 
+        "arrival time (ms)": [], 
+        "CCS (Ang^2)": [], 
+        "Lipid@Adduct": [] 
+    } | {
+        alias: []
+        for alias in alias_mapping.values()
+    }
+    # fill the data dictionary
+    for entry in grouped:
+        if include_unknowns or len(entry["annotations"]) > 0:
+            data["precursor IDs"].append("|".join(map(str, entry["dia_pre_ids"])))
+            emz, ert, edt = entry["mz_rt_dt"]
+            data["m/z"].append(emz)
+            data["RT (min)"].append(ert)
+            data["arrival time (ms)"].append(edt)
+            data["CCS (Ang^2)"].append(entry["ccs"])
+            data["Lipid@Adduct"].append("|".join(entry["annotations"]))
+            for dfid, abun in entry["abundance"].items():
+                # cast abundances to ints 
+                data[alias_mapping[dfid]].append(int(abun))
+            for dfid, alias in alias_mapping.items():
+                if dfid not in entry["abundance"].keys():
+                    data[alias].append(None)
+    return pl.DataFrame(data).sort("Lipid@Adduct", "RT (min)", "arrival time (ms)")
+
+
 def export_results_table(results_db: ResultsDbPath,
                          out_csv: str,
                          tolerances: Tuple[float, float, float],
@@ -334,7 +400,8 @@ def export_results_table(results_db: ResultsDbPath,
                          include_unknowns: bool = False,
                          limit_precursor_mz_ppm: float = 40.,
                          data_file_aliases: Optional[Dict[Union[int, str], str]] = None,
-                         ) -> Any :
+                         annotation_combine_strategy: Literal["union", "intersection"] = "union"
+                         ) -> int :
     """
     Aggregate the results (DIA) from the database and output in a tabular format (.csv).
 
@@ -355,7 +422,7 @@ def export_results_table(results_db: ResultsDbPath,
         output results file (.csv)
     tolerances
         tuple of tolerances (m/z, RT, arrival time) for combining DIA precursors
-    select_data_files, optional
+    select_data_files : optional
         If provided, restrict the results to only include the specified list of data files, by data 
         file name if list of str or by data file ID if list of int
     abundance_value : default="dt_area"
@@ -366,15 +433,42 @@ def export_results_table(results_db: ResultsDbPath,
     limit_precursor_mz_ppm : default=40.
         limit the absolute m/z ppm error when selecting lipid annotations 
     data_file_aliases : optional
-        If provided, map data file names to specified aliases. The mapping may be defined as data
-        file name (str) to alias (str) or data file ID (int) to alias (str)
+        If provided, map data file ids or names to specified aliases. The mapping may be defined as data
+        file name (str) to alias (str) or data file ID (int) to alias (str). 
+    annotation_combine_strategy : default="union"
+        for cases where there are multiple potential annotations within a group of features, determines 
+        the strategy for what annotations to keep. "union" to keep all possible annotations and
+        "intersection" to only keep annotations that are common among all features that get combined into
+        a group. The latter is much more stringent. 
+    
+    Returns
+    -------
+    n_rows
+        the number of rows in the exported table
     """
+    # ensure results database file exists
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT,
+                                os.strerror(errno.ENOENT),
+                                results_db)
+    # connect to results database
+    con = sqlite3.connect(results_db)
+    cur = con.cursor()
+    # determine the set of data files to include
+    include_dfile_ids = _get_included_dfile_ids(select_data_files, cur)
     # perform the first half of the process to get the _GroupedResults
-    # intermediate datastructure
-    grouped = _export_results_table_first_half(results_db,
-                                               tolerances, 
-                                               select_data_files, 
-                                               abundance_value, 
-                                               include_unknowns, 
-                                               limit_precursor_mz_ppm)
-    # unroll the intermediate datastructure into tabular format (as a polars dataframe)
+    # intermediate data structure
+    grouped = _extract_intermediate_data(cur,
+                                         include_dfile_ids,
+                                         tolerances, 
+                                         abundance_value, 
+                                         include_unknowns, 
+                                         limit_precursor_mz_ppm,
+                                         annotation_combine_strategy)
+    # set up the mapping between data file aliases and data file names/IDs
+    alias_mapping = _setup_alias_mapping(cur, data_file_aliases)
+    # upack the intermediate data structure into tabular format (as a polars dataframe)
+    df = _unpack_intermediate_results(grouped, alias_mapping, include_unknowns)  
+    # (filter dataframe? replace NAs?)
+    df.write_csv(out_csv)
+    return df.shape[0]
