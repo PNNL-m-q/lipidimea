@@ -1,4 +1,4 @@
-# LipidIMEA
+# lipidimea
 Lipidomics Integrated Multi-Experiment Analysis tool
 
 #### Contributors:

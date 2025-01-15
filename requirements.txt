@@ -4,5 +4,7 @@ pandas
 numpy
 scipy
 matplotlib
-yaml
+pyyaml
 mzapy
+polars
+#lipidlib

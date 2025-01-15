@@ -145,23 +145,25 @@ document.getElementsByClassName('tablinks')[0].click();
 
 // Function to switch between tabs
 function openTab(evt, tabName) {
-  var i, tabcontent, tablinks;
+  console.log(tabName);
+
+  let tabcontent, tablinks;
 
   // Hide all tab content
   tabcontent = document.getElementsByClassName('tabcontent');
-  for (i = 0; i < tabcontent.length; i++) {
+  for (let i = 0; i < tabcontent.length; i++) {
       tabcontent[i].style.display = 'none';
   }
 
   // Remove the "active" class from all tab links
-  tablinks = document.getElementsByClassName('tablinks');
-  for (i = 0; i < tablinks.length; i++) {
-      tablinks[i].className = tablinks[i].className.replace(' active', '');
+  tablinks = document.getElementsByClassName('tablinks-sel');
+  for (let i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = 'tablinks';
   }
 
   // Show the current tab and add an "active" class to the button that opened the tab
   document.getElementById(tabName).style.display = 'block';
-  evt.currentTarget.className += ' active';
+  evt.currentTarget.className = 'tablinks-sel';
 }
 
 
@@ -701,7 +703,7 @@ function UpdateDatabaseOptions() {
 // Receive Python Experiment Results to display
 window.api.receive('python-result-experiment', (result) => {
   console.log('Received result:', result);
-  outputBox.innerText += result + '\n'; // Append the result to the output box
+  outputBox.innerText += result; // Append the result to the output box
   scrollToBottom(outputBox);
 });
 

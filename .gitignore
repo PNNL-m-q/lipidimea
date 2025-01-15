@@ -35,6 +35,9 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# exception for experiment.spec and yamlwrite.spec
+!experiment.spec
+!yamlwriter.spec
 
 # Installer logs
 pip-log.txt
@@ -146,3 +149,13 @@ gui/logs/
 gui/*.log
 gui/*.pid
 gui/*.seed
+
+
+# do not track static HTML in gui/src/docs/
+# those are generated with Sphinx (in docs/ dir) then copied there
+gui/src/docs/*
+# do track this README, it makes sure that the gui/src/docs/ directory actually gets tracked as well
+!gui/src/docs/README.txt
+
+
+.vscode/

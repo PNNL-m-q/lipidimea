@@ -1,0 +1,252 @@
+-- DATABASE SCHEMA FOR DDA-DIA ANALYSIS RESULTS
+--
+-- -- SQLite3
+-- -- Uses STRICT constraint on tables
+-- -- All "non-public" table names prepended with _ 
+
+
+-- table with descriptions of columns from all other tables
+CREATE TABLE _TableDescriptions (
+    tab_name TEXT NOT NULL,
+    col_name TEXT NOT NULL,
+    col_desc TEXT NOT NULL
+);
+
+
+----------- Metadata --------------
+
+-- table for tracking data files
+CREATE TABLE DataFiles (
+    dfile_id INTEGER PRIMARY KEY,
+    dfile_type TEXT NOT NULL,
+    dfile_name TEXT NOT NULL,
+    dfile_notes TEXT,
+    dfile_shortname TEXT
+) STRICT;
+INSERT INTO _TableDescriptions VALUES
+    ('DataFiles', 'dfile_id', 'unique data file identifier'),
+    ('DataFiles', 'dfile_type', 'specify the type of the data file (e.g. LC-MS/MS DDA, LC-IMS-MS/MS DIA, ...)'),
+    ('DataFiles', 'dfile_name', 'data file name (+ path)'),
+    ('DataFiles', 'dfile_notes', 'optional additional notes about the data file'),
+    ('DataFiles', 'dfile_shortname', 'optional shorthand name for the data file');
+
+
+----------- Raw/Unprocessed Data --------------
+
+-- table with raw XICs, ATDs, or mass spectra (all as BLOBs)
+CREATE TABLE Raw (
+    raw_id INTEGER PRIMARY KEY,
+    raw_type TEXT NOT NULL,
+    feat_id_type TEXT NOT NULL,
+    feat_id INT NOT NULL,
+    raw_n INT NOT NULL,
+    raw_data BLOB NOT NULL
+) STRICT;
+INSERT INTO _TableDescriptions VALUES 
+    ('Raw', 'raw_id', 'unique identifier for this piece of raw data'),
+    ('Raw', 'raw_type', 'specify the type of raw data stored (XIC/ATD/MS1/MS2)'),
+    ('Raw', 'feat_id_type', 'specify the type of feature identifier used for this piece of raw data, essentially the name of an identifier column from one of the XPrecursors or XFragments tables (e.g. dia_pre_id)'),
+    ('Raw', 'feat_id', 'identifier mapping this piece of raw data to some feature (precursors, fragments, etc.)'),
+    ('Raw', 'raw_n', 'All of the array data stored here are 2D arrays with shape (2, N), where N is the number of points in the two individual arrays. Store the N value so the data can be reconstructed easily using `numpy.frombuffer(buf).reshape((2, n))`.'),
+    ('Raw', 'raw_data', 'the actual data being stored, as a BLOB produced using tobytes() method from numpy.ndarray');
+
+
+----------- DDA --------------
+
+-- table with LC-MS/MS (DDA) precursors
+CREATE TABLE DDAPrecursors (
+    dda_pre_id INTEGER PRIMARY KEY,
+    dfile_id INT NOT NULL,
+    mz REAL NOT NULL,
+    rt REAL NOT NULL,
+    rt_fwhm REAL NOT NULL,
+    rt_pkht REAL NOT NULL,
+    rt_psnr REAL NOT NULL,
+    ms2_n_scans INT,
+    ms2_n_peaks INT
+) STRICT;
+INSERT INTO _TableDescriptions VALUES 
+    ('DDAPrecursors', 'dda_pre_id', 'unique DDA precursor identifier'),
+    ('DDAPrecursors', 'dfile_id', 'identifier for the raw data file this feature was extracted from'),
+    ('DDAPrecursors', 'mz', 'precursor m/z'),
+    ('DDAPrecursors', 'rt', 'observed retention time of chromatographic peak'),
+    ('DDAPrecursors', 'rt_fwhm', 'FWHM of chromatographic peak'),
+    ('DDAPrecursors', 'rt_pkht', 'height of chromatographic peak'),
+    ('DDAPrecursors', 'rt_psnr', 'signal to noise ratio for chromatographic peak'),
+    ('DDAPrecursors', 'ms2_n_scans', 'number of MS2 scans for this precursor, optional'),
+    ('DDAPrecursors', 'ms2_n_peaks', 'number of peaks in centroided spectrum, optional');
+
+-- table with LC-MS/MS (DDA) fragments
+CREATE TABLE DDAFragments (
+    dda_frag_id INTEGER PRIMARY KEY,
+    dda_pre_id INT NOT NULL,
+    fmz REAL NOT NULL,
+    fint REAL NOT NULL
+) STRICT;
+INSERT INTO _TableDescriptions VALUES
+    ('DDAFragments', 'dda_pre_id', 'unique DDA fragment identifier'),
+    ('DDAFragments', 'dda_frag_id', 'DDA precursor identifier'),
+    ('DDAFragments', 'fmz', 'fragment m/z'),
+    ('DDAFragments', 'fint', 'fragment intensity');
+
+-- TODO: view that combines DDAPrecursors and DDAFragments into DDAFeatures?
+
+
+----------- DIA --------------
+
+-- table with LC-IMS-MS/MS (DIA) precursors
+CREATE TABLE DIAPrecursors (
+    dia_pre_id INTEGER PRIMARY KEY,
+    dda_pre_id INT,
+    dfile_id INT NOT NULL,
+    mz REAL NOT NULL,
+    rt REAL NOT NULL,
+    rt_fwhm REAL NOT NULL,
+    rt_pkht REAL NOT NULL,
+    rt_psnr REAL NOT NULL,
+    dt REAL NOT NULL,
+    dt_fwhm REAL NOT NULL,
+    dt_pkht REAL NOT NULL,
+    dt_psnr REAL NOT NULL,
+    ccs REAL,
+    ms2_n_peaks INT
+) STRICT;
+INSERT INTO _TableDescriptions VALUES 
+    ('DIAPrecursors', 'dia_pre_id', 'unique DIA precursor identifier'),
+    ('DIAPrecursors', 'dda_pre_id', 'reference to corresponding precursor in DDAPrecursors table, can be NULL before mapping between DDA/DIA precursors is performed'),
+    ('DIAPrecursors', 'dfile_id', 'identifier for the raw data file this feature was extracted from'),
+    ('DIAPrecursors', 'mz', 'precursor m/z'),
+    ('DIAPrecursors', 'rt', 'observed retention time of chromatographic peak'),
+    ('DIAPrecursors', 'rt_fwhm', 'FWHM of chromatographic peak'),
+    ('DIAPrecursors', 'rt_pkht', 'height of chromatographic peak'),
+    ('DIAPrecursors', 'rt_psnr', 'signal to noise ratio for chromatographic peak'),
+    ('DIAPrecursors', 'dt', 'observed arrival time of ATD peak'),
+    ('DIAPrecursors', 'dt_fwhm', 'FWHM of ATD peak'),
+    ('DIAPrecursors', 'dt_pkht', 'height of ATD peak'),
+    ('DIAPrecursors', 'dt_psnr', 'signal to noise ratio for ATD peak'),
+    ('DIAPrecursors', 'ccs', 'calibrated CCS if available, optional'),
+    ('DIAPrecursors', 'ms2_n_peaks', 'number of peaks in centroided spectrum, optional');
+
+-- table with LC-MS/MS (DIA) fragments
+CREATE TABLE DIAFragments (
+    dia_frag_id INTEGER PRIMARY KEY,
+    dia_pre_id INT NOT NULL,
+    fmz REAL NOT NULL,
+    fint REAL NOT NULL,
+    deconvoluted INT NOT NULL,
+    xic_dist REAL,
+    atd_dist REAL
+) STRICT;
+INSERT INTO _TableDescriptions VALUES
+    ('DIAFragments', 'dia_frag_id', 'unique DIA fragment identifier'),
+    ('DIAFragments', 'dia_pre_id', 'DIA precursor identifier'),
+    ('DIAFragments', 'fmz', 'fragment m/z'),
+    ('DIAFragments', 'fint', 'fragment intensity'),
+    ('DIAFragments', 'deconvoluted', 'flag indicating whether the fragment was deconvoluted or not (0=False, 1=True)'),
+    ('DIAFragments', 'xic_distance', 'distance metric, relative to precursor XIC (optional, only set for deconvoluted fragments)'),
+    ('DIAFragments', 'atd_distance', 'distance metric, relative to precursor ATD (optional, only set for deconvoluted fragments)');
+
+-- TODO: view that combines DIAPrecursors and DIAFragments into DIAFeatures?
+
+
+----------- Lipid Annotations --------------
+
+-- table with Lipid annotations
+CREATE TABLE Lipids (
+    lipid_id INTEGER PRIMARY KEY,
+    dia_pre_id INT NOT NULL,
+    lmid_prefix TEXT NOT NULL,
+    lipid TEXT NOT NULL,
+    adduct TEXT NOT NULL,
+    mz_ppm_err REAL NOT NULL,
+    ccs_rel_err REAL,
+    ccs_lit_trend INT,
+    chains TEXT
+) STRICT;
+INSERT INTO _TableDescriptions VALUES 
+    ('Lipids', 'lipid_id', 'lipid annotation identifier'),
+    ('Lipids', 'dia_pre_id', 'reference to precursor identifier from DIAPrecursors table'),
+    ('Lipids', 'lipid', 'lipid annotation, made at the level of sum composition or higher if supporting fragment(s) found in MS2 spectrum'),
+    ('Lipids', 'lmaps_id_prefix', 'LipidMAPS ID prefix (reflects lipid category, class, and sub-class)'),
+    ('Lipids', 'adduct', 'MS adduct/ionization state'),
+    ('Lipids', 'mz_ppm_err', 'mass error in ppm relative to theoretical monoisotopic mass'),
+    ('Lipids', 'ccs_rel_err', 'relative CCS error (from class trend) in percent, NULL if no CCS filtering performed'),
+    ('Lipids', 'ccs_lit_trend', 'flag indicating whether a literature trend was used for CCS filtering or not (0=False, 1=True), NULL if no CCS filtering performed'),
+    ('Lipids', 'chains', 'flag indicating degree to which acyl chain composition is known, levels: NULL, "partial", "inferred", "complete"');
+
+-- map LMID prefix to long versions of LipidMaps category/class/subclass 
+-- populate from lipidlib.lipids.LMAPS
+CREATE TABLE _LipidMapsPrefixToLong (
+    lmid_prefix TEXT NOT NULL,
+    lm_cat_long TEXT NOT NULL,
+    lm_cls_long TEXT NOT NULL,
+    lm_sub_long TEXT NOT NULL
+) STRICT;
+
+-- view with LipidMAPS ontology info (category/class/subclass) for lipid
+-- annotations in shortened form
+CREATE VIEW 
+    LipidMapsShort
+AS SELECT 
+    lipid_id,
+    SUBSTR(lmid_prefix, 3, 2) AS lm_cat,
+    SUBSTR(lmid_prefix, 3, 4) AS lm_cls,
+    SUBSTR(lmid_prefix, 3, 6) AS lm_sub
+FROM 
+    Lipids;
+INSERT INTO _TableDescriptions VALUES 
+    ('LipidMapsShort', 'lipid_id', 'lipid annotation identifier'),
+    ('LipidMapsShort', 'lm_cat', 'LipidMAPS ontology: category (short)'),
+    ('LipidMapsShort', 'lm_cls', 'LipidMAPS ontology: class (short)'),
+    ('LipidMapsShort', 'lm_sub', 'LipidMAPS ontology: subclass (short)');
+
+-- view with LipidMAPS ontology info (category/class/subclass) for lipid
+-- annotations in long form
+CREATE VIEW 
+    LipidMapsLong
+AS SELECT 
+    lipid_id,
+    lm_cat_long AS lm_cat,
+    lm_cls_long AS lm_cls,
+    lm_sub_long AS lm_sub
+FROM 
+    Lipids
+    JOIN _LipidMapsPrefixToLong USING(lmid_prefix);
+INSERT INTO _TableDescriptions VALUES 
+    ('LipidMapsLong', 'lipid_id', 'lipid annotation identifier'),
+    ('LipidMapsLong', 'lm_cat', 'LipidMAPS ontology: category (long)'),
+    ('LipidMapsLong', 'lm_cls', 'LipidMAPS ontology: class (long)'),
+    ('LipidMapsLong', 'lm_sub', 'LipidMAPS ontology: subclass (long)');
+
+-- table with (sum) FA composition info for lipid annotations
+CREATE TABLE LipidSumComp (
+    lipid_id INT NOT NULL,
+    carbon INT NOT NULL,
+    unsat INT NOT NULL,
+    n_chains INT NOT NULL
+);
+INSERT INTO _TableDescriptions VALUES 
+    ('LipidSumComp', 'lipid_id', 'lipid annotation identifier'),
+    ('LipidSumComp', 'carbon', 'total carbon count for FAs'),
+    ('LipidSumComp', 'unsat', 'total unsaturation count for FAs'),
+    ('LipidSumComp', 'n_chains', 'number of FAs');
+
+-- table for tracking annotated lipid fragments
+CREATE TABLE LipidFragments (
+    lipid_id INT NOT NULL,
+    dia_frag_id INT NOT NULL,
+    frag_rule TEXT NOT NULL,
+    rule_mz REAL NOT NULL,
+    ppm REAL NOT NULL,
+    diagnostic INT NOT NULL,
+    supports_fa TEXT
+);
+INSERT INTO _TableDescriptions VALUES 
+    ('LipidFragments', 'lipid_id', 'lipid annotation identifier'),
+    ('LipidFragments', 'dia_frag_id', 'DIA fragment identifier'),
+    ('LipidFragments', 'frag_rule', 'description of fragmentation rule'),
+    ('LipidFragments', 'rule_mz', 'fragmentation rule m/z'),
+    ('LipidFragments', 'ppm', 'ppm error of fragment m/z relative to rule m/z'),
+    ('LipidFragments', 'diagnostic', 'indicates if the fragment is diagnostic for this class (treat as boolean)'),
+    ('LipidFragments', 'supports_fa', 'if the fragment annotation supports presence of a particular FA, include it as C:U');
+

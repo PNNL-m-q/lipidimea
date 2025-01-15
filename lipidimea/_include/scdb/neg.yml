@@ -1,0 +1,13 @@
+# These defaults come from lipids identified from NIST SRM1950 plasma
+LMFA0101: ["[M-H]-"]                  # FA (sat)
+LMFA0103: ["[M-H]-"]                  # FA (unsat)
+LMGP0201: ["[M-H]-"]                  # PE
+LMGP0202: ["[M-H]-"]                  # PE O-
+LMGP0205: ["[M-H]-"]                  # LPE 
+LMGP0206: ["[M-H]-"]                  # LPE O-
+LMGP0401: ["[M-H]-"]                  # PG
+LMGP0405: ["[M-H]-"]                  # LPG 
+LMGP0601: ["[M-H]-"]                  # PI
+LMGP0605: ["[M-H]-"]                  # LPI 
+LMGP1001: ["[M-H]-"]                  # PA
+LMSP0201: ["[M+CH3COO]-", "[M-H]-"]   # Cer

@@ -1,5 +1,5 @@
 """
-LipidIMEA/msms/_util.py
+lipidimea/msms/_util.py
 
 Dylan Ross (dylan.ross@pnnl.gov)
 
@@ -8,24 +8,66 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import os
+import re
+from typing import Any, Callable, List, Dict
 
 import numpy as np
-            
+import numpy.typing as npt
 
-def ms2_to_str(mzs, iis):
+from lipidimea.typing import Spec, SpecStr
+
+
+
+def ms2_to_str(mzs: npt.NDArray[np.float64], iis: npt.NDArray[np.float64]
+               ) -> SpecStr :
     """  
     converts arrays of m/z bins and intensities to flat str representation
+    with space-separated peaks in format "{mz}:{intensity}"
+    
+    Parameters
+    ----------
+    mzs : ``numpy.ndarray(float)``
+    iis : ``numpy.ndarray(float)``
+        m/z and intensity components of mass spectrum as arrays
+
+    Returns
+    -------
+    spec_string : ``SpecStr``
+        string representation of spectrum
     """
+    lm, li = len(mzs), len(iis)
+    if lm != li:
+        msg = f"ms2_to_str: mzs and iis arrays have different lengths ({lm} and {li})"
+        raise ValueError(msg)
+    if lm < 1:
+        msg = f"ms2_to_str: mzs and iis arrays should not be empty"
+        raise ValueError(msg)        
     s = ''
     for mz, i in zip(mzs, iis):
-        s += '{:.4f}:{:.0f} '.format(mz, i)
+        s += f"{mz:.4f}:{i:.0f} "
     return s.rstrip()
 
 
-def str_to_ms2(s):
+def str_to_ms2(s: SpecStr
+               ) -> Spec :
     """
-    converts flat str representation to arrays of m/z and intensities
+    converts flat str representation (space-separated peaks in format "{mz}:{intensity}") 
+    to arrays of m/z and intensities
+
+    Parameters
+    ----------
+    s : ``SpecStr``
+        string form of spectrum
+
+    Returns
+    -------
+    spectrum : ``Spec``
+        spectrum as 2D array with m/z and intensity components
     """
+    # check the format of the spectrum string
+    if not re.match(r'^([0-9]+[.][0-9]*:[0-9]+[ ]*)+$', s):
+        msg = "str_to_ms2: spectrum string not properly formatted"
+        raise ValueError(msg)
     ms_, is_ = [], []
     if ' ' in s:
         for ms2pk in s.split():
@@ -40,47 +82,41 @@ def str_to_ms2(s):
     return np.array([ms_, is_])
 
 
-def debug_handler(debug_flag, debug_cb, msg, pid=None):
-    """
-    deal with different debugging states automatically 
-    
-    debug_flag:
-
-    - ``None``: do nothing
-    - ``'text'``: prints text debugging messages only
-    - ``'text_pid'``: prints text debugging messages, with PID prepended on the DEBUG label 
-    - ``'textcb'``: produces text debugging messages but instead of printing it calls the 
-      debug_cb callback with the message as an argument
-    - ``'textcb_pid'``: produces text debugging messages but instead of printing it calls 
-      the debug_cb callback with the message as an argument, with PID prepended on the DEBUG label 
-    
-    Parameters
-    ----------
-    debug_flag : ``str``
-        specifies how to dispatch the message, `None` to do nothing
-    debug_cb : ``func``
-        callback function that takes the debugging message as an argument, can be None if
-        debug_flag is not set to 'textcb'
-    msg : ``str``
-        debugging message (automatically prepended with "DEBUG: ")
-    pid : ``int``, optional
-        PID for individual process, may be omitted if debug flag does not have "_pid" in it
-    """
-    if debug_flag is not None:
-        pid_flag = 'pid' in debug_flag
-        lbl = '<pid: {}> '.format(pid) if pid_flag else ''
-        msg = lbl + 'DEBUG: ' + msg
-        if debug_flag in ['text', 'text_pid']:
-            print(msg, flush=True)
-        if debug_flag in ['textcb', 'textcb_pid']:
-            if debug_cb is not None:
-                debug_cb(msg)
-            else:
-                ve = '_debug_handler: debug_flag was set to "textcb" or "textcb_pid" but no debug_cb was provided'
-                raise ValueError(ve)
-
-
-def apply_args_and_kwargs(fn, args, kwargs):
+def apply_args_and_kwargs(fn: Callable, args: List[Any], kwargs: Dict[Any, Any]
+                          ) -> Any:
     """ small helper that enables multiprocessing.Pool.starmap with kwargs """
     return fn(*args, **kwargs)
 
+
+def ppm_from_delta_mz(delta_mz: float, mz: float
+                      ) -> float:
+    """
+    compute ppm from delta mz and mz
+
+    Parameters
+    ----------
+    delta_mz : ``float``
+    mz : ``float``
+
+    Returns
+    -------
+    ppm : ``float``
+    """
+    return 1e6 * delta_mz / mz
+
+
+def tol_from_ppm(mz: float, ppm: float
+                 ) -> float :
+    """ 
+    convert ppm to a tolerance for a specified m/z
+    
+    Parameters
+    ----------
+    mz : ``float``
+    ppm : ``float``
+
+    Returns
+    -------
+    mz_tolerance : ``float``
+    """
+    return mz * ppm / 1e6

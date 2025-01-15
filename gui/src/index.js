@@ -21,8 +21,8 @@ let mainWindow;
 const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1600,
+    height: 1200,
     webPreferences: {
       // nodeIntegration: false,
       contextIsolation: true,
@@ -38,7 +38,7 @@ const createWindow = () => {
 
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
   // Store the current session data when switching tabs
   mainWindow.on('blur', () => {
@@ -78,7 +78,7 @@ app.on('activate', () => {
 // Load on DOM
 // Get Defaults Data
 ipcMain.on('getDefaults', (event) => {
-  const defaultsPath = path.join(__dirname, '../../LipidIMEA/_include/default_params.yml');
+  const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yml');
   console.log('YAML Path:', defaultsPath);
 
   fs.readFile(defaultsPath, 'utf8', (err, data) => {
@@ -105,7 +105,7 @@ ipcMain.on('request-filename-and-directory', (event) => {
   prompt({
       title: 'Parameter File Name',
       label: 'Enter the desired filename to save parameters under:',
-      value: 'saved_lipidmea_params.yaml',
+      value: 'saved_lipidmea_params.yml',
       type: 'input'
   }).then((fileName) => {
       if (fileName !== null) {
@@ -144,7 +144,7 @@ ipcMain.on('run-python-yamlwriter', (event, options) => {
   let savePath;
   if (options.location && options.name) {
       // If location and name are provided, construct the save path
-      savePath = path.join(options.location, options.name + ".yaml");
+      savePath = path.join(options.location, options.name + ".yml");
   } else {
       // Otherwise, use the path directly from options
       savePath = options.path;
@@ -152,7 +152,7 @@ ipcMain.on('run-python-yamlwriter', (event, options) => {
   console.log('yamlwriter input values:', inputNumber);
 
   // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, 'dist', 'yamlwriter');
+  let pythonExecutable = path.join(__dirname, '../dist', 'yamlwriter');
 
   const spawn = require('child_process').spawn;
   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), savePath]);
@@ -219,7 +219,7 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
 
 
 
-// Run python script to run the Lipidimea workflow
+// Run python script to run the lipidimea workflow
 // ipcMain.on('run-python-experiment', (event, options) => {
 //   const inputNumber = options.args;
 //   console.log('Experiment input values:', inputNumber);
@@ -247,7 +247,7 @@ ipcMain.on('run-python-experiment', (event, options) => {
   console.log('Experiment input values:', inputNumber);
 
   // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, 'dist', 'experiment');
+  let pythonExecutable = path.join(__dirname, '../dist', 'experiment');
 
   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber)]);
 
