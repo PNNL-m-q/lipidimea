@@ -313,7 +313,7 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
       dda_ms2_peaks, 
       dia_ms2_peaks, 
       dia_ms1 
-    FROM CombinedFeatures
+    FROM _CombinedFeaturesForGUI
     `, (error, data) => {
     if (error) {
       console.error('Error fetching data from the database:', error);
