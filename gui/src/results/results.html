@@ -4,7 +4,7 @@
 <head>
     <!-- Meta and Title -->
     <meta charset="UTF-8">
-    <title>DIA-DDA Lipid Identification</title>
+    <title>LipidIMEA</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Stylesheet Link -->
     <link href="../style.css" rel="stylesheet">
@@ -15,20 +15,18 @@
     <div>
         <nav class="menu" style="z-index:1000;">
           <a href="../intro/intro.html" class="menu-item">Instructions</a>
-          <a href="../experiment/experiment.html" class="menu-item">Experiment</a>
-          <a href="#../results/results.html" class="menu-item">Results</a>
+          <a href="../experiment/experiment.html" class="menu-item">Process Data</a>
+          <a href="#../results/results.html" class="menu-item">View Results</a>
         </nav>
     </div>
 
   <!-- Page content -->
   <div class="content-wrapper">
-    <!-- The Header -->
-    <h1>View Results</h1>
-    <!-- Inital Box containing  'Explore New Database' Button -->
+    <!-- Inital Box containing  'Open Results' Button -->
     <html>
     <div class="results-outer-box">
-        <span class="table-header-and-button">Select a SQLite database:</span>
-        <button class="table-header-and-button" id="show-table-button" onclick="databaseDialog()">Explore New Database</button>
+        <!-- <span class="table-header-and-button">Select a SQLite database:</span> -->
+        <button class="table-header-and-button" id="show-table-button" onclick="databaseDialog()">Open Results</button>
       <!-- <button id="show-table-button" style="display:none" onclick="databaseDialog()"></button> -->
       <br><br>
       <!-- Main Table from SQLite -->

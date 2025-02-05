@@ -213,6 +213,8 @@ window.api.receive('returnDefaults', (data) => {
             const duoinputsColumnBothAdvanced = document.getElementById('duo-inputs-column-both-advanced');
 
             sectionsTopBoth.forEach((sectionTopBoth) => {
+
+                // TODO: Text formatting, some of the keys/values from the YAML are ugly
                 const sectionsBoth = Object.keys(data.PARAMETERS[sectionTopBoth]).filter(key => key !== "misc" && key !== "display_name");
 
                 createHeaderElement(data.PARAMETERS[sectionTopBoth].display_name, duoinputsColumnBothAdvanced, sectionTopBoth);
