@@ -7,4 +7,3 @@ matplotlib
 pyyaml
 mzapy
 polars
-#lipidlib

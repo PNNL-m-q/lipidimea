@@ -16,9 +16,13 @@ import multiprocessing
 import os
 import errno
 
+<<<<<<< HEAD
+=======
 import numpy as np
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
 from mzapy.dda import MsmsReaderDda, MsmsReaderDdaCachedMs1
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
+from mzapy.view import plot_spectrum, plot_chrom
 
 from lipidimea.typing import (
     ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaPrecursor,
@@ -34,12 +38,15 @@ from lipidimea.params import (
 )
 
 
+<<<<<<< HEAD
+=======
 # TODO (Dylan Ross): Change the behavior of the DDA data extraction functions to be more like 
 #                    the lipid annotation functions: pass around one big DdaParams dataclass
 #                    instance and let the functions fetch the parameters they need from it rather
 #                    than passing around different parameter subsets.
 
 
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
 def _extract_and_fit_chroms(rdr: DdaReader, 
                             pre_mzs: Set[float], 
                             params: DdaExtractAndFitChromsParams,
@@ -77,6 +84,7 @@ def _extract_and_fit_chroms(rdr: DdaReader,
         msg = f"({i + 1}/{n}) precursor m/z: {pre_mz:.4f} -> "
         # extract chromatogram
         chrom = rdr.get_chrom(pre_mz, tol_from_ppm(pre_mz, params.mz_ppm))
+        plot_chrom(*chrom, figname="show")
         # try fitting chromatogram (up to n peaks)
         _pkrts, _pkhts, _pkwts = find_peaks_1d_gauss(*chrom, 
                                                      params.min_rel_height, params.min_abs_height, 
@@ -203,7 +211,14 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
         ms2 = rdr.get_msms_spectrum(fmz, tol_from_ppm(fmz, params.pre_mz_ppm), rt_min, rt_max, 
                                     params.mz_bin_min, mz_bin_max, params.mz_bin_size)
         mz_bins, i_bins, n_scan_pre_mzs, scan_pre_mzs = ms2
+<<<<<<< HEAD
+        print(f"{n_scan_pre_mzs=}")
+        print(f"{scan_pre_mzs=}")
+        plot_spectrum(mz_bins, i_bins, figname="show")
+        msg += '# MS2 scans: {} '.format(n_scan_pre_mzs)
+=======
         msg += f"# MS2 scans: {n_scan_pre_mzs}"
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
         if n_scan_pre_mzs > 0:
             # find peaks
             pkmzs, pkhts, pkwts = find_peaks_1d_localmax(mz_bins, i_bins,
@@ -349,10 +364,15 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
         else MsmsReaderDda(dda_data_file, drop_scans=drop_scans)
     )
     # get the list of precursor m/zs
+<<<<<<< HEAD
+    pre_mzs: Set[float] = rdr.get_pre_mzs()[4000:4020]  # TODO: TEMPORARY SLICE, REMOVE ME!
+    debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
+=======
     pre_mzs: Set[float] = rdr.get_pre_mzs()
     # limit to a specified range 
     pre_mzs = set([_ for _ in pre_mzs if (_ >= params.min_precursor_mz and _ <= params.max_precursor_mz)])
     debug_handler(debug_flag, debug_cb, f"# precursor m/zs: {len(pre_mzs)}")
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 
                                                               pre_mzs, 
@@ -363,6 +383,12 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
                                                                             params.consolidate_chrom_feats_params, 
                                                                             debug_flag, debug_cb)
     # extract MS2 spectra
+<<<<<<< HEAD
+    qdata: List[DdaFeature] = _extract_and_fit_ms2_spectra(rdr, 
+                                                           chrom_feats_consolidated, 
+                                                           params.extract_and_fit_ms2_spectra_params, 
+                                                           debug_flag, debug_cb)
+=======
     precursors, spectra = _extract_and_fit_ms2_spectra(rdr, 
                                                        dda_file_id,
                                                        chrom_feats_consolidated, 
@@ -370,6 +396,7 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
                                                        debug_flag, debug_cb)
     precursors: List[DdaPrecursor]
     spectra: List[Optional[Ms2]]
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
     # do not need the reader anymore
     rdr.close()
     # initialize connection to DDA ids database
