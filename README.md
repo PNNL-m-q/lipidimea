@@ -41,7 +41,9 @@
         - [ ] F. run full workflow \(A-E\)
     - [ ] each analysis takes list of data files + associated parameter config file\(s\) as args \(where applicable\) 
     - [ ] add flags to database that indicate which steps have been completed
-
+- [ ] clean up unit tests and get them running again
+    - [ ] adopt unit testing framework used in `tcdr` codebase
+- [ ] general code cleanup: module docstrings, indentation and other visual style, etc.
 
 ### General
 - [ ] migrate to GitHub

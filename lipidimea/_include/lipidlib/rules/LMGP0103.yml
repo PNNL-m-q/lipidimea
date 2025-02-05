@@ -1,0 +1,163 @@
+# fragmentation rules for PC(P-) lipid class 
+POS:
+    -
+        label: C5H15O4NP
+        diagnostic: true
+        rule:
+            C: 5
+            H: 15
+            O: 4
+            N: 1
+            P: 1
+    -
+        label: C5H15O4NP-H2O
+        rule:
+            C: 5
+            H: 13
+            O: 3
+            N: 1
+            P: 1
+    -
+        label: C5H14ON
+        rule:
+            C: 5
+            H: 14
+            O: 1
+            N: 1
+    -
+        label: C2H6O4P
+        rule:
+            C: 2
+            H: 6
+            O: 4
+            P: 1
+    -
+        label: C8H19O5NP
+        rule:
+            C: 8
+            H: 19
+            O: 5
+            N: 1
+            P: 1
+    -
+        label: C8H21O6NP
+        rule:
+            C: 8
+            H: 21
+            O: 6
+            N: 1
+            P: 1
+    -
+        label: C5H12N
+        rule:
+            C: 5
+            H: 12
+            N: 1
+    -
+        label: C2H5O4P+Na
+        rule:
+            C: 2
+            H: 5
+            O: 4
+            P: 1
+            Na: 1
+    -
+        label: C2H5O4P+K
+        rule:
+            C: 2
+            H: 5
+            O: 4
+            P: 1
+            K: 1
+    - 
+        label: LPA(P-{c}:{u})
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 3
+            H: 2 * (c - u + 3)
+            O: 6
+            P: 1
+    - 
+        label: LPA(P-{c}:{u})-H2O
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 3
+            H: 2 * (c - u + 2)
+            O: 5
+            P: 1
+    - 
+        label: LPC(P-{c}:{u})
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 8
+            H: 2 * (c - u + 9)
+            O: 6
+            N: 1
+            P: 1
+    - 
+        label: LPC(P-{c}:{u})-H2O
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 8
+            H: 2 * (c - u + 8)
+            O: 5
+            N: 1
+            P: 1
+    -
+        label: M-C5H15O4NP
+        neutral_loss: true
+        rule:
+            C: 5
+            H: 15
+            O: 4
+            N: 1
+            P: 1
+    -
+        label: M-C5H14O4NP
+        neutral_loss: true
+        rule:
+            C: 5
+            H: 14
+            O: 4
+            N: 1
+            P: 1
+    -
+        label: M-(CH2)3NH3
+        neutral_loss: true
+        rule:
+            C: 3
+            H: 9
+            N: 1
+    -
+        label: M-ketene({c}:{u})-59
+        neutral_loss: true
+        static: false
+        n_chains: 1
+        rule:
+            C: c + 5
+            H: 2 * (c - u + 6)
+            O: 6
+            P: 1
+    -
+        label: M-ether({c}:{u})
+        neutral_loss: true
+        static: false
+        n_chains: 1
+        rule:
+            C: c 
+            H: 2 * c - 2 * u
+            O: 1
+    -
+        label: M-ether({c}:{u})-C3H9N
+        neutral_loss: true
+        static: false
+        n_chains: 1
+        rule:
+            C: c + 3
+            H: 2 * c - 2 * u + 9
+            O: 1
+            N: 1

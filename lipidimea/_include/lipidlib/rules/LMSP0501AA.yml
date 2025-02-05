@@ -1,0 +1,69 @@
+# fragmentation rules for HexCer lipid class
+POS:
+    - 
+        label: M-sugar
+        neutral_loss: true
+        rule:
+            C: 6
+            H: 10
+            O: 5
+    - 
+        label: M-sugar-H2O
+        neutral_loss: true
+        rule: 
+            C: 6
+            H: 12
+            O: 6
+    - 
+        label: M-H2O-H2CO-CH2
+        neutral_loss: true
+        rule:
+            C: 2
+            H: 6
+            O: 2
+    -
+        label: M-H2O-CH2
+        neutral_loss: true
+        rule:
+            C: 1
+            H: 4
+            O: 1
+    -
+        label: M-2(H2O)
+        neutral_loss: true
+        rule:
+            H: 4
+            O: 2
+    -
+        label: FA({c}:{u})_long
+        static: false
+        n_chains: 1
+        rule:
+            C: c + 2
+            H: 2 * c - 2 * u + 2
+            O: 1
+            N: 1
+    -
+        label: FA({c}:{u})_short
+        static: false
+        n_chains: 1
+        rule:
+            C: c 
+            H: 2 * c - 2 * u + 2
+            O: 1
+            N: 1
+NEG:
+    - 
+        label: M-sugar
+        neutral_loss: true
+        rule:
+            C: 6
+            H: 10
+            O: 5
+    - 
+        label: M-sugar-H2O
+        neutral_loss: true
+        rule: 
+            C: 6
+            H: 12
+            O: 6

@@ -21,10 +21,6 @@ import numpy as np
 import numpy.typing as npt
 from scipy.optimize import curve_fit
 
-from lipidlib.lipids import LMAPS, get_c_u_combos, Lipid, LipidWithChains
-from lipidlib.parser import parse_lipid_name
-from lipidlib._fragmentation_rules import load_rules
-
 from lipidimea.typing import (
     ScdbLipidId, ResultsDbPath, ResultsDbCursor, YamlFilePath
 )
@@ -33,6 +29,9 @@ from lipidimea.msms._util import tol_from_ppm
 from lipidimea.params import (
     AnnotationParams, LITERATURE_CCS_TREND_PARAMS
 )
+from lipidimea._lipidlib.lipids import LMAPS, get_c_u_combos, Lipid, LipidWithChains
+from lipidimea._lipidlib.parser import parse_lipid_name
+from lipidimea._lipidlib._fragmentation_rules import load_rules
 
 
 class SumCompLipidDB():

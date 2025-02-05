@@ -1,0 +1,89 @@
+# fragmentation rules for PE lipid class
+POS:
+    -
+        label: M-C2H8NO4P
+        diagnostic: true
+        neutral_loss: true
+        rule:
+            C: 2
+            H: 8
+            O: 4
+            N: 1
+            P: 1
+    - 
+        label: LPA({c}:{u})-H
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 6
+            O: 7
+            P: 1
+    - 
+        label: LPA({c}:{u})-H2O-H
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 4
+            O: 6
+            P: 1
+NEG:
+    -
+        label: C5H11O5NP
+        diagnostic: true
+        rule:
+            C: 5
+            H: 11
+            O: 5
+            N: 1
+            P: 1
+    -
+        label: C5H13O6NP
+        rule:
+            C: 5
+            H: 13
+            O: 6
+            N: 1
+            P: 1
+    -
+        label: C3H6O5P
+        rule:
+            C: 3
+            H: 6
+            O: 5
+            P: 1
+    - 
+        label: M-C2H6N
+        neutral_loss: true
+        rule:
+            C: 2
+            H: 6
+            N: 1
+    - 
+        label: M-C5H12O5NP
+        neutral_loss: true
+        rule:
+            C: 5
+            H: 12
+            O: 5
+            N: 1
+            P: 1
+    - 
+        label: LPA({c}:{u})-H
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 6
+            O: 7
+            P: 1
+    - 
+        label: LPA({c}:{u})-H2O-H
+        static: false
+        n_chains: 1
+        rule: 
+            C: c + 3
+            H: 2 * c - 2 * u + 4
+            O: 6
+            P: 1
