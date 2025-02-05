@@ -22,7 +22,7 @@ from lipidimea.typing import (
 
 
 # define path to results DB schema file
-_RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3')
+_RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sql3')
 
 
 def create_results_db(results_file: ResultsDbPath,

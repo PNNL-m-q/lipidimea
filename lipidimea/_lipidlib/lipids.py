@@ -18,7 +18,7 @@ from mzapy.isotopes import monoiso_mass
 
 # load the classifications from YAML file
 assert False, "change this path"
-with open(op.join(op.dirname(op.abspath(__file__)), "_include/lmaps.yml"), "r") as _yf:
+with open(op.join(op.dirname(op.abspath(__file__)), "_include/lmaps.yaml"), "r") as _yf:
     LMAPS = yaml.safe_load(_yf)
 
 

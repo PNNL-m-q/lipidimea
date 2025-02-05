@@ -19,17 +19,17 @@ from lipidimea.typing import YamlFilePath
 
 # define paths to default sum composition lipid DB config files
 DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
-                                                '_include/scdb/pos.yml')
+                                                '_include/scdb/pos.yaml')
 DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
-                                                '_include/scdb/neg.yml')
+                                                '_include/scdb/neg.yaml')
 
 # define path to default RT ranges config
 DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
-                                                   '_include/rt_ranges/RP.yml')
+                                                   '_include/rt_ranges/RP.yaml')
 
 # define path to literature CCS trends file
 LITERATURE_CCS_TREND_PARAMS: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
-                                                    '_include/literature_ccs_trend_params.yml')
+                                                    '_include/literature_ccs_trend_params.yaml')
 
 
 @dataclass
@@ -187,7 +187,7 @@ def load_default_params(
     params : ``dict(...)``
         analysis parameter dict component of parameters, with all default values
     """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yml'), 'r') as yf:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yaml'), 'r') as yf:
         defaults = yaml.safe_load(yf)
     params = {}
     for top_lvl in ['dda', 'dia', 'annotation']:

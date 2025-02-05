@@ -65,8 +65,8 @@ class TestLoadParams(unittest.TestCase):
     def test_LP_load_params_no_errs(self):
         """ run load_params and there should be no errors """
         with TemporaryDirectory() as tmp_dir:
-            yf = os.path.join(tmp_dir, "params.yml")
-            # create params.yml file and write to it
+            yf = os.path.join(tmp_dir, "params.yaml")
+            # create params.yaml file and write to it
             # give it the "input_output" and "params" sections it expects
             s = (
                 "input_output:\n"
@@ -85,7 +85,7 @@ class TestSaveParams(unittest.TestCase):
     def test_SP_param_file_creation(self):
         """ makes sure a new params file is created """
         with TemporaryDirectory() as tmp_dir:
-            pf = os.path.join(tmp_dir, "params.yml")
+            pf = os.path.join(tmp_dir, "params.yaml")
             self.assertFalse(os.path.isfile(pf), 
                              msg="params file should not exist before")
             save_params({"junk": "data"}, {"more": "junk"}, pf)
@@ -95,7 +95,7 @@ class TestSaveParams(unittest.TestCase):
     def test_SP_param_file_overwrite(self):
         """ make sure saving params to exsiting file overwrites it """
         with TemporaryDirectory() as tmp_dir:
-            pf = os.path.join(tmp_dir, "params.yml")
+            pf = os.path.join(tmp_dir, "params.yaml")
             # create db file and write to it
             with open(pf, "w") as f:
                 f.write("test")
