@@ -1,6 +1,5 @@
 """
 lipidimea/typing.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     type annotations for use across this package

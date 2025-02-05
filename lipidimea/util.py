@@ -1,6 +1,5 @@
 """
 lipidimea/util.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     module with general utilities

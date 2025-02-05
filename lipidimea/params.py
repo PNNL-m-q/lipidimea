@@ -1,6 +1,5 @@
 """
 lipidimea/params.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     module for organizing/handling parameters 

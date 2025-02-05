@@ -1,6 +1,5 @@
 """
 lipidimea/msms/dia.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     module with DIA MSMS utilities
@@ -14,7 +13,6 @@ import os
 import errno
 from itertools import repeat
 import multiprocessing
-import time
 
 import numpy as np
 import numpy.typing as npt
@@ -22,16 +20,14 @@ from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from lipidimea.msms._util import apply_args_and_kwargs
+from lipidimea.msms._util import apply_args_and_kwargs, tol_from_ppm
 from lipidimea.util import debug_handler, add_data_file_to_db
-from lipidimea.msms._util import tol_from_ppm
 from lipidimea.params import (
     DiaDeconvoluteMs2PeaksParams, DiaParams
 )
 from lipidimea.typing import (
-    Xic, Atd, Ms1, Ms2, Spec, SpecStr,
-    DiaDeconFragment,
-    ResultsDbPath, ResultsDbCursor, ResultsDbConnection,
+    Xic, Atd, Ms1, 
+    ResultsDbPath, ResultsDbCursor,
     MzaFilePath, MzaFileId
 )
 
