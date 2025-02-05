@@ -83,15 +83,17 @@ class TestCreateResultsDb(unittest.TestCase):
             with self.assertRaises(sqlite3.IntegrityError,
                                    msg="trying to insert with wrong types and STRICT enabled should cause an error"):
                 con = sqlite3.connect(dbf)
-                con.execute("INSERT INTO _DIAFeatsToDeconFrags VALUES (?,?);", ("bad", "types"))
+                con.execute("INSERT INTO DDAFragments VALUES (?,?,?,?);", (None, "are", "bad", "types"))
         # create a database with strict disabled
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
             create_results_db(dbf, strict=False)
             # try an insert query with the wrong datatypes
             # with STRICT disabled this should not cause an error
+            # first column is None because it is an INTEGER PRIMARY KEY column and does not like the wrong type
+            # even if STRICT is not available
             con = sqlite3.connect(dbf)
-            con.execute("INSERT INTO _DIAFeatsToDeconFrags VALUES (?,?);", ("bad", "types"))
+            con.execute("INSERT INTO DDAFragments VALUES (?,?,?,?);", (None, "are", "bad", "types"))
                 
 
 class TestDebugHandler(unittest.TestCase):

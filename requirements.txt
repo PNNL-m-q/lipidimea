@@ -6,4 +6,4 @@ scipy
 matplotlib
 pyyaml
 mzapy
-#lipidlib
+polars

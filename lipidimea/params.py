@@ -10,8 +10,26 @@ Dylan Ross (dylan.ross@pnnl.gov)
 from typing import Dict, Any, Tuple
 from dataclasses import dataclass
 import os
+from os import path as op
 
 import yaml
+
+from lipidimea.typing import YamlFilePath
+
+
+# define paths to default sum composition lipid DB config files
+DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                '_include/scdb/pos.yml')
+DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                '_include/scdb/neg.yml')
+
+# define path to default RT ranges config
+DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                   '_include/rt_ranges/RP.yml')
+
+# define path to literature CCS trends file
+LITERATURE_CCS_TREND_PARAMS: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+                                                    '_include/literature_ccs_trend_params.yml')
 
 
 @dataclass
@@ -54,9 +72,13 @@ class DdaConsolidateFeaturesParams:
     drop_if_no_ms2: bool
 
 
+# TODO (Dylan Ross): Refactor parameter dataclasses to work more like AnnotationParams
+
 @dataclass
 class DdaParams:
     """ class for organizing DDA data processing parameters """
+    min_precursor_mz: float
+    max_precursor_mz: float
     extract_and_fit_chrom_params: DdaExtractAndFitChromsParams
     consolidate_chrom_feats_params: DdaConsolidateChromFeatsParams
     extract_and_fit_ms2_spectra_params: DdaExtractAndFitMs2SpectraParams
@@ -111,6 +133,8 @@ class DiaDeconvoluteMs2PeaksParams:
     atd_dist_metric: str
 
 
+# TODO (Dylan Ross): Refactor parameter dataclasses to work more like AnnotationParams
+
 @dataclass
 class DiaParams:
     """ class for organizing DIA data processing parameters """
@@ -124,13 +148,13 @@ class DiaParams:
 
 
 @dataclass
-class SumCompAnnotationParams:
+class SumCompAnnParams:
     """ parameters for initial annotation based on sum composition """
-    overwrite: bool
     fa_min_c: int
     fa_max_c: int
     fa_odd_c: bool
     mz_ppm: float
+    config: YamlFilePath
     
 
 @dataclass
@@ -145,8 +169,11 @@ class FragRuleAnnParams:
 @dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
-    sum_comp_annotation_params: SumCompAnnotationParams
-    frag_rule_ann_params: FragRuleAnnParams
+    SumCompAnnParams: SumCompAnnParams
+    rt_range_config: YamlFilePath
+    ccs_trend_percent: float
+    FragRuleAnnParams: FragRuleAnnParams
+    ionization: str
 
 
 def load_default_params(
@@ -164,8 +191,18 @@ def load_default_params(
         defaults = yaml.safe_load(yf)
     params = {}
     for top_lvl in ['dda', 'dia', 'annotation']:
-        params[top_lvl] = {section: {param: value['default'] for param, value in sec_params.items() if param != 'display_name'} for section, sec_params in defaults[top_lvl].items() if section != 'display_name'}
-    params['misc'] = {param: value['default'] for param, value in defaults['misc'].items() if param != 'display_name'}
+        params[top_lvl] = {
+            section: {
+                param: value['default'] for param, value in sec_params.items() if param != 'display_name'
+            } 
+            for section, sec_params in defaults[top_lvl].items() 
+            if section != 'display_name'
+        }
+    params['misc'] = {
+        param: value['default'] 
+        for param, value in defaults['misc'].items() 
+        if param != 'display_name'
+    }
     return params
 
 

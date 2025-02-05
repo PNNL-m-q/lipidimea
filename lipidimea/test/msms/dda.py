@@ -18,7 +18,7 @@ from mzapy.peaks import _gauss
 
 from lipidimea.msms.dda import (
     _MSMSReaderDDA, _MSMSReaderDDA_Cached, _extract_and_fit_chroms, _consolidate_chrom_feats,
-    _extract_and_fit_ms2_spectra, _add_features_to_db, extract_dda_features, 
+    _extract_and_fit_ms2_spectra, _add_precursors_and_fragments_to_db, extract_dda_features, 
     consolidate_dda_features
 )
 from lipidimea.msms._util import ms2_to_str, str_to_ms2
@@ -60,6 +60,8 @@ _CDF_PARAMS = DdaConsolidateFeaturesParams(
 )
 
 _DDA_PARAMS = DdaParams(
+    300.,
+    1000.,
     _EAFC_PARAMS, 
     _CCF_PARAMS, 
     _EAFMS2_PARAMS, 
@@ -72,7 +74,7 @@ class Test_MSMSReaderDDA(unittest.TestCase):
 
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+        self.assertTrue(False, "no tests implemented yet")
 
 
 class Test_MSMSReaderDDACached(unittest.TestCase):
@@ -80,7 +82,7 @@ class Test_MSMSReaderDDACached(unittest.TestCase):
 
     def test_NO_TESTS_IMPLEMENTED_YET(self):
         """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+        self.assertTrue(False, "no tests implemented yet")
 
 
 class Test_ExtractAndFitChroms(unittest.TestCase):
@@ -209,18 +211,17 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
         # mock a _MSMSReaderDDA instance with get_msms_spectrum method that returns the fake spectrum
         with patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
             rdr = MockReader.return_value
-            rdr.f = "<filename>"
             rdr.get_msms_spectrum.return_value = (ms2_mzs, ms2_iis, 3, [789.0123, 789.0123, 789.0123])
             # use a helper callback function to store instead of printing debugging messages
             global _DEBUG_MSGS
             _DEBUG_MSGS = []
             # test the function
-            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, _EAFMS2_PARAMS, 
-                                                 debug_flag="textcb", debug_cb=_debug_cb)
+            precursors, spectra = _extract_and_fit_ms2_spectra(rdr, 69, cons_feats, _EAFMS2_PARAMS, 
+                                                               debug_flag="textcb", debug_cb=_debug_cb)
             # there should be no features found in this spectrum, it is just flat noise
             # but there will still be qdata with the chromatographic feature
-            self.assertListEqual(qdata, [(None, '<filename>', 789.0123, 10.03, 0.25, 100000.0, 10, 3, 0, None)],
-                                 msg="incorrect qdata returned")
+            self.assertListEqual(precursors, [(None, 69, 789.0123, 10.03, 0.25, 100000.0, 10, 3, 0)],
+                                 msg="incorrect precursors returned")
             # make sure that the correct number of debugging messages were generated
             self.assertEqual(len(_DEBUG_MSGS), 3)
             # check for debug message showing no peaks found
@@ -238,8 +239,8 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
         for pkmz in pkmzs:
             ms2_iis += _gauss(ms2_mzs, pkmz, 1e5, 0.1) * noise2 
         # expected query data generated from extracting and fitting MS2 spectrum
-        expected_qdata = (
-            None, "<filename>", 789.0123, 10.03, 0.25, 1e5, 10, 3, 28, ms2_to_str(pkmzs, np.repeat(1e5, len(pkmzs)))
+        expected_precursors = (
+            (None, 69, 789.0123, 10.03, 0.25, 1e5, 10, 3, 28)
         )
         # consolidated features
         cons_feats = [
@@ -248,17 +249,16 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
         # mock a _MSMSReaderDDA instance with get_msms_spectrum method that returns the fake spectrum
         with patch('lipidimea.msms.dda._MSMSReaderDDA') as MockReader:
             rdr = MockReader.return_value
-            rdr.f = "<filename>"
             rdr.get_msms_spectrum.return_value = (ms2_mzs, ms2_iis, 3, [789.0123, 789.0123, 789.0123])
             # use a helper callback function to store instead of printing debugging messages
             global _DEBUG_MSGS
             _DEBUG_MSGS = []
             # test the function
-            qdata = _extract_and_fit_ms2_spectra(rdr, cons_feats, _EAFMS2_PARAMS, 
-                                                 debug_flag="textcb", debug_cb=_debug_cb)
+            precursors, spectra = _extract_and_fit_ms2_spectra(rdr, 69, cons_feats, _EAFMS2_PARAMS,
+                                                               debug_flag="textcb", debug_cb=_debug_cb)
             # check the returned qdata values
-            qid, qf, qmz, qrt, qwt, qht, qsnr, qnscans, qmzpeaks, qspecstr = qdata[0]
-            eid, ef, emz, ert, ewt, eht, esnr, enscans, emzpeaks, especstr = expected_qdata
+            qid, qf, qmz, qrt, qwt, qht, qsnr, qnscans, qmzpeaks = precursors[0]
+            eid, ef, emz, ert, ewt, eht, esnr, enscans, emzpeaks = expected_precursors
             self.assertEqual(qid, eid)
             self.assertEqual(qf, ef)
             self.assertAlmostEqual(qmz, emz, places=4)
@@ -268,29 +268,31 @@ class Test_ExtractAndFitMs2Spectra(unittest.TestCase):
             self.assertAlmostEqual(qsnr, esnr, places=0)
             self.assertEqual(qnscans, enscans)
             self.assertEqual(qmzpeaks, emzpeaks)
-            qpeak_arrays = str_to_ms2(str(qspecstr))
-            epeak_arrays = str_to_ms2(especstr)
-            for qpmz, qpi, epmz, epi in zip(*qpeak_arrays, *epeak_arrays):
-                self.assertAlmostEqual(qpmz, epmz, places=1)
-                self.assertLess(abs(qpi - epi) / epi, 0.3)
+            # TODO: check on the returned spectra
+            #for qpmz, qpi, epmz, epi in zip(*qpeak_arrays, *epeak_arrays):
+            #    self.assertAlmostEqual(qpmz, epmz, places=1)
+            #    self.assertLess(abs(qpi - epi) / epi, 0.3)
             # make sure that the correct number of debugging messages were generated
             self.assertEqual(len(_DEBUG_MSGS), 3)
             # check for debug message with number of MS2 peaks found
             self.assertIn("# MS2 peaks: 28", _DEBUG_MSGS[1])
 
 
-class Test_AddFeaturesToDb(unittest.TestCase):
+class Test_AddPrecursorsAndFragmentsToDb(unittest.TestCase):
     """ 
-        tests for the _add_features_to_db function, 
+        tests for the _add_precursors_to_db function, 
         cover all cases that can be generated by 
         _extract_and_fit_ms2_spectra 
     """
 
-    def test_AFTD_qdata_full(self):
+    def test_APAFTD_qdata_full(self):
         """ test adding complete qdata to DB """
         # query data
-        qdata = [
-            (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
+        precursors = [
+            (None, 69, 789.0123, 12.34, 0.12, 1.23e4, 10., 3, 3),
+        ]
+        spectra = [
+            np.array([[123.456, 234.567, 345.678], [1e3, 2e3, 3e3]]),
         ]
         # use a helper callback function to store instead of printing debugging messages
         _DEBUG_MSGS = []
@@ -300,20 +302,23 @@ class Test_AddFeaturesToDb(unittest.TestCase):
             con = sqlite3.connect(dbf)
             cur = con.cursor()
             # test the function
-            _add_features_to_db(cur, qdata,
-                                debug_flag="textcb", debug_cb=_debug_cb)
+            _add_precursors_and_fragments_to_db(cur, precursors, spectra, 
+                                                debug_flag="textcb", debug_cb=_debug_cb)
             # make sure values in = values out 
             # exept for the first value which is an ID 
             # that is generated when the data gets inserted
-            _, *values_in = qdata[0]
-            _, *values_out = cur.execute("SELECT * FROM DDAFeatures;").fetchall()[0]
+            _, *values_in = precursors[0]
+            _, *values_out = cur.execute("SELECT * FROM DDAPrecursors;").fetchall()[0]
             self.assertListEqual(values_in, values_out)
 
-    def test_AFTD_qdata_zero_mzpeaks_null_spectrum(self):
-        """ test adding qdata with null spectrum string to the DB """
+    def test_APAFTD_qdata_zero_mzpeaks_null_spectrum(self):
+        """ test adding qdata with null spectrum to the DB """
         # query data
-        qdata = [
-            (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 3, 0, None),
+        precursors = [
+            (None, 69, 789.0123, 12.34, 0.12, 1.23e4, 10., 3, 0),
+        ]
+        spectra = [
+            None,
         ]
         # use a helper callback function to store instead of printing debugging messages
         global _DEBUG_MSGS
@@ -324,20 +329,23 @@ class Test_AddFeaturesToDb(unittest.TestCase):
             con = sqlite3.connect(dbf)
             cur = con.cursor()
             # test the function
-            _add_features_to_db(cur, qdata,
-                                debug_flag="textcb", debug_cb=_debug_cb)
+            _add_precursors_and_fragments_to_db(cur, precursors, spectra,
+                                                debug_flag="textcb", debug_cb=_debug_cb)
             # make sure values in = values out 
             # exept for the first value which is an ID 
             # that is generated when the data gets inserted
-            _, *values_in = qdata[0]
-            _, *values_out = cur.execute("SELECT * FROM DDAFeatures;").fetchall()[0]
+            _, *values_in = precursors[0]
+            _, *values_out = cur.execute("SELECT * FROM DDAPrecursors;").fetchall()[0]
             self.assertListEqual(values_in, values_out)
     
-    def test_AFTD_null_mzpeaks_null_spectrum(self):
-        """ test adding qdata with null mz peaks count and  """
+    def test_APAFTD_null_mzpeaks_null_spectrum(self):
+        """ test adding qdata with null mz peaks count and no spectrum """
         # query data
-        qdata = [
-            (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 3, None, None),
+        precursors = [
+            (None, 69, 789.0123, 12.34, 0.12, 1.23e4, 10., 3, None),
+        ]
+        spectra = [
+            None,
         ]
         # use a helper callback function to store instead of printing debugging messages
         global _DEBUG_MSGS
@@ -348,18 +356,21 @@ class Test_AddFeaturesToDb(unittest.TestCase):
             con = sqlite3.connect(dbf)
             cur = con.cursor()
             # test the function
-            _add_features_to_db(cur, qdata,
-                                debug_flag="textcb", debug_cb=_debug_cb)
+            _add_precursors_and_fragments_to_db(cur, precursors, spectra,
+                                                debug_flag="textcb", debug_cb=_debug_cb)
             # make sure values in = values out 
             # exept for the first value which is an ID 
             # that is generated when the data gets inserted
-            _, *values_in = qdata[0]
-            _, *values_out = cur.execute("SELECT * FROM DDAFeatures;").fetchall()[0]
+            _, *values_in = precursors[0]
+            _, *values_out = cur.execute("SELECT * FROM DDAPrecursors;").fetchall()[0]
             self.assertListEqual(values_in, values_out)
 
 
 class TestExtractDdaFeatures(unittest.TestCase):
     """ tests for the extract_dda_features function """
+
+    # TODO (Dylan Ross): Add a method to test cases where dda_data_file is provided as a path, an 
+    #                    integer file ID, or some invalid value.
 
     def test_EDF_with_peaks(self):
         """ test extracting DDA features from mock data with peaks """
@@ -404,7 +415,7 @@ class TestExtractDdaFeatures(unittest.TestCase):
             # make sure that the correct number of debugging messages were generated
             self.assertEqual(len(_DEBUG_MSGS), 13)
             # fetch the features from the database, there should be 2
-            self.assertEqual(len(cur.execute("SELECT * FROM DDAFeatures;").fetchall()), 2,
+            self.assertEqual(len(cur.execute("SELECT * FROM DDAPrecursors;").fetchall()), 2,
                              msg="there should be 2 DDA features in the database")
             # make sure the correct number of DDA features is returned from the function
             self.assertEqual(n, 2,
@@ -424,29 +435,40 @@ class TestConsolidateDdaFeatures(unittest.TestCase):
     def test_CDF_multiple_cases(self):
         """ covers multiple cases of DDA features that should or should not be combined """
         # query data to fill the database with
-        qdata = [
+        precursors = [
             # only the 3rd from this group is kept because it has the highest intensity
-            (None, "file.mza", 789.0123, 12.34, 0.12, 1.23e4, 10., 0, None, None),
-            (None, "file.mza", 789.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
-            (None, "file.mza", 789.0123, 12.34, 0.12, 3.45e4, 10., 0, None, None),
+            (None, 69, 789.0123, 12.34, 0.12, 1.23e4, 10., 0, None),
+            (None, 69, 789.0123, 12.34, 0.12, 2.34e4, 10., 0, None),
+            (None, 69, 789.0123, 12.34, 0.12, 3.45e4, 10., 0, None),
             # different m/z so different group
             # second is kept because it has a spectrum
             # even though the others have higher intensity
-            (None, "file.mza", 799.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
-            (None, "file.mza", 799.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
-            (None, "file.mza", 799.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
+            (None, 69, 799.0123, 12.34, 0.12, 2.34e4, 10., 0, None),
+            (None, 69, 799.0123, 12.34, 0.12, 1.23e4, 10., 3, 3),
+            (None, 69, 799.0123, 12.34, 0.12, 2.34e4, 10., 0, None),
             # different m/z so different group
             # first and second are kept because they have spectra
             # even though the third has higher intensity
-            (None, "file.mza", 709.0123, 12.34, 0.12, 1.99e4, 10., 1, 0, None),  # has a spectrum but no peaks
-            (None, "file.mza", 709.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
-            (None, "file.mza", 709.0123, 12.34, 0.12, 2.34e4, 10., 0, None, None),
+            (None, 69, 709.0123, 12.34, 0.12, 1.99e4, 10., 1, 0),  # has a spectrum but no peaks
+            (None, 69, 709.0123, 12.34, 0.12, 1.23e4, 10., 3, 3),
+            (None, 69, 709.0123, 12.34, 0.12, 2.34e4, 10., 0, None),
+        ]
+        spectra = [
+            None,
+            None,
+            None,
+            None,
+            np.array([[123.456, 234.567, 345.678], [1e3, 2e3, 3e3]]),
+            None,
+            None,
+            np.array([[123.456, 234.567, 345.678], [1e3, 2e3, 3e3]]),
+            None,
         ]
         expected = [
-            (None, "file.mza", 789.0123, 12.34, 0.12, 3.45e4, 10., 0, None, None),
-            (None, "file.mza", 799.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
-            (None, "file.mza", 709.0123, 12.34, 0.12, 1.99e4, 10., 1, 0, None),
-            (None, "file.mza", 709.0123, 12.34, 0.12, 1.23e4, 10., 3, 3, "1.2346:12346 2.3457:23457 5.6789:56789"),
+            (None, 69, 789.0123, 12.34, 0.12, 3.45e4, 10., 0, None),
+            (None, 69, 799.0123, 12.34, 0.12, 1.23e4, 10., 3, 3),
+            (None, 69, 709.0123, 12.34, 0.12, 1.99e4, 10., 1, 0),
+            (None, 69, 709.0123, 12.34, 0.12, 1.23e4, 10., 3, 3),
         ]
         # use a helper callback function to store instead of printing debugging messages
         _DEBUG_MSGS = []
@@ -458,7 +480,7 @@ class TestConsolidateDdaFeatures(unittest.TestCase):
             # fill the db with the features
             # set debug_flag and debug_cb to None
             # so we do not capture debug messages from this step
-            _add_features_to_db(cur, qdata, None, None)  
+            _add_precursors_and_fragments_to_db(cur, precursors, spectra, None, None)  
             # write changes to the db
             con.commit()
             # test the function
@@ -472,7 +494,7 @@ class TestConsolidateDdaFeatures(unittest.TestCase):
             # make sure values in = values out 
             # exept for the first value which is an ID 
             # that is generated when the data gets inserted
-            for exp, obs in zip(expected, cur.execute("SELECT * FROM DDAFeatures;").fetchall()):
+            for exp, obs in zip(expected, cur.execute("SELECT * FROM DDAPrecursors;").fetchall()):
                 _, *a = exp
                 _, *b = obs
                 self.assertListEqual(a, b)

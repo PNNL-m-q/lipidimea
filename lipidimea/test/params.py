@@ -39,7 +39,7 @@ from lipidimea.params import (
     
 #     #def test_NO_TESTS_IMPLEMENTED_YET(self):
 #     #    """ placeholder, remove this function and implement tests """
-#     #    raise NotImplementedError("no tests implemented yet")
+#     #    self.assertTrue(False, "no tests implemented yet")
     
 
 class TestLoadDefaultParams(unittest.TestCase):
@@ -54,9 +54,9 @@ class TestLoadDefaultParams(unittest.TestCase):
         params = load_default_params()
         for top_lvl_section in ['dda', 'dia', 'annotation', 'misc']:
             self.assertIn(top_lvl_section, params.keys(), 
-                          msg="top level section '{}' should have been in default params".format(top_lvl_section))
+                          msg=f"top level section '{top_lvl_section}' should have been in default params")
             self.assertNotEqual(params[top_lvl_section], {},
-                                msg="top level section '{}' should not have been empty".format(top_lvl_section))
+                                msg=f"top level section '{top_lvl_section}' should not have been empty")
             
 
 class TestLoadParams(unittest.TestCase):

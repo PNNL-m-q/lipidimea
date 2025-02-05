@@ -8,31 +8,45 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Any, Set, Callable, Optional, Dict, Tuple
+from typing import List, Any, Set, Callable, Optional, Dict, Tuple, Union
 import sqlite3
-from time import time, sleep
+from time import time
 from itertools import repeat
 import multiprocessing
 import os
+import errno
 
+<<<<<<< HEAD
+=======
+import numpy as np
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
 from mzapy.dda import MsmsReaderDda, MsmsReaderDdaCachedMs1
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 from mzapy.view import plot_spectrum, plot_chrom
 
 from lipidimea.typing import (
-    ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaFeature,
-    MzaFilePath
+    ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaPrecursor,
+    MzaFilePath, MzaFileId, Ms2
 )
 from lipidimea.msms._util import (
-    ms2_to_str, apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
+    apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
 )
-from lipidimea.util import debug_handler
+from lipidimea.util import add_data_file_to_db, debug_handler
 from lipidimea.params import (
     DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMs2SpectraParams,
     DdaParams
 )
 
 
+<<<<<<< HEAD
+=======
+# TODO (Dylan Ross): Change the behavior of the DDA data extraction functions to be more like 
+#                    the lipid annotation functions: pass around one big DdaParams dataclass
+#                    instance and let the functions fetch the parameters they need from it rather
+#                    than passing around different parameter subsets.
+
+
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
 def _extract_and_fit_chroms(rdr: DdaReader, 
                             pre_mzs: Set[float], 
                             params: DdaExtractAndFitChromsParams,
@@ -57,13 +71,13 @@ def _extract_and_fit_chroms(rdr: DdaReader,
 
     Returns
     -------
-    features : ``list(tuple(...))``
+    chrom_feats : ``list(tuple(...))``
         list of chromatographic features (pre_mz, peak RT, peak height, peak FWHM, pSNR)
     """
     pid = os.getpid()
     # extract chromatograms
     debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING CHROMATOGRAMS', pid)
-    features: List[DdaChromFeat] = []
+    chrom_feats: List[DdaChromFeat] = []
     t0 = time()
     n: int = len(pre_mzs)
     for i, pre_mz in enumerate(pre_mzs): 
@@ -89,14 +103,14 @@ def _extract_and_fit_chroms(rdr: DdaReader,
             for r, h, w, s in zip(pkrts, pkhts, pkwts, psnrs):
                 pkinfo = f"RT: {r:.2f} +/- {w:.2f} min ({h:.1e}, {s:.1f}) "
                 debug_handler(debug_flag, debug_cb, msg + pkinfo, pid)
-                features.append((pre_mz, r, h, w, s))
+                chrom_feats.append((pre_mz, r, h, w, s))
         else: 
             debug_handler(debug_flag, debug_cb, msg + 'no peaks found', pid)
     debug_handler(debug_flag, debug_cb, f"EXTRACTING AND FITTING CHROMATOGRAMS: elapsed: {time() - t0:.1f} s", pid)
-    return features
+    return chrom_feats
 
 
-def _consolidate_chrom_feats(feats: List[DdaChromFeat], 
+def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat], 
                              params: DdaConsolidateChromFeatsParams, 
                              debug_flag: Optional[str], debug_cb: Optional[Callable] 
                              ) -> List[DdaChromFeat] :
@@ -106,7 +120,7 @@ def _consolidate_chrom_feats(feats: List[DdaChromFeat],
 
     Parameters
     ----------
-    feats : ``list(tuple(...))``
+    chrom_feats : ``list(tuple(...))``
         list of chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     params : ``ConsolidateChromFeatsParams``
         parameters for consolidating chromatographic features
@@ -118,33 +132,37 @@ def _consolidate_chrom_feats(feats: List[DdaChromFeat],
 
     Returns
     -------
-    feats_consolidated : ``list(tuple(...))``
+    chrom_feats_consolidated : ``list(tuple(...))``
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     """
     pid = os.getpid()
     # consolidate features
-    features_consolidated: List[DdaChromFeat] = []
-    for feat in feats:
+    chrom_feats_consolidated: List[DdaChromFeat] = []
+    for feat in chrom_feats:
         add: bool = True
-        for i in range(len(features_consolidated)):
-            fc_i: DdaChromFeat = features_consolidated[i]
+        for i in range(len(chrom_feats_consolidated)):
+            fc_i: DdaChromFeat = chrom_feats_consolidated[i]
             delta_mz: float = abs(feat[0] - fc_i[0])
             if ppm_from_delta_mz(delta_mz, fc_i[0]) <= params.mz_ppm and abs(feat[1] - fc_i[1]) <= params.rt_tol:
                 add = False
                 if feat[2] > fc_i[2]:
-                    features_consolidated[i] = feat
+                    chrom_feats_consolidated[i] = feat
         if add:
-            features_consolidated.append(feat)
-    msg = f"CONSOLIDATING CHROMATOGRAPHIC FEATURES: {len(feats)} features -> {len(features_consolidated)} features"
+            chrom_feats_consolidated.append(feat)
+    msg = (
+        f"CONSOLIDATING CHROMATOGRAPHIC FEATURES: {len(chrom_feats)} features "
+        f"-> {len(chrom_feats_consolidated)} features"
+    )
     debug_handler(debug_flag, debug_cb, msg, pid)
-    return features_consolidated
+    return chrom_feats_consolidated
 
 
 def _extract_and_fit_ms2_spectra(rdr: DdaReader,
+                                 dda_file_id: MzaFileId,
                                  chrom_feats_consolidated: List[DdaChromFeat],
                                  params: DdaExtractAndFitMs2SpectraParams,
                                  debug_flag: Optional[str], debug_cb: Optional[Callable] 
-                                 ) -> List[DdaFeature] :
+                                 ) -> Tuple[List[DdaPrecursor], List[Optional[Ms2]]] :
     """
     extracts MS2 spectra for consolidated chromatographic features, tries to fit spectra peaks,
     returns query data for adding features to database
@@ -153,6 +171,8 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
     ----------
     rdr : ``_MSMSReaderDDA``
         object for accessing DDA MSMS data from MZA
+    dda_file_id : ``int``
+        file ID for DDA data file
     chrom_feats_consolidated : ``list(tuple(...))``
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     params : ``ExtractAndFitMS2SpectraParams``
@@ -165,15 +185,21 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
 
     Returns
     -------
-    qdata : ``list(tuple(...))``
-        list of query data for all of the features
-            [None, str, float, float, float, float, float, int, Optional[int], Optional[str]]
+    precursors : ``list(tuple(...))``
+        list of precursor info (as tuple) for each precursor
+            [None, int, float, float, float, float, float, int, Optional[int]]
+    spectra : ``list(numpy.ndarray(float) or None)``
+        list of tandem mass spectra (centroided, as 2D arrays) or None if no MS2 peaks were found
     """
     pid: int = os.getpid()
     # extract and fit MS2 spectra, return query data
-    debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING MS2 SPECTRA', pid)
+    debug_handler(debug_flag, 
+                  debug_cb, 
+                  'EXTRACTING AND FITTING MS2 SPECTRA', 
+                  pid)
     t0 = time()
-    qdata: List[DdaFeature] = []
+    precursors: List[DdaPrecursor] = []
+    spectra: List[Optional[Ms2]] = []
     n: int = len(chrom_feats_consolidated)
     for i, (fmz, frt, fht, fwt, fsnr) in enumerate(chrom_feats_consolidated):
         msg: str = f"({i + 1}/{n}) m/z: {fmz:.4f} RT: {frt:.2f} +/- {fwt:.2f} min ({fht:.1e}, {fsnr:.1f}) -> "
@@ -185,10 +211,14 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
         ms2 = rdr.get_msms_spectrum(fmz, tol_from_ppm(fmz, params.pre_mz_ppm), rt_min, rt_max, 
                                     params.mz_bin_min, mz_bin_max, params.mz_bin_size)
         mz_bins, i_bins, n_scan_pre_mzs, scan_pre_mzs = ms2
+<<<<<<< HEAD
         print(f"{n_scan_pre_mzs=}")
         print(f"{scan_pre_mzs=}")
         plot_spectrum(mz_bins, i_bins, figname="show")
         msg += '# MS2 scans: {} '.format(n_scan_pre_mzs)
+=======
+        msg += f"# MS2 scans: {n_scan_pre_mzs}"
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
         if n_scan_pre_mzs > 0:
             # find peaks
             pkmzs, pkhts, pkwts = find_peaks_1d_localmax(mz_bins, i_bins,
@@ -196,22 +226,34 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                                          params.fwhm_min, params.fwhm_max, 
                                                          params.peak_min_dist)
             if len(pkmzs) > 0:
-                ms2_str: str = ms2_to_str(pkmzs, pkhts)
-                qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, len(pkmzs), ms2_str))
+                precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, len(pkmzs)))
+                spectra.append(np.array([pkmzs, pkhts]))
             else:
-                qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, 0, None))
-            debug_handler(debug_flag, debug_cb, msg + "-> # MS2 peaks: {}".format(len(pkmzs)), pid)
+                precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, 0))
+                spectra.append(None)
+            debug_handler(debug_flag, 
+                          debug_cb, 
+                          msg + f"-> # MS2 peaks: {len(pkmzs)}", 
+                          pid)
         else:
-            qdata.append((None, rdr.f, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, None, None))
-            debug_handler(debug_flag, debug_cb, msg, pid)
-    debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING MS2 SPECTRA: elapsed: {:.1f} s'.format(time() - t0), pid)
-    return qdata
+            precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, None))
+            spectra.append(None)
+            debug_handler(debug_flag, 
+                          debug_cb, 
+                          msg, 
+                          pid)
+    debug_handler(debug_flag, 
+                  debug_cb, 
+                  f"EXTRACTING AND FITTING MS2 SPECTRA: elapsed: {time() - t0:.1f} s", 
+                  pid)
+    return precursors, spectra
 
 
-def _add_features_to_db(cur: ResultsDbCursor, 
-                        qdata: List[DdaFeature], 
-                        debug_flag: Optional[str], debug_cb: Optional[Callable]
-                        ) -> None:
+def _add_precursors_and_fragments_to_db(cur: ResultsDbCursor, 
+                                        precursors: List[DdaPrecursor], 
+                                        spectra: List[Optional[Ms2]],
+                                        debug_flag: Optional[str], debug_cb: Optional[Callable]
+                                        ) -> None:
     """
     adds features and metadata into the DDA ids database. 
 
@@ -219,8 +261,10 @@ def _add_features_to_db(cur: ResultsDbCursor,
     ----------
     cur : ``sqlite3.Cursor``
         cursor for making queries into the lipid ids database
-    qdata : ``list(tuple(...))``
-        list of query data for all of the features
+    precursors : ``list(tuple(...))``
+        list of query data for all of the precursors
+    spectra : ``list(numpy.ndarray(float) or None)``
+        list of MS/MS spectra (if found) for each precursor
     debug_flag : ``str``
         specifies how to dispatch debugging messages, None to do nothing
     debug_cb : ``func``
@@ -228,13 +272,22 @@ def _add_features_to_db(cur: ResultsDbCursor,
         debug_flag is not set to 'textcb' or 'textcb_pid'
     """
     pid = os.getpid()
-    debug_handler(debug_flag, debug_cb, 'ADDING DDA FEATURES TO DATABASE', pid)
-    qry = 'INSERT INTO DDAFeatures VALUES (?,?,?,?,?,?,?,?,?,?);'
-    for qd in qdata:
-        cur.execute(qry, qd)
+    debug_handler(debug_flag, debug_cb, f'ADDING {len(precursors)} DDA FEATURES TO DATABASE', pid)
+    qry_pre = """--beginsql
+        INSERT INTO DDAPrecursors VALUES (?,?,?,?,?,?,?,?,?)
+    --endsql"""
+    qry_frag = """--beginsql
+        INSERT INTO DDAFragments VALUES (?,?,?,?)
+    --endsql"""
+    for pre, spec in zip(precursors, spectra):
+        cur.execute(qry_pre, pre)
+        pre_id = cur.lastrowid
+        if spec is not None:
+            for msms_mz, msms_i in spec.T:
+                cur.execute(qry_frag, (None, pre_id, msms_mz, msms_i))
 
 
-def extract_dda_features(dda_data_file: MzaFilePath, 
+def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId], 
                          results_db: ResultsDbPath, 
                          params: DdaParams, 
                          cache_ms1: bool = True, 
@@ -246,8 +299,9 @@ def extract_dda_features(dda_data_file: MzaFilePath,
 
     Parameters
     ----------
-    dda_data_file : ``str``
-        path to raw DDA data file (MZA format)
+    dda_data_file : ``str`` or ``int``
+        path to raw DDA data file (MZA format) OR a file ID from the results database if analyzing 
+        a file that has already been added into the database
     results_db : ``str``
         path to DDA-DIA analysis results database
     params : ``DdaParams``
@@ -271,9 +325,38 @@ def extract_dda_features(dda_data_file: MzaFilePath,
     n_dda_features : ``int``
         number of DDA features extracted
     """
+    # ensure the results database exists
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     pid: int = os.getpid()
     debug_handler(debug_flag, debug_cb, 'EXTRACTING DDA FEATURES', pid)
-    debug_handler(debug_flag, debug_cb, 'file: {}'.format(dda_data_file), pid)
+    debug_handler(debug_flag, debug_cb, f"file: {dda_data_file}", pid)
+    # check if the dda_data_file is a path (str) or file ID from the results database (int)
+    match dda_data_file:
+        case int():
+            dda_file_id: int = dda_data_file
+        case str():
+            # initialize a connection to results database
+            # increase timeout to avoid errors from database locked by another process
+            con: ResultsDbConnection = sqlite3.connect(results_db, timeout=60)  
+            cur: ResultsDbCursor = con.cursor()
+            # add the MZA data file to the database and get a file identifier for it
+            dda_file_id: int = add_data_file_to_db(cur, "LC-MS/MS (DDA)", dda_data_file)
+            # close database connection
+            con.commit()
+            con.close()
+            # NOTE: A database connection gets opened here briefly then closed right afterwards and this gets
+            #       repeated later on to add the extracted features. The reason for doing it this way rather 
+            #       than just opening a connection once and leaving it open until we are done with it is that
+            #       the process of feature extraction takes a really long time and it seems pretty unnecessary 
+            #       to sit with an open database connection that will not be used for a long time. This is 
+            #       also important because this function might be running on multiple processes at one time
+            #       so might as well keep the database as free as possible when access is not needed. 
+        case _:
+            msg = f"extract_dda_features: invalid type for dda_data_file ({type(dda_data_file)})"
+            raise ValueError(msg)
     # initialize the MSMS reader
     rdr: DdaReader = (
         MsmsReaderDdaCachedMs1(dda_data_file, drop_scans=drop_scans) 
@@ -281,8 +364,15 @@ def extract_dda_features(dda_data_file: MzaFilePath,
         else MsmsReaderDda(dda_data_file, drop_scans=drop_scans)
     )
     # get the list of precursor m/zs
+<<<<<<< HEAD
     pre_mzs: Set[float] = rdr.get_pre_mzs()[4000:4020]  # TODO: TEMPORARY SLICE, REMOVE ME!
     debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
+=======
+    pre_mzs: Set[float] = rdr.get_pre_mzs()
+    # limit to a specified range 
+    pre_mzs = set([_ for _ in pre_mzs if (_ >= params.min_precursor_mz and _ <= params.max_precursor_mz)])
+    debug_handler(debug_flag, debug_cb, f"# precursor m/zs: {len(pre_mzs)}")
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 
                                                               pre_mzs, 
@@ -293,22 +383,33 @@ def extract_dda_features(dda_data_file: MzaFilePath,
                                                                             params.consolidate_chrom_feats_params, 
                                                                             debug_flag, debug_cb)
     # extract MS2 spectra
+<<<<<<< HEAD
     qdata: List[DdaFeature] = _extract_and_fit_ms2_spectra(rdr, 
                                                            chrom_feats_consolidated, 
                                                            params.extract_and_fit_ms2_spectra_params, 
                                                            debug_flag, debug_cb)
+=======
+    precursors, spectra = _extract_and_fit_ms2_spectra(rdr, 
+                                                       dda_file_id,
+                                                       chrom_feats_consolidated, 
+                                                       params.extract_and_fit_ms2_spectra_params, 
+                                                       debug_flag, debug_cb)
+    precursors: List[DdaPrecursor]
+    spectra: List[Optional[Ms2]]
+>>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
     # do not need the reader anymore
     rdr.close()
     # initialize connection to DDA ids database
-    con: ResultsDbConnection = sqlite3.connect(results_db, timeout=60)  # increase timeout to avoid errors from database locked by another process
+    # increase timeout to avoid errors from database locked by another process
+    con: ResultsDbConnection = sqlite3.connect(results_db, timeout=60)  
     cur: ResultsDbCursor = con.cursor()
-    # add features to database
-    _add_features_to_db(cur, qdata, debug_flag, debug_cb)
+    # add precursors and MS/MS spectra to database
+    _add_precursors_and_fragments_to_db(cur, precursors, spectra, debug_flag, debug_cb)
     # close database connection
     con.commit()
     con.close()
     # return the number of features extracted
-    return len(qdata)
+    return len(precursors)
     
 
 def extract_dda_features_multiproc(dda_data_files: List[MzaFilePath], 
@@ -388,12 +489,19 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     n_features_post : ``int``
         return the number of features before and after consolidating
     """
+    # ensure the results database exists
+    if not os.path.isfile(results_db):    
+        raise FileNotFoundError(errno.ENOENT, 
+                                os.strerror(errno.ENOENT), 
+                                results_db)
     # no need to get the PID, this should only ever be run in the main process
     # connect to the database
     con: ResultsDbConnection = sqlite3.connect(results_db)
     cur: ResultsDbCursor = con.cursor()
     # step 1, create groups of features based on similar m/z and RT
-    qry_sel = "SELECT dda_feat_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAFeatures"
+    qry_sel = """--beginsql
+        SELECT dda_pre_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAPrecursors
+    --endsql"""
     grouped: List[List[Any]] = []
     n_dda_features: int = 0
     for d in cur.execute(qry_sel).fetchall():
@@ -431,6 +539,12 @@ def consolidate_dda_features(results_db: ResultsDbPath,
                         #                    first conditional checking for features that contain spectra
                         #                    would become unnecessary and everything could be handled in 
                         #                    the else branch below
+                        # TODO (Dylan Ross): P.S. This is not a problem with the current implementation
+                        #                    because all precursors with MS2 spectra are retained, but if 
+                        #                    the above change is made, then there will need to be some logic
+                        #                    for dealing with entries in DDAFragments that no longer point
+                        #                    to an entry in DDAPrecursors after some DDA precursors are 
+                        #                    dropped or merged.
             else:
                 # none of the features have MSMS
                 # only keep the feature with the highest intensity of the group
@@ -457,7 +571,9 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     n_post: int = n_dda_features - len(drop_fids)                        
     debug_handler(debug_flag, debug_cb, f"CONSOLIDATING DDA FEATURES: {n_dda_features} features -> {n_post} features")
     # step 3, drop features from database
-    qry_drop = "DELETE FROM DDAFeatures WHERE dda_feat_id=?"
+    qry_drop = """--beginsql
+        DELETE FROM DDAPrecursors WHERE dda_pre_id=?
+    --endsql"""
     for fid in drop_fids:
         cur.execute(qry_drop, (fid,))
     # commit changes to the database
@@ -467,3 +583,9 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     return n_dda_features, n_post
 
     
+# TODO (Dylan Ross): Add a function that goes through the DDA precursors and drops the ones in the 
+#                    top/bottom X% in terms of the peak FWHMs. The precursor features that have very
+#                    large or very small FWHMs are probably not good features and getting rid of them
+#                    early will lead to less noise features being included in downstream analyses.
+
+

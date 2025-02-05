@@ -14,17 +14,17 @@ import sqlite3
 
 from lipidimea.util import create_results_db
 from lipidimea.params import (
-    SumCompAnnotationParams, FragRuleAnnParams, AnnotationParams
+    SumCompAnnParams, FragRuleAnnParams, AnnotationParams
 )
 from lipidimea.annotation import (
     DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG, DEFAULT_RP_RT_RANGE_CONFIG,
-    SumCompLipidDB, remove_lipid_annotations, _annotate_lipids_sum_composition, 
-    _filter_annotations_by_rt_range, _update_lipid_ids_with_frag_rules
+    SumCompLipidDB, remove_lipid_annotations, annotate_lipids_sum_composition, 
+    filter_annotations_by_rt_range, _update_lipid_ids_with_frag_rules
 )
 
 
 # set some parameters for testing the different DIA data processing steps
-_SCA_PARAMS = SumCompAnnotationParams(
+_SCA_PARAMS = SumCompAnnParams(
     overwrite=True, 
     fa_min_c=12, 
     fa_max_c=24, 
@@ -41,7 +41,7 @@ _FRA_PARAMS = FragRuleAnnParams(
 
 _ANNOTATION_PARAMS = AnnotationParams(
     sum_comp_annotation_params=_SCA_PARAMS, 
-    frag_rule_ann_params=_FRA_PARAMS
+    FragRuleAnnParams=_FRA_PARAMS
 )
 
 
@@ -245,7 +245,7 @@ class Test_AnnotateLipidsSumComposition(unittest.TestCase):
                         dia_qdata)
             con.commit()
             # test the function
-            n_feats_annotated, n_ann = _annotate_lipids_sum_composition(dbf, 
+            n_feats_annotated, n_ann = annotate_lipids_sum_composition(dbf, 
                                                                        DEFAULT_POS_SCDB_CONFIG, 
                                                                        _SCA_PARAMS)
             # there should be 1 feature annotated and more than 1 annotation
@@ -258,7 +258,7 @@ class Test_AnnotateLipidsSumComposition(unittest.TestCase):
         """ should raise an error if the results database file does not exist """
         with self.assertRaises(ValueError, 
                                msg="expect a ValueError from nonexistent database file"):
-            _ = _annotate_lipids_sum_composition("results db file doesnt exist",
+            _ = annotate_lipids_sum_composition("results db file doesnt exist",
                                                 DEFAULT_POS_SCDB_CONFIG, _ANNOTATION_PARAMS)
     
 
@@ -287,7 +287,7 @@ class Test_FilterAnnotationsByRTRange(unittest.TestCase):
                         dia_qdata)
             con.commit()
             # annotate the features (there should be a couple PCs in there)
-            n_feats_annotated, n_ann = _annotate_lipids_sum_composition(dbf, 
+            n_feats_annotated, n_ann = annotate_lipids_sum_composition(dbf, 
                                                                        DEFAULT_POS_SCDB_CONFIG, 
                                                                        _SCA_PARAMS)
             # check the features before filtering
@@ -297,7 +297,7 @@ class Test_FilterAnnotationsByRTRange(unittest.TestCase):
             # there should be more than 2 annotation in the Lipid table of the database
             self.assertGreater(len(cur.execute("SELECT * FROM Lipids").fetchall()), 2)
             # test the function
-            n_filtered = _filter_annotations_by_rt_range(dbf, DEFAULT_RP_RT_RANGE_CONFIG)
+            n_filtered = filter_annotations_by_rt_range(dbf, DEFAULT_RP_RT_RANGE_CONFIG)
             # check the features after filtering 
             # there should have been at least one annotation filtered out
             self.assertGreater(n_filtered, 0)
@@ -309,7 +309,7 @@ class Test_FilterAnnotationsByRTRange(unittest.TestCase):
         """ should raise an error if the results database file does not exist """
         with self.assertRaises(ValueError, 
                                msg="expect a ValueError from nonexistent database file"):
-            _ = _filter_annotations_by_rt_range("results db file doesnt exist", 
+            _ = filter_annotations_by_rt_range("results db file doesnt exist", 
                                                DEFAULT_RP_RT_RANGE_CONFIG)
 
 
@@ -332,7 +332,7 @@ class TestAnnotateLipids(unittest.TestCase):
 
     def test_AL_not_implemented(self):
         """ placeholder, remove this function and implement tests """
-        raise NotImplementedError("no tests implemented yet")
+        self.assertTrue(False, "no tests implemented yet")
 
 
 if __name__ == "__main__":

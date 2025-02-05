@@ -114,11 +114,15 @@ window.api.receive('return-atd-blob-data', (data) => {
   // Render the plots using the received data
   displayATDPlot(atdPairs);
 });
+
+
+// TODO: CALL THIS SOMETHING
 document.addEventListener('DOMContentLoaded', () => {
   window.api.receive('selected-database-path', (result) => {
-    filePath = result;
+    //filePath = result;
     window.api.send('fetch-database-table', result);
     window.api.send('fetch-annotation-table', result);
+    // load all the rest of the elements
   });
 });
 
@@ -390,6 +394,10 @@ function showMainTable(data) {
           PreDIAxicValueElement.textContent = row['dia_atd'];
 
           window.api.send('fetch-mapping-table', selectedRowValue);
+
+          // TODO: Fetch blob data for the selected DIA feature ID from index.js
+          //        Process blob data can just fetch the blob data from database (based on feat ID)
+          //        then process and return it.
 
           window.api.send('process-xic-blob-data', {
             dia_xic: row['dia_xic']

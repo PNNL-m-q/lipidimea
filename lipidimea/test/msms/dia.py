@@ -412,6 +412,9 @@ class Test_Ms2PeaksToStr(unittest.TestCase):
 class Test_SingleTargetAnalysis(unittest.TestCase):
     """ tests for the _single_target_analysis function """
 
+    # TODO (Dylan Ross): Add a method to test cases where dia_data_file is provided as a path, an 
+    #                    integer file ID, or some invalid value.
+
     def test_STA_mock_data(self):
         """ use mock data to test complete single target analysis """
         # make a fake XIC with one peak
