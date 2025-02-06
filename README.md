@@ -15,6 +15,7 @@
     - [ ] get rid of "other DIA features from same DDA feature" lower panel
     - [ ] In top panel, add an empty box to allow user to enter a DIA feature ID, filter rows in the panel to display only that ID if found
     - [ ] display the flags from the database that indicate which data processing steps have been completed
+    - [ ] In top panel, add a search & filter method. This will allow us to search for Feature IDs and sort or filter by ranges for m/z, RT, or arrival Time.
 - [ ] process data view 
     - [ ] set up analysis
         - [ ] update setting up analysis to accommodate new parameter config model
