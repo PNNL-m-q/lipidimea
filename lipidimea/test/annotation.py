@@ -14,7 +14,7 @@ import sqlite3
 
 from lipidimea.util import create_results_db
 from lipidimea.params import (
-    SumCompAnnParams, FragRuleAnnParams, AnnotationParams
+    _SumComp, FragRuleAnnParams, AnnotationParams
 )
 from lipidimea.annotation import (
     DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG, DEFAULT_RP_RT_RANGE_CONFIG,
@@ -24,7 +24,7 @@ from lipidimea.annotation import (
 
 
 # set some parameters for testing the different DIA data processing steps
-_SCA_PARAMS = SumCompAnnParams(
+_SCA_PARAMS = _SumComp(
     overwrite=True, 
     fa_min_c=12, 
     fa_max_c=24, 

@@ -6,10 +6,10 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Optional, Union
 from dataclasses import dataclass
 import os
-from os import path as op
+import enum
 
 import yaml
 
@@ -17,114 +17,88 @@ from lipidimea.typing import YamlFilePath
 
 
 # define paths to default sum composition lipid DB config files
-DEFAULT_POS_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+DEFAULT_POS_SCDB_CONFIG: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                                                 '_include/scdb/pos.yaml')
-DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                                                 '_include/scdb/neg.yaml')
 
 # define path to default RT ranges config
-DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                                                    '_include/rt_ranges/RP.yaml')
 
 # define path to literature CCS trends file
-LITERATURE_CCS_TREND_PARAMS: YamlFilePath = op.join(op.dirname(op.abspath(__file__)), 
+LITERATURE_CCS_TREND_PARAMS: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                                                     '_include/literature_ccs_trend_params.yaml')
 
 
+# -----------------------------------------------------------------------------
+# NOTE: Component dataclasses that are nested under the DdaParams, DiaParams
+#       and AnnotationParams dataclasses. 
+
+
 @dataclass
-class DdaExtractAndFitChromsParams:
-    """ parameters for extracting and fitting chromatograms """
-    mz_ppm: float
+class _Range:
+    min: float
+    max: float
+
+
+@dataclass
+class _IntRange:
+    min: int
+    max: int
+
+
+@dataclass
+class _ExtractAndFitChroms:
     min_rel_height: float
     min_abs_height: float
-    fwhm_min: float 
-    fwhm_max: float
+    fwhm: _Range
     max_peaks: int
-    min_psnr: float
+    min_psnr: Optional[float] = None
+    mz_ppm: Optional[float] = None
+    rt_tol: Optional[float] = None
+
+    def __post_init__(self):
+        if type(self.fwhm) is dict:
+            self.fwhm = _Range(**self.fwhm)
 
 
 @dataclass
-class DdaConsolidateChromFeatsParams:
-    """ parameters for consolidating chromatographic features """
+class _ConsolidateChromFeats:
     mz_ppm: float
     rt_tol: float
 
 
 @dataclass
-class DdaExtractAndFitMs2SpectraParams:
-    """ parameters for extracting and fitting MS2 spectra """
-    pre_mz_ppm: float
-    mz_bin_min: float
-    mz_bin_size: float
+class _ExtractAndFitMs2Spectra:
     min_rel_height: float
     min_abs_height: float
-    fwhm_min: float
-    fwhm_max: float
+    fwhm: _Range
     peak_min_dist: float
+    pre_mz_ppm: Optional[float] = None
+    mz_bin_min: Optional[float] = None
+    mz_bin_size: Optional[float] = None
+
+    def __post_init__(self):
+        if type(self.fwhm) is dict:
+            self.fwhm = _Range(**self.fwhm)
 
 
 @dataclass
-class DdaConsolidateFeaturesParams:
-    """ parameters for consolidating DDA features """
+class _ConsolidateDdaFeats:
     mz_ppm: float
     rt_tol: float
     drop_if_no_ms2: bool
 
 
-# TODO (Dylan Ross): Refactor parameter dataclasses to work more like AnnotationParams
-
 @dataclass
-class DdaParams:
-    """ class for organizing DDA data processing parameters """
-    min_precursor_mz: float
-    max_precursor_mz: float
-    extract_and_fit_chrom_params: DdaExtractAndFitChromsParams
-    consolidate_chrom_feats_params: DdaConsolidateChromFeatsParams
-    extract_and_fit_ms2_spectra_params: DdaExtractAndFitMs2SpectraParams
-    consolidate_dda_features_params: DdaConsolidateFeaturesParams
-
-
-@dataclass
-class DiaExtractAndFitChromsParams:
-    """ parameters for extracting and fitting chromatograms """
-    mz_ppm: float
-    rt_tol: float
-    min_rel_height: float
-    min_abs_height: float
-    fwhm_min: float 
-    fwhm_max: float
-    max_peaks: int
-    
-
-@dataclass
-class DiaChromPeakSelectionParams:
-    """ parameters for selecting chromatographic peaks """
+class _DiaChromPeakSelect:
     target_rt_shift: float
     target_rt_tol: float
 
 
 @dataclass
-class DiaAtdFitParams:
-    """ parameters for fitting ATDs """
-    min_rel_height: float
-    min_abs_height: float
-    fwhm_min: float 
-    fwhm_max: float
-    max_peaks: int
-
-
-@dataclass
-class DiaMs2FitParams:
-    min_rel_height: float
-    min_abs_height: float
-    fwhm_min: float 
-    fwhm_max: float
-    min_dist: float
-
-
-@dataclass
-class DiaDeconvoluteMs2PeaksParams:
-    """ parameters for deconvoluting MS2 peaks """
+class _DeconvoluteMs2Peaks:
     mz_ppm: float
     xic_dist_threshold: float
     atd_dist_threshold: float 
@@ -132,119 +106,146 @@ class DiaDeconvoluteMs2PeaksParams:
     atd_dist_metric: str
 
 
-# TODO (Dylan Ross): Refactor parameter dataclasses to work more like AnnotationParams
+@dataclass
+class _Annotation:
+    fa_c: _IntRange
+    fa_odd_c: bool
+    mz_ppm: float
+    config: Optional[YamlFilePath] = None
+
+    def __post_init__(self):
+        if type(self.fa_c) is dict:
+            self.fa_c = _IntRange(**self.fa_c)
+
+
+# -----------------------------------------------------------------------------
+
+
+@dataclass
+class DdaParams:
+    """ class for organizing DDA data processing parameters """
+    precursor_mz: _Range
+    extract_and_fit_chroms: _ExtractAndFitChroms
+    consolidate_chrom_feats: _ConsolidateChromFeats
+    extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
+    consolidate_dda_feats: _ConsolidateDdaFeats
+
+    def __post_init__(self):
+        if type(self.precursor_mz) is dict:
+            self.precursor_mz = _Range(**self.precursor_mz)
+        if type(self.extract_and_fit_chroms) is dict:
+            self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
+        if type(self.consolidate_chrom_feats) is dict:
+            self.consolidate_chrom_feats = _ConsolidateChromFeats(**self.consolidate_chrom_feats) 
+        if type(self.extract_and_fit_ms2_spectra) is dict:
+            self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
+        if type(self.consolidate_dda_feats) is dict:
+            self.consolidate_dda_feats = _ConsolidateDdaFeats(**self.consolidate_dda_feats)
+
 
 @dataclass
 class DiaParams:
     """ class for organizing DIA data processing parameters """
-    extract_and_fit_chrom_params: DiaExtractAndFitChromsParams
-    select_chrom_peaks_params: DiaChromPeakSelectionParams
-    atd_fit_params: DiaAtdFitParams
-    ms2_fit_params: DiaMs2FitParams
+    extract_and_fit_chroms: _ExtractAndFitChroms
+    select_chrom_peaks: _DiaChromPeakSelect
+    extract_and_fit_atds: _ExtractAndFitChroms
+    extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
     ms2_peak_matching_ppm: float
-    deconvolute_ms2_peaks_params: DiaDeconvoluteMs2PeaksParams
+    deconvolute_ms2_peaks: _DeconvoluteMs2Peaks
     store_blobs: bool
 
-
-@dataclass
-class SumCompAnnParams:
-    """ parameters for initial annotation based on sum composition """
-    fa_min_c: int
-    fa_max_c: int
-    fa_odd_c: bool
-    mz_ppm: float
-    config: YamlFilePath
-    
-
-@dataclass
-class FragRuleAnnParams:
-    """ parameters for annotation using fragmentation rules """
-    mz_ppm: float
-    fa_min_c: int
-    fa_max_c: int
-    fa_odd_c: bool
+    def __post_init__(self):
+        if type(self.extract_and_fit_chroms) is dict:
+            self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
+        if type(self.select_chrom_peaks) is dict:
+            self.select_chrom_peaks = _DiaChromPeakSelect(**self.select_chrom_peaks)
+        if type(self.extract_and_fit_atds) is dict:
+            self.extract_and_fit_atds = _ExtractAndFitChroms(**self.extract_and_fit_atds)
+        if type(self.extract_and_fit_ms2_spectra) is dict:
+            self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
+        if type(self.deconvolute_ms2_peaks) is dict:
+            self.deconvolute_ms2_peaks = _DeconvoluteMs2Peaks(**self.deconvolute_ms2_peaks)
 
 
 @dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
-    SumCompAnnParams: SumCompAnnParams
+    sum_comp: _Annotation
     rt_range_config: YamlFilePath
     ccs_trend_percent: float
-    FragRuleAnnParams: FragRuleAnnParams
+    frag_rule: _Annotation
     ionization: str
 
 
-def load_default_params(
-                        ) -> Dict[Any, Any]:
+type Params = Union[DdaParams, DiaParams, AnnotationParams]
+
+class ParamType(enum.Enum):
+    DDA = enum.auto()
+    DIA = enum.auto()
+    ANN = enum.auto()
+
+
+# -----------------------------------------------------------------------------
+
+
+def _load_yaml(config: YamlFilePath
+               ) -> Dict[str, Any] :
+    """ Helper function that loads the default config as a nested dict """
+    with open(config, "r") as yf:
+        cfg = yaml.safe_load(yf)
+    return cfg
+
+
+def load_default(pt: ParamType) -> Params : 
     """
-    load the default parameters (only the analysis parameters component, not the complete parameters 
-    with input/output component)
+    Load the default parameters from built-in configuration file
+    """
+    match pt:
+        case _: pass
+    default = SlimParams._load_default_dict()
+    return SlimParams(**default)
+
+
+def from_config(config: str
+                ) -> "SlimParams" :
+    """
+    Read parameters from a configuration file (YAML) and return an instance of `SlimParams`
     
-    Returns
-    -------
-    params : ``dict(...)``
-        analysis parameter dict component of parameters, with all default values
+    Any parameters not explicitly specified in the config are taken from the default config.
     """
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/default_params.yaml'), 'r') as yf:
-        defaults = yaml.safe_load(yf)
-    params = {}
-    for top_lvl in ['dda', 'dia', 'annotation']:
-        params[top_lvl] = {
-            section: {
-                param: value['default'] for param, value in sec_params.items() if param != 'display_name'
-            } 
-            for section, sec_params in defaults[top_lvl].items() 
-            if section != 'display_name'
-        }
-    params['misc'] = {
-        param: value['default'] 
-        for param, value in defaults['misc'].items() 
-        if param != 'display_name'
-    }
-    return params
-
-
-# TODO (Dylan Ross): The load params function should return a tuple of the top level 
-#                    dataclasses, at present this is (DdaParams, DiaParams) but will
-#                    add AnnotationParams and InputOutput Params?
-
-def load_params(params_file: str
-                ) -> Tuple[Dict[Any, Any], Dict[Any, Any]]:
-    """
-    load parameters from a YAML file, returns a dict with the params
-    
-    Parameters
-    ----------
-    params_file : ``str``
-        filename/path of parameters file to load (as YAML)
-
-    Returns
-    -------
-    input_output : ``dict(...)``
-        input/output component of parameters
-    params : ``dict(...)``
-        analysis parameter dict component of parameters
-    """
-    with open(params_file, 'r') as yf:
-        params = yaml.safe_load(yf)
-    return params['input_output'], params['params']
-
-
-def save_params(input_output: Dict[Any, Any], params: Dict[Any, Any], params_file: str
-                ) -> None:
-    """
-    save analysis parameters along with input/output info
-
-    Parameters
-    ----------
-    input_output : ``dict(...)``
-        input/output component of parameters
-    params : ``dict(...)``
-        analysis parameter dict component of parameters
-    params_file : ``str``
-        filename/path to save parameters file (as YAML)
-    """
-    with open(params_file, 'w') as out:
-        yaml.dump({'input_output': input_output, 'params': params}, out, default_flow_style=False)
-
+    # start by loading the default config
+    params = SlimParams._load_default_dict()
+    # then load the specified config file
+    # it needs to exist
+    if not os.path.isfile(config):
+        raise ValueError(f"config file {config} not found")
+    with open(config, "r") as yf:
+        config_params = yaml.safe_load(yf)
+    # keep track of the current parameter that is being updated (track nested params)
+    _current_param = []
+    # helper function to overwrite defaults with updated parameters
+    def overwrite(default, updated):
+        for k, v in updated.items():
+            _current_param.append(k)
+            if type(v) is not dict: 
+                # this should force a KeyError when the key from updated is not present in default
+                _ = default[k]
+                default[k] = v
+            else:
+                # recurse
+                overwrite(default[k], v)
+            # after each item is processed, take it out of the current_param list
+            _ = _current_param.pop()
+    if config_params is not None:
+        # only try to update the parameters if the config file was not empty
+        try:
+            # update defaults with values from specified config
+            overwrite(params, config_params)
+        except KeyError as e:
+            raise ValueError(
+                f"Supplied configuration file ({config}) contains an unrecognized parameter or section: "
+                # grab contents of the current_param list to indicate what param caused the problem
+                # this should account for nested parameters
+                + ".".join(map(str, _current_param))
+            ) from e
+    return SlimParams(**params)

@@ -22,8 +22,8 @@ from lipidimea.msms.dia import (
     extract_dia_features, add_calibrated_ccs_to_dia_features
 )
 from lipidimea.params import (
-    DiaExtractAndFitChromsParams, DiaChromPeakSelectionParams, DiaAtdFitParams,
-    DiaMs2FitParams, DiaDeconvoluteMs2PeaksParams, 
+    DiaExtractAndFitChromsParams, _DiaChromPeakSelect, DiaAtdFitParams,
+    DiaMs2FitParams, _DeconvoluteMs2Peaks, 
     DiaParams
 )
 from lipidimea.util import create_results_db
@@ -34,7 +34,7 @@ _EAFC_PARAMS = DiaExtractAndFitChromsParams(
     20, 0.25, 0.1, 1e4, 0.1, 1.0, 1
 )
 
-_CPS_PARAMS = DiaChromPeakSelectionParams(
+_CPS_PARAMS = _DiaChromPeakSelect(
     0., 0.1
 )
 
@@ -46,7 +46,7 @@ _MF_PARAMS = DiaMs2FitParams(
     0.1, 1e3, 0.01, 0.1, 0.2
 )
 
-_DMP_PARAMS = DiaDeconvoluteMs2PeaksParams(
+_DMP_PARAMS = _DeconvoluteMs2Peaks(
     40, 0.5, 0.5, "cosine", "cosine"
 )
 

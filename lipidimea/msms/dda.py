@@ -30,7 +30,7 @@ from lipidimea.msms._util import (
 )
 from lipidimea.util import add_data_file_to_db, debug_handler
 from lipidimea.params import (
-    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMs2SpectraParams,
+    DdaExtractAndFitChromsParams, _ConsolidateChromFeats, _ExtractAndFitMs2Spectra,
     DdaParams
 )
 
@@ -105,7 +105,7 @@ def _extract_and_fit_chroms(rdr: DdaReader,
 
 
 def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat], 
-                             params: DdaConsolidateChromFeatsParams, 
+                             params: _ConsolidateChromFeats, 
                              debug_flag: Optional[str], debug_cb: Optional[Callable] 
                              ) -> List[DdaChromFeat] :
     """
@@ -154,7 +154,7 @@ def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat],
 def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                  dda_file_id: MzaFileId,
                                  chrom_feats_consolidated: List[DdaChromFeat],
-                                 params: DdaExtractAndFitMs2SpectraParams,
+                                 params: _ExtractAndFitMs2Spectra,
                                  debug_flag: Optional[str], debug_cb: Optional[Callable] 
                                  ) -> Tuple[List[DdaPrecursor], List[Optional[Ms2]]] :
     """
@@ -433,7 +433,7 @@ def extract_dda_features_multiproc(dda_data_files: List[MzaFilePath],
 
 
 def consolidate_dda_features(results_db: ResultsDbPath, 
-                             params: DdaConsolidateChromFeatsParams, 
+                             params: _ConsolidateChromFeats, 
                              debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                              ) -> Tuple[int, int] :
     """

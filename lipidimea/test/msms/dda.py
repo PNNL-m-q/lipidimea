@@ -24,8 +24,8 @@ from lipidimea.msms.dda import (
 from lipidimea.msms._util import ms2_to_str, str_to_ms2
 from lipidimea.util import create_results_db
 from lipidimea.params import (
-    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMs2SpectraParams,
-    DdaConsolidateFeaturesParams, DdaParams
+    DdaExtractAndFitChromsParams, _ConsolidateChromFeats, _ExtractAndFitMs2Spectra,
+    _ConsolidateDdaFeats, DdaParams
 )
 
 
@@ -47,15 +47,15 @@ _EAFC_PARAMS = DdaExtractAndFitChromsParams(
     20, 0.33, 1e4, 0.1, 0.5, 2, 5
 )
 
-_CCF_PARAMS = DdaConsolidateChromFeatsParams(
+_CCF_PARAMS = _ConsolidateChromFeats(
     20, 0.1
 )
 
-_EAFMS2_PARAMS = DdaExtractAndFitMs2SpectraParams(
+_EAFMS2_PARAMS = _ExtractAndFitMs2Spectra(
     40, 50, 0.05, 0.3, 1e4, 0.025, 0.25, 0.1
 )
 
-_CDF_PARAMS = DdaConsolidateFeaturesParams(
+_CDF_PARAMS = _ConsolidateDdaFeats(
     20, 0.1, False
 )
 

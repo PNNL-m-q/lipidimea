@@ -26,11 +26,21 @@ from lipidimea.typing import (
 from lipidimea.util import debug_handler
 from lipidimea.msms._util import tol_from_ppm
 from lipidimea.params import (
-    AnnotationParams, LITERATURE_CCS_TREND_PARAMS
+    AnnotationParams, 
+    DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG,
+    DEFAULT_RP_RT_RANGE_CONFIG,
+    LITERATURE_CCS_TREND_PARAMS
 )
 from lipidimea._lipidlib.lipids import LMAPS, get_c_u_combos, Lipid, LipidWithChains
 from lipidimea._lipidlib.parser import parse_lipid_name
 from lipidimea._lipidlib._fragmentation_rules import load_rules
+
+
+# TODO: Any of the functions that need to read a config (like SCDB configs or RT ranges) should
+#       first check the relevant config attribute in the AnnotationParams dataclass, and if it 
+#       is None, then that signifies that the default config file should be loaded and used. In
+#       this case, those default config file path variables ought to be defined in this module
+#       not in params. 
 
 
 class SumCompLipidDB():
