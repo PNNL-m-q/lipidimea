@@ -23,17 +23,16 @@ from scipy.optimize import curve_fit
 from lipidimea.typing import (
     ScdbLipidId, ResultsDbPath, ResultsDbCursor, YamlFilePath
 )
-from lipidimea.util import debug_handler
+from lipidimea.util import debug_handler, INCLUDE_DIR
 from lipidimea.msms._util import tol_from_ppm
-from lipidimea.params import (
-    AnnotationParams, 
-    DEFAULT_POS_SCDB_CONFIG, DEFAULT_NEG_SCDB_CONFIG,
-    DEFAULT_RP_RT_RANGE_CONFIG,
-    LITERATURE_CCS_TREND_PARAMS
-)
+from lipidimea.params import AnnotationParams
 from lipidimea._lipidlib.lipids import LMAPS, get_c_u_combos, Lipid, LipidWithChains
 from lipidimea._lipidlib.parser import parse_lipid_name
 from lipidimea._lipidlib._fragmentation_rules import load_rules
+
+
+# TODO: For functions that use extra config files (like SCDB configs or RT ranges), there should
+#       be some helper functions that load and validate the structure of those config files. 
 
 
 # TODO: Any of the functions that need to read a config (like SCDB configs or RT ranges) should
@@ -41,6 +40,27 @@ from lipidimea._lipidlib._fragmentation_rules import load_rules
 #       is None, then that signifies that the default config file should be loaded and used. In
 #       this case, those default config file path variables ought to be defined in this module
 #       not in params. 
+
+
+# define paths to default sum composition lipid DB config files
+DEFAULT_SCDB_CONFIG: Dict[str, YamlFilePath] = {
+    "POS": os.path.join(INCLUDE_DIR, '_include/scdb/pos.yaml'),
+    "NEG": os.path.join(INCLUDE_DIR, '_include/scdb/neg.yaml')
+}
+
+
+# define path to default RT ranges config
+DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = os.path.join(
+    INCLUDE_DIR, 
+    "_include/rt_ranges/RP.yaml"
+)
+
+
+# define path to literature CCS trends file
+DEFAULT_LITERATURE_CCS_TREND_PARAMS: YamlFilePath = os.path.join(
+    INCLUDE_DIR, 
+    "_include/literature_ccs_trend_params.yaml"
+)
 
 
 class SumCompLipidDB():
@@ -327,6 +347,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     n_anns : ``int``
         number of total annotations
     """
+    # TODO: This check is used repeatedly in a few functions, move it into a helper function.
     # ensure results database file exists
     if not op.isfile(results_db):
         raise FileNotFoundError(errno.ENOENT, 
@@ -335,11 +356,17 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     debug_handler(debug_flag, debug_cb, 
                   "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABASE...")
     # create the sum composition lipid database
+    # load the default config if no alternative was provided
+    sum_comp_config = (
+        params.sum_comp.config 
+        if params.sum_comp.config is not None 
+        else DEFAULT_SCDB_CONFIG[params.ionization]
+    )
     scdb = SumCompLipidDB()
-    scdb.fill_db_from_config(params.SumCompAnnParams.config, 
-                             params.SumCompAnnParams.fa_min_c, 
-                             params.SumCompAnnParams.fa_max_c, 
-                             params.SumCompAnnParams.fa_odd_c)
+    scdb.fill_db_from_config(sum_comp_config, 
+                             params.sum_comp.fa_c.min, 
+                             params.sum_comp.fa_c.max, 
+                             params.sum_comp.fa_odd_c)
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
@@ -357,7 +384,9 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
         n_feats += 1
         annotated = False
-        for clmidp, cname, csumc, csumu, cchains, cadduct, cmz in scdb.get_sum_comp_lipid_ids(mz, params.SumCompAnnParams.mz_ppm):
+        # TODO: this ugly
+        for clmidp, cname, csumc, csumu, cchains, cadduct, cmz \
+        in scdb.get_sum_comp_lipid_ids(mz, params.sum_comp.mz_ppm):
             annotated = True
             # special case: lipids with single chains automatically have inferred acyl chain 
             # composition instead of unknown
@@ -419,10 +448,14 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     debug_handler(debug_flag, debug_cb, 
                   "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...")
     # ann_rtr_only_keep_defined_classes
-    # load RT ranges
-    with open(params.rt_range_config, 'r') as yf:
+    # load the default config if no alternative was provided
+    rt_range_config = (
+        params.rt_range_config 
+        if params.rt_range_config is not None 
+        else DEFAULT_RP_RT_RANGE_CONFIG
+    )
+    with open(rt_range_config, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
-    # TODO (Dylan Ross): validate the structure of the data from the YAML config file
     con = connect(results_db) 
     cur = con.cursor()
     # iterate through annotations, check if the RT is within specified range 
@@ -508,6 +541,8 @@ def _point_in_trend(mz: float,
         return None
 
 
+# TODO: This function is too big, should break it up for ease of interpretation and maintenance.
+
 def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath, 
                                              params: AnnotationParams,
                                              debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
@@ -578,7 +613,13 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
         UPDATE Lipids SET ccs_rel_err=?, ccs_lit_trend=? WHERE lipid_id=?
     --endsql"""
     # load the lipid subclass ccs trends 
-    with open(LITERATURE_CCS_TREND_PARAMS, "r") as yf:
+    # load the default config if no alternative was provided
+    ccs_trends_config = (
+        params.ccs_trends.config
+        if params.ccs_trends.config is not None 
+        else DEFAULT_LITERATURE_CCS_TREND_PARAMS
+    )
+    with open(ccs_trends_config, "r") as yf:
         lit_ccs_trends = yaml.safe_load(yf)
     # track lipid annotation IDs to drop
     drop_lids = []
@@ -589,15 +630,18 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
         # fetch the lipid IDs, m/zs, and CCS values from all annotations of this subclass
         res = cur.execute(ann_qry, (lm_sub, adduct)).fetchall()
         # fetch the CCS trend parameters for this subclass (if available)
-        if (sub_params := lit_ccs_trends.get(lm_sub)) is not None and (trend_params := sub_params.get(adduct)) is not None:
-            debug_handler(debug_flag, debug_cb, 
-                          f"literature CCS trend for subclass {lm_sub} and adduct {adduct} FOUND ({trend_params=})")
+        if (sub_params := lit_ccs_trends.get(lm_sub)) is not None \
+                and (trend_params := sub_params.get(adduct)) is not None:
+            debug_handler(
+                debug_flag, debug_cb, 
+                f"literature CCS trend for subclass {lm_sub} and adduct {adduct} FOUND ({trend_params=})"
+            )
             # filter each annotation based on whether the the m/z and CCS are within
             # X % of the lipid subclass trend
             for lid, mz, ccs in res:
                 if (trend_err := _point_in_trend(mz, ccs, 
                                                 trend_params, 
-                                                params.ccs_trend_percent)) is not None:
+                                                params.ccs_trends.percent)) is not None:
                     # update Lipids entry with lipids subclass CCS trend error
                     # ccs_lit_trend is 1 (True)
                     cur.execute(update_qry, (trend_err, 1, lid))
@@ -627,7 +671,7 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
                 for lid, mz, ccs in res:
                     if (trend_err := _point_in_trend(mz, ccs, 
                                                     trend_params, 
-                                                    params.ccs_trend_percent)) is not None:
+                                                    params.ccs_trends.percent)) is not None:
                         # update Lipids entry with lipids class CCS trend error
                         # ccs_lit_trend is 0 (False)
                         cur.execute(update_qry, (trend_err, 0, lid))
@@ -697,6 +741,8 @@ def _copy_lipid_frag_entries_with_new_lipid_id(results_cur: ResultsDbCursor,
             qd[0] = lipid_id
             results_cur.execute("INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)", qd)
 
+
+# TODO: This function is too big, should break it up for ease of interpretation and maintenance.
 
 def _update_lipid_with_chain_info(results_cur: ResultsDbCursor
                                   ) -> None :
@@ -817,6 +863,8 @@ def _update_lipid_with_chain_info(results_cur: ResultsDbCursor
                 results_cur.execute("DELETE FROM Lipids WHERE lipid_id=?", (lipid_id,))
 
 
+# TODO: This function is too big, should break it up for ease of interpretation and maintenance.
+
 def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                                      params: AnnotationParams,
                                      debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
@@ -886,9 +934,9 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             c_u_combos = list(get_c_u_combos(n_chains, 
                                              sum_c, 
                                              sum_u, 
-                                             params.FragRuleAnnParams.fa_min_c, 
-                                             params.FragRuleAnnParams.fa_max_c, 
-                                             params.FragRuleAnnParams.fa_odd_c,
+                                             params.frag_rules.fa_c.min, 
+                                             params.frag_rules.fa_c.max, 
+                                             params.frag_rules.fa_odd_c,
                                              max_u=SumCompLipidDB.max_u))
             ffmzs = list(map(float, fmzs.split(",")))
             ifids = list(map(int, fids.split(",")))
@@ -901,14 +949,14 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                     rmz = rule.mz(pmz)  # type: ignore
                     for ffmz, ifid in zip(ffmzs, ifids):
                         ppm = _ppm_error(rmz, ffmz)
-                        if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
+                        if abs(ppm) <= params.frag_rules.mz_ppm:
                             cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, diag_flag, None))  # type: ignore
                 else:
                     for c, u in sorted(c_u_combos):
                         rmz = rule.mz(pmz, c, u) # type: ignore
                         for ffmz, ifid in zip(ffmzs, ifids):
                             ppm = _ppm_error(rmz, ffmz)
-                            if abs(ppm) <= params.FragRuleAnnParams.mz_ppm:
+                            if abs(ppm) <= params.frag_rules.mz_ppm:
                                 cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, diag_flag, f"{c}:{u}"))  # type: ignore
                                 update = True
             # update counters
@@ -927,9 +975,8 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
 
 def annotate_lipids(results_db: ResultsDbPath,
                     params: AnnotationParams,
-                    scdb_config_yml: YamlFilePath,
-                    rt_range_config_yml: YamlFilePath,
-                    debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
+                    debug_flag: Optional[str] = None, 
+                    debug_cb: Optional[Callable] = None
                     ) -> None :
     """
     Perform the full lipid annotation workflow:

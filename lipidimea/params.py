@@ -13,27 +13,19 @@ import enum
 
 import yaml
 
+from lipidimea.util import INCLUDE_DIR
 from lipidimea.typing import YamlFilePath
 
 
-# define paths to default sum composition lipid DB config files
-DEFAULT_POS_SCDB_CONFIG: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                                '_include/scdb/pos.yaml')
-DEFAULT_NEG_SCDB_CONFIG: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                                '_include/scdb/neg.yaml')
-
-# define path to default RT ranges config
-DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                                   '_include/rt_ranges/RP.yaml')
-
-# define path to literature CCS trends file
-LITERATURE_CCS_TREND_PARAMS: YamlFilePath = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                                    '_include/literature_ccs_trend_params.yaml')
+# define paths to default config files
+_DEFAULT_DDA_CONFIG = os.path.join(INCLUDE_DIR, "")
+_DEFAULT_DIA_CONFIG = os.path.join(INCLUDE_DIR, "")
+_DEFAULT_ANN_CONFIG = os.path.join(INCLUDE_DIR, "")
 
 
 # -----------------------------------------------------------------------------
-# NOTE: Component dataclasses that are nested under the DdaParams, DiaParams
-#       and AnnotationParams dataclasses. 
+# Component dataclasses that are nested under the DdaParams, DiaParams
+# and AnnotationParams dataclasses. 
 
 
 @dataclass
@@ -107,7 +99,7 @@ class _DeconvoluteMs2Peaks:
 
 
 @dataclass
-class _Annotation:
+class _AnnotationComponent:
     fa_c: _IntRange
     fa_odd_c: bool
     mz_ppm: float
@@ -118,7 +110,14 @@ class _Annotation:
             self.fa_c = _IntRange(**self.fa_c)
 
 
+@dataclass
+class _CcsTrends:
+    percent: float 
+    config: Optional[YamlFilePath] = None
+
+
 # -----------------------------------------------------------------------------
+# Main parameter dataclasses
 
 
 @dataclass
@@ -170,14 +169,23 @@ class DiaParams:
 @dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
-    sum_comp: _Annotation
+    ionization: str   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
+    sum_comp: _AnnotationComponent
     rt_range_config: YamlFilePath
-    ccs_trend_percent: float
-    frag_rule: _Annotation
-    ionization: str
+    ccs_trends: _CcsTrends
+    frag_rules: _AnnotationComponent
+
+    def __post_init__(self):
+        if type(self.sum_comp) is dict:
+            self.sum_comp = _AnnotationComponent(**self.sum_comp)
+        if type(self.frag_rules) is dict:
+            self.frag_rules = _AnnotationComponent(**self.frag_rules)
+        if type(self.ccs_trends) is dict:
+            self.ccs_trends = _CcsTrends(**self.ccs_trends)
 
 
 type Params = Union[DdaParams, DiaParams, AnnotationParams]
+
 
 class ParamType(enum.Enum):
     DDA = enum.auto()
@@ -186,6 +194,7 @@ class ParamType(enum.Enum):
 
 
 # -----------------------------------------------------------------------------
+# Functions for loading configs
 
 
 def _load_yaml(config: YamlFilePath
@@ -196,25 +205,40 @@ def _load_yaml(config: YamlFilePath
     return cfg
 
 
-def load_default(pt: ParamType) -> Params : 
-    """
-    Load the default parameters from built-in configuration file
-    """
-    match pt:
-        case _: pass
-    default = SlimParams._load_default_dict()
-    return SlimParams(**default)
+def _load_default(param_type: ParamType
+                  ) -> Dict[str, Any] : 
+    """ Load the default parameters from built-in configuration files as nested dict """
+    match param_type:
+        case ParamType.DDA: 
+            return _load_yaml(_DEFAULT_DDA_CONFIG)
+        case ParamType.DIA: 
+            return  _load_yaml(_DEFAULT_DIA_CONFIG)
+        case ParamType.ANN:
+            return _load_yaml(_DEFAULT_ANN_CONFIG)
+        
+
+def load_default(param_type: ParamType
+                 ) -> Params: 
+    """ Load default parameters from built-in configuration files """
+    match param_type:
+        case ParamType.DDA: 
+            return DdaParams(**_load_default(param_type))
+        case ParamType.DIA: 
+            return DiaParams(**_load_default(param_type))
+        case ParamType.ANN:
+            return AnnotationParams(**_load_default(param_type))
 
 
-def from_config(config: str
-                ) -> "SlimParams" :
+def from_config(config: YamlFilePath,
+                param_type: ParamType
+                ) -> Params :
     """
     Read parameters from a configuration file (YAML) and return an instance of `SlimParams`
     
     Any parameters not explicitly specified in the config are taken from the default config.
     """
     # start by loading the default config
-    params = SlimParams._load_default_dict()
+    params = _load_default(param_type)
     # then load the specified config file
     # it needs to exist
     if not os.path.isfile(config):
@@ -248,4 +272,10 @@ def from_config(config: str
                 # this should account for nested parameters
                 + ".".join(map(str, _current_param))
             ) from e
-    return SlimParams(**params)
+    match param_type:
+        case ParamType.DDA: 
+            return DdaParams(**params)
+        case ParamType.DIA: 
+            return DiaParams(**params)
+        case ParamType.ANN:
+            return AnnotationParams(**params)

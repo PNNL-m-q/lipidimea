@@ -45,6 +45,8 @@
 - [ ] clean up unit tests and get them running again
     - [ ] adopt unit testing framework used in `tcdr` codebase
 - [ ] general code cleanup: module docstrings, indentation and other visual style, etc.
+- [ ] reevaluate why the connection between DIA precursor and DDA precursor is no longer explicit, this makes displaying the results much more straightforward
+
 
 ### General
 - [ ] migrate to GitHub
