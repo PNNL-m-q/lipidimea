@@ -7,7 +7,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 from typing import Dict, Any, Optional, Union
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import os
 import enum
 
@@ -18,9 +18,9 @@ from lipidimea.typing import YamlFilePath
 
 
 # define paths to default config files
-_DEFAULT_DDA_CONFIG = os.path.join(INCLUDE_DIR, "")
-_DEFAULT_DIA_CONFIG = os.path.join(INCLUDE_DIR, "")
-_DEFAULT_ANN_CONFIG = os.path.join(INCLUDE_DIR, "")
+_DEFAULT_DDA_CONFIG = os.path.join(INCLUDE_DIR, "default_dda_params.yaml")
+_DEFAULT_DIA_CONFIG = os.path.join(INCLUDE_DIR, "default_dia_params.yaml")
+_DEFAULT_ANN_CONFIG = os.path.join(INCLUDE_DIR, "default_ann_params.yaml")
 
 
 # -----------------------------------------------------------------------------
@@ -117,84 +117,16 @@ class _CcsTrends:
 
 
 # -----------------------------------------------------------------------------
-# Main parameter dataclasses
-
-
-@dataclass
-class DdaParams:
-    """ class for organizing DDA data processing parameters """
-    precursor_mz: _Range
-    extract_and_fit_chroms: _ExtractAndFitChroms
-    consolidate_chrom_feats: _ConsolidateChromFeats
-    extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
-    consolidate_dda_feats: _ConsolidateDdaFeats
-
-    def __post_init__(self):
-        if type(self.precursor_mz) is dict:
-            self.precursor_mz = _Range(**self.precursor_mz)
-        if type(self.extract_and_fit_chroms) is dict:
-            self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
-        if type(self.consolidate_chrom_feats) is dict:
-            self.consolidate_chrom_feats = _ConsolidateChromFeats(**self.consolidate_chrom_feats) 
-        if type(self.extract_and_fit_ms2_spectra) is dict:
-            self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
-        if type(self.consolidate_dda_feats) is dict:
-            self.consolidate_dda_feats = _ConsolidateDdaFeats(**self.consolidate_dda_feats)
-
-
-@dataclass
-class DiaParams:
-    """ class for organizing DIA data processing parameters """
-    extract_and_fit_chroms: _ExtractAndFitChroms
-    select_chrom_peaks: _DiaChromPeakSelect
-    extract_and_fit_atds: _ExtractAndFitChroms
-    extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
-    ms2_peak_matching_ppm: float
-    deconvolute_ms2_peaks: _DeconvoluteMs2Peaks
-    store_blobs: bool
-
-    def __post_init__(self):
-        if type(self.extract_and_fit_chroms) is dict:
-            self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
-        if type(self.select_chrom_peaks) is dict:
-            self.select_chrom_peaks = _DiaChromPeakSelect(**self.select_chrom_peaks)
-        if type(self.extract_and_fit_atds) is dict:
-            self.extract_and_fit_atds = _ExtractAndFitChroms(**self.extract_and_fit_atds)
-        if type(self.extract_and_fit_ms2_spectra) is dict:
-            self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
-        if type(self.deconvolute_ms2_peaks) is dict:
-            self.deconvolute_ms2_peaks = _DeconvoluteMs2Peaks(**self.deconvolute_ms2_peaks)
-
-
-@dataclass
-class AnnotationParams:
-    """ class for organizing lipid annotation parameters """
-    ionization: str   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
-    sum_comp: _AnnotationComponent
-    rt_range_config: YamlFilePath
-    ccs_trends: _CcsTrends
-    frag_rules: _AnnotationComponent
-
-    def __post_init__(self):
-        if type(self.sum_comp) is dict:
-            self.sum_comp = _AnnotationComponent(**self.sum_comp)
-        if type(self.frag_rules) is dict:
-            self.frag_rules = _AnnotationComponent(**self.frag_rules)
-        if type(self.ccs_trends) is dict:
-            self.ccs_trends = _CcsTrends(**self.ccs_trends)
+# Helper functions for loading/writing configs
 
 
 type Params = Union[DdaParams, DiaParams, AnnotationParams]
 
 
-class ParamType(enum.Enum):
+class _ParamType(enum.Enum):
     DDA = enum.auto()
     DIA = enum.auto()
     ANN = enum.auto()
-
-
-# -----------------------------------------------------------------------------
-# Functions for loading configs
 
 
 def _load_yaml(config: YamlFilePath
@@ -205,35 +137,23 @@ def _load_yaml(config: YamlFilePath
     return cfg
 
 
-def _load_default(param_type: ParamType
+def _load_default(param_type: _ParamType
                   ) -> Dict[str, Any] : 
     """ Load the default parameters from built-in configuration files as nested dict """
     match param_type:
-        case ParamType.DDA: 
+        case _ParamType.DDA: 
             return _load_yaml(_DEFAULT_DDA_CONFIG)
-        case ParamType.DIA: 
+        case _ParamType.DIA: 
             return  _load_yaml(_DEFAULT_DIA_CONFIG)
-        case ParamType.ANN:
+        case _ParamType.ANN:
             return _load_yaml(_DEFAULT_ANN_CONFIG)
-        
-
-def load_default(param_type: ParamType
-                 ) -> Params: 
-    """ Load default parameters from built-in configuration files """
-    match param_type:
-        case ParamType.DDA: 
-            return DdaParams(**_load_default(param_type))
-        case ParamType.DIA: 
-            return DiaParams(**_load_default(param_type))
-        case ParamType.ANN:
-            return AnnotationParams(**_load_default(param_type))
 
 
-def from_config(config: YamlFilePath,
-                param_type: ParamType
-                ) -> Params :
+def _from_config(config: YamlFilePath,
+                 param_type: _ParamType
+                 ) -> Params :
     """
-    Read parameters from a configuration file (YAML) and return an instance of `SlimParams`
+    Read parameters from a configuration file (YAML) and return an instance of parameters dataclass
     
     Any parameters not explicitly specified in the config are taken from the default config.
     """
@@ -273,9 +193,163 @@ def from_config(config: YamlFilePath,
                 + ".".join(map(str, _current_param))
             ) from e
     match param_type:
-        case ParamType.DDA: 
+        case _ParamType.DDA: 
             return DdaParams(**params)
-        case ParamType.DIA: 
+        case _ParamType.DIA: 
             return DiaParams(**params)
-        case ParamType.ANN:
+        case _ParamType.ANN:
             return AnnotationParams(**params)
+
+
+def _write_config(current_dc: Params,
+                  config: str,
+                  include_unchanged: bool, 
+                  param_type: _ParamType
+                  ) -> None :
+    # NOTE: Assume that the instance of this dataclass is valid in terms of its structure. I 
+    #       can't imagine how it could get into an invalid state, but it needs to be for 
+    #       this approach to saving cofig file to work.
+    # convert this instance to a nested dict
+    current = asdict(current_dc)
+    if include_unchanged:
+        # do not bother trying to see which parameters are changed from their defaults
+        to_write = current
+    else:
+        # helper function to recursively find changed entries
+        def find_changes(default, updated):
+            changes = {}
+            for k, v in updated.items():
+                if type(k) is not dict:
+                    if v != default[k]:
+                        changes[k] = v
+                else:
+                    if (changes_below := find_changes(default[k], v)) != {}:
+                        changes[k] = changes_below
+            return changes
+        # check default parameters and only include the ones that are changed from the default
+        to_write = find_changes(_load_default(param_type), current)
+    # TODO: If to_write == {} that means nothing was changed from the default config. Should 
+    #       we check for this condition and emit a warning or something? 
+    # TODO: Does it matter if the specified config file already exists? It will get overwritten.
+    # write the dict data to file 
+    with open(config, 'w') as yf:
+        yaml.dump(to_write, yf, default_flow_style=False, sort_keys=False)
+
+
+# -----------------------------------------------------------------------------
+# Main parameter dataclasses
+
+
+@dataclass
+class DdaParams:
+    """ class for organizing DDA data processing parameters """
+    precursor_mz: _Range
+    extract_and_fit_chroms: _ExtractAndFitChroms
+    consolidate_chrom_feats: _ConsolidateChromFeats
+    extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
+    consolidate_dda_feats: _ConsolidateDdaFeats
+
+    def __post_init__(self):
+        if type(self.precursor_mz) is dict:
+            self.precursor_mz = _Range(**self.precursor_mz)
+        if type(self.extract_and_fit_chroms) is dict:
+            self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
+        if type(self.consolidate_chrom_feats) is dict:
+            self.consolidate_chrom_feats = _ConsolidateChromFeats(**self.consolidate_chrom_feats) 
+        if type(self.extract_and_fit_ms2_spectra) is dict:
+            self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
+        if type(self.consolidate_dda_feats) is dict:
+            self.consolidate_dda_feats = _ConsolidateDdaFeats(**self.consolidate_dda_feats)
+
+    # --- static methods ---
+
+    @staticmethod
+    def load_default() -> "DdaParams" : return DdaParams(**_load_default(_ParamType.DDA))
+
+    @staticmethod
+    def from_config(config: YamlFilePath) -> "DdaParams" : return _from_config(config, _ParamType.DDA)  # type: ignore
+
+    # --- normal methods ---
+
+    def write_config(self,
+                     config: YamlFilePath, 
+                     include_unchanged: bool = False
+                     ) -> None :
+        """ Write current parameters to a configuration file """
+        _write_config(self, config, include_unchanged, _ParamType.DDA)
+
+
+@dataclass
+class DiaParams:
+    """ class for organizing DIA data processing parameters """
+    extract_and_fit_chroms: _ExtractAndFitChroms
+    select_chrom_peaks: _DiaChromPeakSelect
+    extract_and_fit_atds: _ExtractAndFitChroms
+    extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
+    ms2_peak_matching_ppm: float
+    deconvolute_ms2_peaks: _DeconvoluteMs2Peaks
+    store_blobs: bool
+
+    def __post_init__(self):
+        if type(self.extract_and_fit_chroms) is dict:
+            self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
+        if type(self.select_chrom_peaks) is dict:
+            self.select_chrom_peaks = _DiaChromPeakSelect(**self.select_chrom_peaks)
+        if type(self.extract_and_fit_atds) is dict:
+            self.extract_and_fit_atds = _ExtractAndFitChroms(**self.extract_and_fit_atds)
+        if type(self.extract_and_fit_ms2_spectra) is dict:
+            self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
+        if type(self.deconvolute_ms2_peaks) is dict:
+            self.deconvolute_ms2_peaks = _DeconvoluteMs2Peaks(**self.deconvolute_ms2_peaks)
+
+    # --- static methods ---
+
+    @staticmethod
+    def load_default() -> "DiaParams" : return DiaParams(**_load_default(_ParamType.DIA))
+
+    @staticmethod
+    def from_config(config: YamlFilePath) -> "DiaParams" : return _from_config(config, _ParamType.DIA)  # type: ignore
+
+    # --- normal methods ---
+
+    def write_config(self,
+                     config: YamlFilePath, 
+                     include_unchanged: bool = False
+                     ) -> None :
+        """ Write current parameters to a configuration file """
+        _write_config(self, config, include_unchanged, _ParamType.DIA)
+
+
+@dataclass
+class AnnotationParams:
+    """ class for organizing lipid annotation parameters """
+    ionization: str   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
+    sum_comp: _AnnotationComponent
+    rt_range_config: YamlFilePath
+    ccs_trends: _CcsTrends
+    frag_rules: _AnnotationComponent
+
+    def __post_init__(self):
+        if type(self.sum_comp) is dict:
+            self.sum_comp = _AnnotationComponent(**self.sum_comp)
+        if type(self.frag_rules) is dict:
+            self.frag_rules = _AnnotationComponent(**self.frag_rules)
+        if type(self.ccs_trends) is dict:
+            self.ccs_trends = _CcsTrends(**self.ccs_trends)
+
+    # --- static methods ---
+
+    @staticmethod
+    def load_default() -> "AnnotationParams" : return AnnotationParams(**_load_default(_ParamType.ANN))
+
+    @staticmethod
+    def from_config(config: YamlFilePath) -> "AnnotationParams" : return _from_config(config, _ParamType.ANN)  # type: ignore
+
+    # --- normal methods ---
+
+    def write_config(self,
+                     config: YamlFilePath, 
+                     include_unchanged: bool = False
+                     ) -> None :
+        """ Write current parameters to a configuration file """
+        _write_config(self, config, include_unchanged, _ParamType.ANN)
