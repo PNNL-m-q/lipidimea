@@ -17,15 +17,14 @@ import numpy as np
 from mzapy.peaks import _gauss
 
 from lipidimea.msms.dda import (
-    _MSMSReaderDDA, _MSMSReaderDDA_Cached, _extract_and_fit_chroms, _consolidate_chrom_feats,
+    _extract_and_fit_chroms, _consolidate_chrom_feats,
     _extract_and_fit_ms2_spectra, _add_precursors_and_fragments_to_db, extract_dda_features, 
     consolidate_dda_features
 )
 from lipidimea.msms._util import ms2_to_str, str_to_ms2
 from lipidimea.util import create_results_db
 from lipidimea.params import (
-    DdaExtractAndFitChromsParams, _ConsolidateChromFeats, _ExtractAndFitMs2Spectra,
-    _ConsolidateDdaFeats, DdaParams
+    DdaParams
 )
 
 

@@ -10,6 +10,7 @@ extract_and_fit_chroms:
   max_peaks: 3
   min_psnr: 5.
   mz_ppm: 40.
+  rt_tol: null
 consolidate_chrom_feats:
   mz_ppm: 40.
   rt_tol: 0.1

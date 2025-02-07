@@ -48,6 +48,7 @@ class _ExtractAndFitChroms:
     max_peaks: int
     min_psnr: Optional[float] = None
     mz_ppm: Optional[float] = None
+    rt_tol: Optional[float] = None
 
     def __post_init__(self):
         if type(self.fwhm) is dict:
