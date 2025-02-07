@@ -30,7 +30,6 @@ from lipidimea.msms._util import (
 )
 from lipidimea.util import add_data_file_to_db, debug_handler
 from lipidimea.params import (
-    DdaExtractAndFitChromsParams, _ConsolidateChromFeats, _ExtractAndFitMs2Spectra,
     DdaParams
 )
 
@@ -43,7 +42,7 @@ from lipidimea.params import (
 
 def _extract_and_fit_chroms(rdr: DdaReader, 
                             pre_mzs: Set[float], 
-                            params: DdaExtractAndFitChromsParams,
+                            params: DdaParams,
                             debug_flag: Optional[str], debug_cb: Optional[Callable] 
                             ) -> List[DdaChromFeat] :
     """
@@ -68,6 +67,8 @@ def _extract_and_fit_chroms(rdr: DdaReader,
     chrom_feats : ``list(tuple(...))``
         list of chromatographic features (pre_mz, peak RT, peak height, peak FWHM, pSNR)
     """
+    # unpack params
+    P = params.extract_and_fit_chroms
     pid = os.getpid()
     # extract chromatograms
     debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING CHROMATOGRAMS', pid)
@@ -77,18 +78,19 @@ def _extract_and_fit_chroms(rdr: DdaReader,
     for i, pre_mz in enumerate(pre_mzs): 
         msg = f"({i + 1}/{n}) precursor m/z: {pre_mz:.4f} -> "
         # extract chromatogram
-        chrom = rdr.get_chrom(pre_mz, tol_from_ppm(pre_mz, params.mz_ppm))
+        assert P.mz_ppm is not None
+        chrom = rdr.get_chrom(pre_mz, tol_from_ppm(pre_mz, P.mz_ppm))
         plot_chrom(*chrom, figname="show")
         # try fitting chromatogram (up to n peaks)
         _pkrts, _pkhts, _pkwts = find_peaks_1d_gauss(*chrom, 
-                                                     params.min_rel_height, params.min_abs_height, 
-                                                     params.fwhm_min, params.fwhm_max, 
-                                                     params.max_peaks, True)
+                                                     P.min_rel_height, P.min_abs_height,  # type: ignore
+                                                     P.fwhm.min, P.fwhm.max,              # type: ignore
+                                                     P.max_peaks, True)                   # type: ignore
         # calc pSNR for each fitted peak, make sure they meet a threshold
         pkrts, pkhts, pkwts, psnrs = [], [], [], []
         for pkparams in zip(_pkrts, _pkhts, _pkwts):
-            psnr = calc_gauss_psnr(*chrom, pkparams)
-            if psnr > params.min_psnr:
+            psnr = calc_gauss_psnr(*chrom, pkparams) # type: ignore
+            if psnr > P.min_psnr:
                 pkrts.append(pkparams[0])
                 pkhts.append(pkparams[1])
                 pkwts.append(pkparams[2])
@@ -105,7 +107,7 @@ def _extract_and_fit_chroms(rdr: DdaReader,
 
 
 def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat], 
-                             params: _ConsolidateChromFeats, 
+                             params: DdaParams, 
                              debug_flag: Optional[str], debug_cb: Optional[Callable] 
                              ) -> List[DdaChromFeat] :
     """

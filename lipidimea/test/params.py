@@ -104,8 +104,8 @@ class TestDdaParams(unittest.TestCase):
         # test with include_unchanged flag set to False
         with tempfile.NamedTemporaryFile(delete_on_close=False) as ntf:
             updated = DdaParams.load_default() 
-            updated.common.imms_feature_extraction.merge_features = False
-            updated.orbi.select_dda_scans.tol.mz = 0.25
+            updated.extract_and_fit_chroms.fwhm.max = 420.
+            updated.extract_and_fit_ms2_spectra.peak_min_dist = 69.
             updated.write_config(ntf.name)
             self.assertEqual(updated, 
                              DdaParams.from_config(ntf.name),
@@ -113,8 +113,8 @@ class TestDdaParams(unittest.TestCase):
         # test with include_unchanged flag set to True
         with tempfile.NamedTemporaryFile(delete_on_close=False) as ntf:
             updated = DdaParams.load_default() 
-            updated.common.imms_feature_extraction.merge_features = False
-            updated.orbi.select_dda_scans.tol.mz = 0.25
+            updated.extract_and_fit_chroms.fwhm.max = 420.
+            updated.extract_and_fit_ms2_spectra.peak_min_dist = 69.
             updated.write_config(ntf.name, include_unchanged=True)
             self.assertEqual(updated, 
                              DdaParams.from_config(ntf.name),
