@@ -3,7 +3,7 @@ precursor_mz:
   max: 1200.
 extract_and_fit_chroms:
   min_rel_height: 0.25
-  min_abs_height: 1e4
+  min_abs_height: 1.e4
   fwhm: 
     min: 0.05
     max: 0.5
@@ -16,10 +16,10 @@ consolidate_chrom_feats:
   rt_tol: 0.1
 extract_and_fit_ms2_spectra:
   min_rel_height: 0.05
-  min_abs_height: 1e3
+  min_abs_height: 1.e3
   fwhm:
-    min: 0.05
-    max: 0.25
+    min: 0.02
+    max: 0.2
   peak_min_dist: 0.2
   pre_mz_ppm: 60.
   mz_bin_min: 50.

@@ -1,9 +1,9 @@
 precursor_mz:
   min: 200.
 extract_and_fit_chroms: 
-  min_abs_height: 5e2
+  min_abs_height: 5.e2
   fwhm:
     max: 2.
 bad_section:
-  bad_parameter_in_section: "foo"
-  another_bad_parameter_in_section: "bar"
+  bad_parameter_in_section: foo
+  another_bad_parameter_in_section: bar

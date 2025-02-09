@@ -1,13 +1,9 @@
-precursor_mz: 
-  max: 1111.
 extract_and_fit_chroms:
   fwhm: 
     max: 0.55
   max_peaks: 2
-consolidate_chrom_feats:
-  mz_ppm: 50.
 extract_and_fit_ms2_spectra:
   min_abs_height: 1.e4
   mz_bin_min: 55.
-consolidate_dda_feats:
-  drop_if_no_ms2: true
+deconvolute_ms2_peaks: 
+  mz_ppm: 60.

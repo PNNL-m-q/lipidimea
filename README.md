@@ -25,13 +25,13 @@
 ### Backend
 - [ ] adopt cleaner parameter configuration/management model \(like `tcdr.slim.params.SlimParams`\)
     - [x] nested dataclasses
-    - [ ] load from default config then update explicitly specified params
+    - [x] load from default config then update explicitly specified params
     - [ ] reconcile the extra information that is included in the default configuration file that is used by the GUI to get default values and descriptions, not needed for actual data processing
     - [ ] reorganize into separate configuration files for each high-level analysis step
-        - [ ] DDA
-        - [ ] DIA
+        - [x] DDA
+        - [x] DIA
         - [ ] annotation
-    - [ ] additional configs used in annotation should be loaded if the corresponding attribute of `AnnotationParams` is `None`, and the constants with paths to the default configs should be defined in `lipidimea.annotation` module 
+    - [x] additional configs used in annotation should be loaded if the corresponding attribute of `AnnotationParams` is `None`, and the constants with paths to the default configs should be defined in `lipidimea.annotation` module 
 - [ ] implement CLI for running data analysis
     - [ ] perform standard analyses
         - [ ] A. create results database \(+ other setup type tasks?\) 

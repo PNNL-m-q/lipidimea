@@ -84,12 +84,6 @@ class _ConsolidateDdaFeats:
 
 
 @dataclass
-class _DiaChromPeakSelect:
-    target_rt_shift: float
-    target_rt_tol: float
-
-
-@dataclass
 class _DeconvoluteMs2Peaks:
     mz_ppm: float
     xic_dist_threshold: float
@@ -283,7 +277,6 @@ class DdaParams:
 class DiaParams:
     """ class for organizing DIA data processing parameters """
     extract_and_fit_chroms: _ExtractAndFitChroms
-    select_chrom_peaks: _DiaChromPeakSelect
     extract_and_fit_atds: _ExtractAndFitChroms
     extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
     ms2_peak_matching_ppm: float
@@ -293,8 +286,6 @@ class DiaParams:
     def __post_init__(self):
         if type(self.extract_and_fit_chroms) is dict:
             self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
-        if type(self.select_chrom_peaks) is dict:
-            self.select_chrom_peaks = _DiaChromPeakSelect(**self.select_chrom_peaks)
         if type(self.extract_and_fit_atds) is dict:
             self.extract_and_fit_atds = _ExtractAndFitChroms(**self.extract_and_fit_atds)
         if type(self.extract_and_fit_ms2_spectra) is dict:
