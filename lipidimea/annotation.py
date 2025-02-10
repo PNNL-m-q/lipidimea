@@ -46,22 +46,22 @@ from lipidimea._lipidlib._fragmentation_rules import load_rules
 
 # define paths to default sum composition lipid DB config files
 DEFAULT_SCDB_CONFIG: Dict[str, YamlFilePath] = {
-    "POS": os.path.join(INCLUDE_DIR, '_include/scdb/pos.yaml'),
-    "NEG": os.path.join(INCLUDE_DIR, '_include/scdb/neg.yaml')
+    "POS": os.path.join(INCLUDE_DIR, 'scdb/pos.yaml'),
+    "NEG": os.path.join(INCLUDE_DIR, 'scdb/neg.yaml')
 }
 
 
 # define path to default RT ranges config
 DEFAULT_RP_RT_RANGE_CONFIG: YamlFilePath = os.path.join(
     INCLUDE_DIR, 
-    "_include/rt_ranges/RP.yaml"
+    "rt_ranges/RP.yaml"
 )
 
 
 # define path to literature CCS trends file
 DEFAULT_LITERATURE_CCS_TREND_PARAMS: YamlFilePath = os.path.join(
     INCLUDE_DIR, 
-    "_include/literature_ccs_trend_params.yaml"
+    "literature_ccs_trend_params.yaml"
 )
 
 
@@ -359,6 +359,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
                   "ANNOTATING LIPIDS AT SUM COMPOSITION LEVEL USING GENERATED LIPID DATABASE...")
     # create the sum composition lipid database
     # load the default config if no alternative was provided
+    assert params.ionization is not None, "ionization must be set (POS or NEG)"
     sum_comp_config = (
         params.sum_comp.config 
         if params.sum_comp.config is not None 
@@ -929,6 +930,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     qry_add_frag = """--beginsql
         INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
+    assert params.ionization is not None, "ionization must be set (POS or NEG)"
     for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
         update = False
         if fmzs is not None:

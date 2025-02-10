@@ -35,6 +35,9 @@
     - [ ] perform testing to validate that updated code is working as expected
         - [ ] unit tests
             - [x] parameters loading from/writing config files (`lipidimea.test.params`)
+            - [ ] DDA data extraction and processing (`lipidimea.test.msms.dda`)
+            - [ ] DIA data extraction and processing (`lipidimea.test.msms.dia`)
+            - [ ] lipid annotation (`lipidimea.test.annotation`)
         - [ ] integration tests
 - [ ] implement CLI for running data analysis
     - [ ] perform standard analyses

@@ -6,19 +6,21 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from os import path as op
+import os
 from itertools import product
 from functools import total_ordering
 from typing import Generator, Tuple, List, Optional, Callable
 import enum
 
 import yaml
-from mzapy.isotopes import monoiso_mass
+
+from lipidimea.util import INCLUDE_DIR
+
 
 
 # load the classifications from YAML file
-# TODO: fix this path
-with open(op.join(op.dirname(op.abspath(__file__)), "_include/lmaps.yaml"), "r") as _yf:
+_LMAPS_YAML = os.path.join(INCLUDE_DIR, "lipidlib/lmaps.yaml")
+with open(_LMAPS_YAML, "r") as _yf:
     LMAPS = yaml.safe_load(_yf)
 
 
@@ -349,11 +351,11 @@ class LipidWithChains(Lipid):
         if self.fa_unsat_pos is None:
             posns = ["" for _ in range(self.n_chains_full)]
         else: 
-            self.fa_unsat_pos + ["" for _ in range(self.n_chains_full - len(self.fa_unsat_pos))]
+            posns = self.fa_unsat_pos + ["" for _ in range(self.n_chains_full - len(self.fa_unsat_pos))]
         if self.fa_unsat_stereo is None:
             stereos = ["" for _ in range(self.n_chains_full)]
         else: 
-            self.fa_unsat_stereo + ["" for _ in range(self.n_chains_full - len(self.fa_unsat_stereo))]
+            stereos = self.fa_unsat_stereo + ["" for _ in range(self.n_chains_full - len(self.fa_unsat_stereo))]
         idata = list(zip(self.fa_carbon_chains, self.fa_unsat_chains, posns, stereos, self.oxy_suffix_chains))
         if self.sn_pos_is_known:
             # iterate through the chains in provided order and use / separator
@@ -373,7 +375,7 @@ class LipidWithChains(Lipid):
                     for a, b in l:
                         s += "{}{},".format(a, b)
                 else:
-                    p.sort()
+                    #p.sort()
                     for c in p:
                         s += "{},".format(c)
                 s = s.rstrip(",")
@@ -503,10 +505,12 @@ def get_c_u_combos(n_chains: int,
         elif type(max_u) is int:
             return max_u
         else:
-            return max_u(c)
+            # max_u is a function not an int
+            return max_u(c)  # type: ignore
+    # TODO: Clean this up, it is hard to read
     fas = set()
     for c_perm in set([tuple(sorted(_)) for _ in product(range(min_c, max_c + 1, c_int), repeat=n_chains) if sum(_) == sum_c]):
-        for u_perm in [_ for _ in product(*[range(0, f_max_u(c) + 1) for c in c_perm]) if sum(_) == sum_u]:
+        for u_perm in [_ for _ in product(*[range(0, f_max_u(c) + 1) for c in c_perm]) if sum(_) == sum_u]:  # type: ignore
             for c, u in zip(c_perm, u_perm):
                 fas.add((c, u))
     # TODO: this does not need to be two steps... ?

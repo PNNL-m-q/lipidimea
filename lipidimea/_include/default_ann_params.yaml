@@ -1,4 +1,4 @@
-ionization: str   
+ionization: null   
 sum_comp: 
   fa_c: 
     min: 12

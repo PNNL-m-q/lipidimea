@@ -3,7 +3,6 @@ lipidimea/msms/dia.py
 Dylan Ross (dylan.ross@pnnl.gov)
 
     module with DIA MSMS utilities
-    
 """
 
 
@@ -32,10 +31,9 @@ from lipidimea.typing import (
 )
 
 
-# TODO (Dylan Ross): Change the behavior of the DDA data extraction functions to be more like 
-#                    the lipid annotation functions: pass around one big DdaParams dataclass
-#                    instance and let the functions fetch the parameters they need from it rather
-#                    than passing around different parameter subsets.
+# TODO: Centralize definitions for raw_type and feat_id_type values, maybe with
+#       a string enum (or int enum + change table data to use ints and include 
+#       additional internal table for mapping ints to variant names)? 
 
 
 # general query for inserting data into the Raw table of the results DB
@@ -54,6 +52,10 @@ def _select_xic_peak(target_rt: float,
     select the peak with the highest intensity that is within target_rt_tol of target_rt 
     returns peak_rt, peak_height, peak_fwhm of selected peak
     returns None, None, None if no peaks meet criteria
+
+    NOTE: This is not used anymore because effectively all DIA peaks are processed and the
+          relationship between DIA and DDA precursurs is determined post-hoc based on their
+          m/z and RT. But keeping this definition here for reference. 
     """
     peaks = [(r, h, w) for r, h, w in zip(pkrts, pkhts, pkwts) if abs(r - target_rt) <= target_rt_tol]
     n_peaks = len(peaks)

@@ -1,6 +1,5 @@
 """
 lipidimea/test/util.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     tests for lipidimea/util.py module
