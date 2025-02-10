@@ -316,7 +316,6 @@ class TestAnnotationParams(unittest.TestCase):
                              "(2) parameters should not have changed between writing and reading config")
 
 
-
 # group all of the tests from this module into a TestSuite
 _loader = unittest.TestLoader()
 AllTestsParams = unittest.TestSuite()
@@ -330,6 +329,3 @@ AllTestsParams.addTests([
 if __name__ == '__main__':
     # run all defined TestCases for only this module if invoked directly
     unittest.TextTestRunner(verbosity=2).run(AllTestsParams)
-
-
-

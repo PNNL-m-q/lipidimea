@@ -1,6 +1,5 @@
 """
 lipidimea/test/msms/dia.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     tests for the lipidimea/msms/dia.py module
@@ -8,7 +7,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 import unittest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch
 from tempfile import TemporaryDirectory
 import os
 import sqlite3
@@ -18,47 +17,15 @@ from mzapy.peaks import _gauss
 
 from lipidimea.msms.dia import (
     _select_xic_peak, _lerp_together, _decon_distance, _deconvolute_ms2_peaks,
-    _add_single_target_results_to_db, _ms2_peaks_to_str, _single_target_analysis,
+    _add_single_target_results_to_db, _single_target_analysis,
     extract_dia_features, add_calibrated_ccs_to_dia_features
 )
-from lipidimea.params import (
-    DiaExtractAndFitChromsParams, _DiaChromPeakSelect, DiaAtdFitParams,
-    DiaMs2FitParams, _DeconvoluteMs2Peaks, 
-    DiaParams
-)
+from lipidimea.params import DiaParams
 from lipidimea.util import create_results_db
 
 
-# set some parameters for testing the different DIA data processing steps
-_EAFC_PARAMS = DiaExtractAndFitChromsParams(
-    20, 0.25, 0.1, 1e4, 0.1, 1.0, 1
-)
-
-_CPS_PARAMS = _DiaChromPeakSelect(
-    0., 0.1
-)
-
-_AF_PARAMS = DiaAtdFitParams(
-    0.1, 1e4, 0.5, 5, 1
-)
-
-_MF_PARAMS = DiaMs2FitParams(
-    0.1, 1e3, 0.01, 0.1, 0.2
-)
-
-_DMP_PARAMS = _DeconvoluteMs2Peaks(
-    40, 0.5, 0.5, "cosine", "cosine"
-)
-
-_DIA_PARAMS = DiaParams(
-    _EAFC_PARAMS, 
-    _CPS_PARAMS,
-    _AF_PARAMS,
-    _MF_PARAMS,
-    40,
-    _DMP_PARAMS,
-    True
-)
+# Use the default params for tests
+_DIA_PARAMS = DiaParams.load_default()
 
 
 class Test_SelectXicPeak(unittest.TestCase):
@@ -211,7 +178,7 @@ class Test_DeconvoluteMs2Peaks(unittest.TestCase):
             rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
             rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
             # test the function
-            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DMP_PARAMS)
+            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
             # should get one entry in the deconvoluted list
             self.assertEqual(len(deconvoluted), 1)
             # make sure the deconvoluted feature has the correct info
@@ -259,7 +226,7 @@ class Test_DeconvoluteMs2Peaks(unittest.TestCase):
             rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
             rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
             # test the function
-            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DMP_PARAMS)
+            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
             # should get no entries in the deconvoluted list because of non matching ATD
             self.assertEqual(deconvoluted, [])
 
@@ -303,7 +270,7 @@ class Test_DeconvoluteMs2Peaks(unittest.TestCase):
             rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
             rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
             # test the function
-            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DMP_PARAMS)
+            deconvoluted = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
             # should get no entries in the deconvoluted list because of non matching ATD
             self.assertEqual(deconvoluted, [])
 
@@ -395,18 +362,6 @@ class Test_AddSingleTargetResultsToDb(unittest.TestCase):
             self.assertEqual(len(cur.execute("SELECT * FROM _DIAFeatures").fetchall()), 1)
             # this query should return 3 rows
             self.assertEqual(len(cur.execute("SELECT * FROM DIADeconFragments").fetchall()), 3)
-
-
-class Test_Ms2PeaksToStr(unittest.TestCase):
-    """ tests for the _ms2_peaks_to_str function """
-
-    # NOTE (Dylan Ross): it is only necessary to test the case where the input arg
-    #                    ms2_peaks is None, the rest of the work is done by the 
-    #                    ms2_to_str() function which already has complete unit tests
-
-    def test_MPTS_ms2_peaks_is_none(self):
-        """ test providing None as the ms2_peaks arg should return None """
-        self.assertIsNone(_ms2_peaks_to_str(None))
 
 
 class Test_SingleTargetAnalysis(unittest.TestCase):
@@ -587,8 +542,22 @@ class TestAddCalibratedCcsToDiaFeatures(unittest.TestCase):
                 self.assertIsNotNone(ccs)
 
 
-if __name__ == "__main__":
-    # run the tests for this module if invoked directly
-    unittest.main(verbosity=2)
+
+# group all of the tests from this module into a TestSuite
+_loader = unittest.TestLoader()
+AllTestsDia = unittest.TestSuite()
+AllTestsDia.addTests([
+    _loader.loadTestsFromTestCase(Test_SelectXicPeak),
+    _loader.loadTestsFromTestCase(Test_LerpTogether),
+    _loader.loadTestsFromTestCase(Test_DeconDistance),
+    _loader.loadTestsFromTestCase(Test_DeconvoluteMs2Peaks),
+    _loader.loadTestsFromTestCase(Test_AddSingleTargetResultsToDb),
+    _loader.loadTestsFromTestCase(Test_SingleTargetAnalysis),
+    _loader.loadTestsFromTestCase(TestExtractDiaFeatures),
+    _loader.loadTestsFromTestCase(TestAddCalibratedCcsToDiaFeatures),
+])
 
 
+if __name__ == '__main__':
+    # run all defined TestCases for only this module if invoked directly
+    unittest.TextTestRunner(verbosity=2).run(AllTestsDia)

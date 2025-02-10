@@ -37,7 +37,7 @@
             - [x] parameters loading from/writing config files (`lipidimea.test.params`)
             - [ ] DDA data extraction and processing (`lipidimea.test.msms.dda`)
             - [ ] DIA data extraction and processing (`lipidimea.test.msms.dia`)
-            - [ ] lipid annotation (`lipidimea.test.annotation`)
+            - [x] lipid annotation (`lipidimea.test.annotation`)
         - [ ] integration tests
 - [ ] implement CLI for running data analysis
     - [ ] perform standard analyses
@@ -56,7 +56,7 @@
 
 
 ### General
-- [ ] migrate to GitHub
+- [x] migrate to GitHub
 - [ ] documentation build and host on readthedocs
 - [ ] backend build and host on PyPI
 

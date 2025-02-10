@@ -19,7 +19,6 @@ import errno
 import numpy as np
 from mzapy.dda import MsmsReaderDda, MsmsReaderDdaCachedMs1
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
-from mzapy.view import plot_chrom
 
 from lipidimea.typing import (
     ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaPrecursor,
@@ -74,7 +73,6 @@ def _extract_and_fit_chroms(rdr: DdaReader,
         # extract chromatogram
         assert P.mz_ppm is not None
         chrom = rdr.get_chrom(pre_mz, tol_from_ppm(pre_mz, P.mz_ppm))
-        plot_chrom(*chrom, figname="show")
         # try fitting chromatogram (up to n peaks)
         _pkrts, _pkhts, _pkwts = find_peaks_1d_gauss(*chrom, 
                                                      P.min_rel_height, P.min_abs_height,  # type: ignore
