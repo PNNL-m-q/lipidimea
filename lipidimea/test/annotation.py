@@ -357,6 +357,3 @@ AllTestsAnnotation.addTests([
 if __name__ == '__main__':
     # run all defined TestCases for only this module if invoked directly
     unittest.TextTestRunner(verbosity=2).run(AllTestsAnnotation)
-
-
-

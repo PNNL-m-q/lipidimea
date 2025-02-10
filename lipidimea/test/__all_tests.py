@@ -10,6 +10,7 @@ import unittest
 
 from lipidimea.test.annotation import AllTestsAnnotation
 from lipidimea.test.params import AllTestsParams
+from lipidimea.test.util import AllTestsUtil
 
 
 # collect tests
@@ -17,4 +18,5 @@ AllTests = unittest.TestSuite()
 AllTests.addTests([
     AllTestsAnnotation,
     AllTestsParams,
+    AllTestsUtil
 ])
