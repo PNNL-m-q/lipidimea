@@ -316,7 +316,7 @@ class AnnotationParams:
     """ class for organizing lipid annotation parameters """
     ionization: str   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
     sum_comp: _AnnotationComponent
-    rt_range_config: YamlFilePath
+    rt_range_config: Optional[YamlFilePath]
     ccs_trends: _CcsTrends
     frag_rules: _AnnotationComponent
 

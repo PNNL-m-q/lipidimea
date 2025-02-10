@@ -11,7 +11,9 @@ import os
 import errno
 from sqlite3 import connect
 from itertools import product
-from typing import Generator, Tuple, List, Optional, Callable, Dict, Iterable
+from typing import (
+    Generator, Tuple, List, Optional, Callable, Dict, Iterable, Any
+)
 
 from mzapy.isotopes import ms_adduct_mz
 from mzapy._util import _ppm_error
@@ -977,7 +979,7 @@ def annotate_lipids(results_db: ResultsDbPath,
                     params: AnnotationParams,
                     debug_flag: Optional[str] = None, 
                     debug_cb: Optional[Callable] = None
-                    ) -> None :
+                    ) -> Dict[str, Any] :
     """
     Perform the full lipid annotation workflow:
     
@@ -994,18 +996,26 @@ def annotate_lipids(results_db: ResultsDbPath,
     params : ``AnnotationParams``
         parameters for lipid annotation
     scdb_config_yml
+
+    Returns 
+    -------
+    results
+
     """
     remove_lipid_annotations(results_db)
     add_lmaps_ont(results_db)
-    sum_comp_results = annotate_lipids_sum_composition(results_db,
-                                                       params, 
-                                                       debug_flag=debug_flag, debug_cb=debug_cb)
-    rt_filter_results = filter_annotations_by_rt_range(results_db, 
-                                                       params, 
-                                                       debug_flag=debug_flag, debug_cb=debug_cb)
-    ccs_filter_results = filter_annotations_by_ccs_subclass_trend(results_db,
-                                                                  params,
-                                                                  debug_flag=debug_flag, debug_cb=debug_cb)
-    frag_rule_results = update_lipid_ids_with_frag_rules(results_db, 
-                                                         params,
-                                                         debug_flag=debug_flag, debug_cb=debug_cb)
+    # track results from each step
+    results = {}
+    results["sum_comp"] = annotate_lipids_sum_composition(results_db,
+                                                          params, 
+                                                          debug_flag=debug_flag, debug_cb=debug_cb)
+    results["rt_filter"] = filter_annotations_by_rt_range(results_db, 
+                                                          params, 
+                                                          debug_flag=debug_flag, debug_cb=debug_cb)
+    results["ccs_filter"] = filter_annotations_by_ccs_subclass_trend(results_db,
+                                                                     params,
+                                                                     debug_flag=debug_flag, debug_cb=debug_cb)
+    results["frag_rule"] = update_lipid_ids_with_frag_rules(results_db, 
+                                                            params,
+                                                            debug_flag=debug_flag, debug_cb=debug_cb)
+    return results
