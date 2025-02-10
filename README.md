@@ -27,11 +27,15 @@
     - [x] nested dataclasses
     - [x] load from default config then update explicitly specified params
     - [ ] reconcile the extra information that is included in the default configuration file that is used by the GUI to get default values and descriptions, not needed for actual data processing
-    - [ ] reorganize into separate configuration files for each high-level analysis step
+    - [x] reorganize into separate configuration files for each high-level analysis step
         - [x] DDA
         - [x] DIA
-        - [ ] annotation
+        - [x] annotation
     - [x] additional configs used in annotation should be loaded if the corresponding attribute of `AnnotationParams` is `None`, and the constants with paths to the default configs should be defined in `lipidimea.annotation` module 
+    - [ ] perform testing to validate that updated code is working as expected
+        - [ ] unit tests
+            - [x] parameters loading from/writing config files (`lipidimea.test.params`)
+        - [ ] integration tests
 - [ ] implement CLI for running data analysis
     - [ ] perform standard analyses
         - [ ] A. create results database \(+ other setup type tasks?\) 
