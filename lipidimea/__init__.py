@@ -1,6 +1,5 @@
 """
 lipidimea/__init__.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     lipidimea - Lipidomics Integrated Multi-Experiment Analysis tool
