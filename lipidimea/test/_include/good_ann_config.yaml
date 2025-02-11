@@ -1,0 +1,9 @@
+sum_comp: 
+  fa_c: 
+    min: 8
+  fa_odd_c: true
+ccs_trends: 
+  percent: 3.
+frag_rules: 
+  fa_c:
+    max: 22

@@ -1,0 +1,7 @@
+precursor_mz:
+  min: 200.
+extract_and_fit_chroms: 
+  min_abs_height: 5.e2
+  fwhm:
+    max: 2.
+    foo: 420.

@@ -181,9 +181,9 @@ class TestLoadRules(TestCase):
         # first, the found flag must be False
         self.assertFalse(found,
                          msg="found flag should have been False")
-        # next, make sure the proper number of rules were loaded from any.yml
+        # next, make sure the proper number of rules were loaded from any.yaml
         self.assertAlmostEqual(len(rules), 6,
-                               msg="6 rules should have been loaded from any.yml")
+                               msg="6 rules should have been loaded from any.yaml")
 
     def test_pe_pos_neg_rules(self):
         """ load rules for the PE class for POS and NEG ionization modes, make sure correct number are loaded """
@@ -206,7 +206,7 @@ class TestLoadRules(TestCase):
         self.assertFalse(found, 
                         msg="found flag should have been False")
         self.assertEqual(len(rules), 4,
-                         msg="4 rules should have been loaded from any.yml")
+                         msg="4 rules should have been loaded from any.yaml")
 
 
 if __name__ == '__main__':

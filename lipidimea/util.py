@@ -1,6 +1,5 @@
 """
 lipidimea/util.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     module with general utilities
@@ -21,8 +20,11 @@ from lipidimea.typing import (
 )
 
 
+INCLUDE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_include")
+
+
 # define path to results DB schema file
-_RESULTS_DB_SCHEMA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_include/results.sqlite3')
+_RESULTS_DB_SCHEMA = os.path.join(INCLUDE_DIR, 'results.sql3')
 
 
 def create_results_db(results_file: ResultsDbPath,

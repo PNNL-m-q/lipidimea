@@ -1,0 +1,9 @@
+extract_and_fit_chroms:
+  fwhm: 
+    max: 0.55
+  max_peaks: 2
+extract_and_fit_ms2_spectra:
+  min_abs_height: 1.e4
+  mz_bin_min: 55.
+deconvolute_ms2_peaks: 
+  mz_ppm: 60.

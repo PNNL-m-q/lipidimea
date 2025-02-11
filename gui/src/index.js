@@ -78,7 +78,7 @@ app.on('activate', () => {
 // Load on DOM
 // Get Defaults Data
 ipcMain.on('getDefaults', (event) => {
-  const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yml');
+  const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yaml');
   console.log('YAML Path:', defaultsPath);
 
   fs.readFile(defaultsPath, 'utf8', (err, data) => {
@@ -105,7 +105,7 @@ ipcMain.on('request-filename-and-directory', (event) => {
   prompt({
       title: 'Parameter File Name',
       label: 'Enter the desired filename to save parameters under:',
-      value: 'saved_lipidmea_params.yml',
+      value: 'saved_lipidmea_params.yaml',
       type: 'input'
   }).then((fileName) => {
       if (fileName !== null) {
@@ -144,7 +144,7 @@ ipcMain.on('run-python-yamlwriter', (event, options) => {
   let savePath;
   if (options.location && options.name) {
       // If location and name are provided, construct the save path
-      savePath = path.join(options.location, options.name + ".yml");
+      savePath = path.join(options.location, options.name + ".yaml");
   } else {
       // Otherwise, use the path directly from options
       savePath = options.path;

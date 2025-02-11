@@ -16,13 +16,9 @@ import multiprocessing
 import os
 import errno
 
-<<<<<<< HEAD
-=======
 import numpy as np
->>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
 from mzapy.dda import MsmsReaderDda, MsmsReaderDdaCachedMs1
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
-from mzapy.view import plot_spectrum, plot_chrom
 
 from lipidimea.typing import (
     ResultsDbConnection, ResultsDbCursor, ResultsDbPath, DdaReader, DdaChromFeat, DdaPrecursor,
@@ -33,23 +29,13 @@ from lipidimea.msms._util import (
 )
 from lipidimea.util import add_data_file_to_db, debug_handler
 from lipidimea.params import (
-    DdaExtractAndFitChromsParams, DdaConsolidateChromFeatsParams, DdaExtractAndFitMs2SpectraParams,
     DdaParams
 )
 
 
-<<<<<<< HEAD
-=======
-# TODO (Dylan Ross): Change the behavior of the DDA data extraction functions to be more like 
-#                    the lipid annotation functions: pass around one big DdaParams dataclass
-#                    instance and let the functions fetch the parameters they need from it rather
-#                    than passing around different parameter subsets.
-
-
->>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
 def _extract_and_fit_chroms(rdr: DdaReader, 
                             pre_mzs: Set[float], 
-                            params: DdaExtractAndFitChromsParams,
+                            params: DdaParams,
                             debug_flag: Optional[str], debug_cb: Optional[Callable] 
                             ) -> List[DdaChromFeat] :
     """
@@ -74,6 +60,8 @@ def _extract_and_fit_chroms(rdr: DdaReader,
     chrom_feats : ``list(tuple(...))``
         list of chromatographic features (pre_mz, peak RT, peak height, peak FWHM, pSNR)
     """
+    # unpack params
+    P = params.extract_and_fit_chroms
     pid = os.getpid()
     # extract chromatograms
     debug_handler(debug_flag, debug_cb, 'EXTRACTING AND FITTING CHROMATOGRAMS', pid)
@@ -83,18 +71,18 @@ def _extract_and_fit_chroms(rdr: DdaReader,
     for i, pre_mz in enumerate(pre_mzs): 
         msg = f"({i + 1}/{n}) precursor m/z: {pre_mz:.4f} -> "
         # extract chromatogram
-        chrom = rdr.get_chrom(pre_mz, tol_from_ppm(pre_mz, params.mz_ppm))
-        plot_chrom(*chrom, figname="show")
+        assert P.mz_ppm is not None
+        chrom = rdr.get_chrom(pre_mz, tol_from_ppm(pre_mz, P.mz_ppm))
         # try fitting chromatogram (up to n peaks)
         _pkrts, _pkhts, _pkwts = find_peaks_1d_gauss(*chrom, 
-                                                     params.min_rel_height, params.min_abs_height, 
-                                                     params.fwhm_min, params.fwhm_max, 
-                                                     params.max_peaks, True)
+                                                     P.min_rel_height, P.min_abs_height,  # type: ignore
+                                                     P.fwhm.min, P.fwhm.max,              # type: ignore
+                                                     P.max_peaks, True)                   # type: ignore
         # calc pSNR for each fitted peak, make sure they meet a threshold
         pkrts, pkhts, pkwts, psnrs = [], [], [], []
         for pkparams in zip(_pkrts, _pkhts, _pkwts):
-            psnr = calc_gauss_psnr(*chrom, pkparams)
-            if psnr > params.min_psnr:
+            psnr = calc_gauss_psnr(*chrom, pkparams) # type: ignore
+            if psnr > P.min_psnr:
                 pkrts.append(pkparams[0])
                 pkhts.append(pkparams[1])
                 pkwts.append(pkparams[2])
@@ -111,7 +99,7 @@ def _extract_and_fit_chroms(rdr: DdaReader,
 
 
 def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat], 
-                             params: DdaConsolidateChromFeatsParams, 
+                             params: DdaParams, 
                              debug_flag: Optional[str], debug_cb: Optional[Callable] 
                              ) -> List[DdaChromFeat] :
     """
@@ -135,6 +123,8 @@ def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat],
     chrom_feats_consolidated : ``list(tuple(...))``
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     """
+    # unpack params
+    P = params.consolidate_chrom_feats
     pid = os.getpid()
     # consolidate features
     chrom_feats_consolidated: List[DdaChromFeat] = []
@@ -143,7 +133,7 @@ def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat],
         for i in range(len(chrom_feats_consolidated)):
             fc_i: DdaChromFeat = chrom_feats_consolidated[i]
             delta_mz: float = abs(feat[0] - fc_i[0])
-            if ppm_from_delta_mz(delta_mz, fc_i[0]) <= params.mz_ppm and abs(feat[1] - fc_i[1]) <= params.rt_tol:
+            if ppm_from_delta_mz(delta_mz, fc_i[0]) <= P.mz_ppm and abs(feat[1] - fc_i[1]) <= P.rt_tol:
                 add = False
                 if feat[2] > fc_i[2]:
                     chrom_feats_consolidated[i] = feat
@@ -160,7 +150,7 @@ def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat],
 def _extract_and_fit_ms2_spectra(rdr: DdaReader,
                                  dda_file_id: MzaFileId,
                                  chrom_feats_consolidated: List[DdaChromFeat],
-                                 params: DdaExtractAndFitMs2SpectraParams,
+                                 params: DdaParams,
                                  debug_flag: Optional[str], debug_cb: Optional[Callable] 
                                  ) -> Tuple[List[DdaPrecursor], List[Optional[Ms2]]] :
     """
@@ -191,6 +181,8 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
     spectra : ``list(numpy.ndarray(float) or None)``
         list of tandem mass spectra (centroided, as 2D arrays) or None if no MS2 peaks were found
     """
+    # unpack params
+    P = params.extract_and_fit_ms2_spectra
     pid: int = os.getpid()
     # extract and fit MS2 spectra, return query data
     debug_handler(debug_flag, 
@@ -208,26 +200,25 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
         rt_max: float = frt + fwt  
         mz_bin_max: float = fmz + 5  # only extract MS2 spectrum up to precursor m/z + 5 Da
         # (try to) extract MS2 spectrum
-        ms2 = rdr.get_msms_spectrum(fmz, tol_from_ppm(fmz, params.pre_mz_ppm), rt_min, rt_max, 
-                                    params.mz_bin_min, mz_bin_max, params.mz_bin_size)
+        assert P.pre_mz_ppm is not None
+        ms2 = rdr.get_msms_spectrum(fmz, 
+                                    tol_from_ppm(fmz, P.pre_mz_ppm), 
+                                    rt_min, 
+                                    rt_max, 
+                                    P.mz_bin_min, 
+                                    mz_bin_max, 
+                                    P.mz_bin_size)
         mz_bins, i_bins, n_scan_pre_mzs, scan_pre_mzs = ms2
-<<<<<<< HEAD
-        print(f"{n_scan_pre_mzs=}")
-        print(f"{scan_pre_mzs=}")
-        plot_spectrum(mz_bins, i_bins, figname="show")
-        msg += '# MS2 scans: {} '.format(n_scan_pre_mzs)
-=======
         msg += f"# MS2 scans: {n_scan_pre_mzs}"
->>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
         if n_scan_pre_mzs > 0:
             # find peaks
             pkmzs, pkhts, pkwts = find_peaks_1d_localmax(mz_bins, i_bins,
-                                                         params.min_rel_height, params.min_abs_height, 
-                                                         params.fwhm_min, params.fwhm_max, 
-                                                         params.peak_min_dist)
+                                                         P.min_rel_height, P.min_abs_height, 
+                                                         P.fwhm.min, P.fwhm.max, 
+                                                         P.peak_min_dist)
             if len(pkmzs) > 0:
                 precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, len(pkmzs)))
-                spectra.append(np.array([pkmzs, pkhts]))
+                spectra.append(np.array([pkmzs, pkhts]))  # type: ignore
             else:
                 precursors.append((None, dda_file_id, fmz, frt, fwt, fht, fsnr, n_scan_pre_mzs, 0))
                 spectra.append(None)
@@ -283,7 +274,7 @@ def _add_precursors_and_fragments_to_db(cur: ResultsDbCursor,
         cur.execute(qry_pre, pre)
         pre_id = cur.lastrowid
         if spec is not None:
-            for msms_mz, msms_i in spec.T:
+            for msms_mz, msms_i in spec.T:  # type: ignore
                 cur.execute(qry_frag, (None, pre_id, msms_mz, msms_i))
 
 
@@ -364,39 +355,27 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
         else MsmsReaderDda(dda_data_file, drop_scans=drop_scans)
     )
     # get the list of precursor m/zs
-<<<<<<< HEAD
-    pre_mzs: Set[float] = rdr.get_pre_mzs()[4000:4020]  # TODO: TEMPORARY SLICE, REMOVE ME!
-    debug_handler(debug_flag, debug_cb, '# precursor m/zs: {}'.format(len(pre_mzs)), pid)
-=======
-    pre_mzs: Set[float] = rdr.get_pre_mzs()
+    pre_mzs: Set[float] = rdr.get_pre_mzs()  # type: ignore
     # limit to a specified range 
-    pre_mzs = set([_ for _ in pre_mzs if (_ >= params.min_precursor_mz and _ <= params.max_precursor_mz)])
+    pre_mzs = set([_ for _ in pre_mzs if (_ >= params.precursor_mz.min and _ <= params.precursor_mz.max)])
     debug_handler(debug_flag, debug_cb, f"# precursor m/zs: {len(pre_mzs)}")
->>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 
                                                               pre_mzs, 
-                                                              params.extract_and_fit_chrom_params,
+                                                              params,
                                                               debug_flag, debug_cb)
     # consolidate chromatographic features
     chrom_feats_consolidated: List[DdaChromFeat] = _consolidate_chrom_feats(chrom_feats, 
-                                                                            params.consolidate_chrom_feats_params, 
+                                                                            params, 
                                                                             debug_flag, debug_cb)
     # extract MS2 spectra
-<<<<<<< HEAD
-    qdata: List[DdaFeature] = _extract_and_fit_ms2_spectra(rdr, 
-                                                           chrom_feats_consolidated, 
-                                                           params.extract_and_fit_ms2_spectra_params, 
-                                                           debug_flag, debug_cb)
-=======
     precursors, spectra = _extract_and_fit_ms2_spectra(rdr, 
                                                        dda_file_id,
                                                        chrom_feats_consolidated, 
-                                                       params.extract_and_fit_ms2_spectra_params, 
+                                                       params, 
                                                        debug_flag, debug_cb)
     precursors: List[DdaPrecursor]
     spectra: List[Optional[Ms2]]
->>>>>>> 4dae6eb847eafffa6f03ccbed2ce80569b9e7180
     # do not need the reader anymore
     rdr.close()
     # initialize connection to DDA ids database
@@ -458,7 +437,7 @@ def extract_dda_features_multiproc(dda_data_files: List[MzaFilePath],
 
 
 def consolidate_dda_features(results_db: ResultsDbPath, 
-                             params: DdaConsolidateChromFeatsParams, 
+                             params: DdaParams, 
                              debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None
                              ) -> Tuple[int, int] :
     """
@@ -489,6 +468,8 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     n_features_post : ``int``
         return the number of features before and after consolidating
     """
+    # unpack parameters
+    P = params.consolidate_dda_feats
     # ensure the results database exists
     if not os.path.isfile(results_db):    
         raise FileNotFoundError(errno.ENOENT, 
@@ -508,10 +489,10 @@ def consolidate_dda_features(results_db: ResultsDbPath,
         n_dda_features += 1
         _, mz, rt, *_ = d
         add = True
-        mzt = tol_from_ppm(mz, params.mz_ppm)
+        mzt = tol_from_ppm(mz, P.mz_ppm)
         for i in range(len(grouped)):
             for _, mz_i, rt_i, *_ in grouped[i]:
-                if abs(mz - mz_i) <= mzt and abs(rt - rt_i) <= params.rt_tol:
+                if abs(mz - mz_i) <= mzt and abs(rt - rt_i) <= P.rt_tol:
                     grouped[i].append(d)
                     add = False
                     break
@@ -553,7 +534,7 @@ def consolidate_dda_features(results_db: ResultsDbPath,
                 keep_ffid: Optional[int] = None
                 for feat in group:
                     ffid, fint = feat[0], feat[3]
-                    if not params.drop_if_no_ms2:
+                    if not P.drop_if_no_ms2:
                         if keep_ffid is None:
                             max_fint = fint
                             keep_ffid = ffid
@@ -586,6 +567,6 @@ def consolidate_dda_features(results_db: ResultsDbPath,
 # TODO (Dylan Ross): Add a function that goes through the DDA precursors and drops the ones in the 
 #                    top/bottom X% in terms of the peak FWHMs. The precursor features that have very
 #                    large or very small FWHMs are probably not good features and getting rid of them
-#                    early will lead to less noise features being included in downstream analyses.
+#                    early will lead to less noisy features being included in downstream analyses.
 
 

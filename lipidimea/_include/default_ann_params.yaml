@@ -1,0 +1,19 @@
+ionization: null   
+sum_comp: 
+  fa_c: 
+    min: 12
+    max: 24
+  fa_odd_c: true
+  mz_ppm: 40.
+  config: null
+rt_range_config: null
+ccs_trends: 
+  percent: 5.
+  config: null
+frag_rules: 
+  fa_c:
+    min: 12
+    max: 24
+  fa_odd_c: true
+  mz_ppm: 80.
+  config: null

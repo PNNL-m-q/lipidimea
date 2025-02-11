@@ -1,0 +1,6 @@
+ccs_trends: 
+  percent: 6.
+frag_rules: 
+  fa_c:
+    foo: bar
+  fa_odd_c: true

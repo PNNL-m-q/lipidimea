@@ -1,10 +1,8 @@
 """
 lipidimea/msms/dia.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     module with DIA MSMS utilities
-    
 """
 
 
@@ -14,7 +12,6 @@ import os
 import errno
 from itertools import repeat
 import multiprocessing
-import time
 
 import numpy as np
 import numpy.typing as npt
@@ -22,24 +19,21 @@ from scipy import spatial
 from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
-from lipidimea.msms._util import apply_args_and_kwargs
+from lipidimea.msms._util import apply_args_and_kwargs, tol_from_ppm
 from lipidimea.util import debug_handler, add_data_file_to_db
-from lipidimea.msms._util import tol_from_ppm
 from lipidimea.params import (
-    DiaDeconvoluteMs2PeaksParams, DiaParams
+    DiaParams
 )
 from lipidimea.typing import (
-    Xic, Atd, Ms1, Ms2, Spec, SpecStr,
-    DiaDeconFragment,
-    ResultsDbPath, ResultsDbCursor, ResultsDbConnection,
+    Xic, Atd, Ms1, 
+    ResultsDbPath, ResultsDbCursor,
     MzaFilePath, MzaFileId
 )
 
 
-# TODO (Dylan Ross): Change the behavior of the DDA data extraction functions to be more like 
-#                    the lipid annotation functions: pass around one big DdaParams dataclass
-#                    instance and let the functions fetch the parameters they need from it rather
-#                    than passing around different parameter subsets.
+# TODO: Centralize definitions for raw_type and feat_id_type values, maybe with
+#       a string enum (or int enum + change table data to use ints and include 
+#       additional internal table for mapping ints to variant names)? 
 
 
 # general query for inserting data into the Raw table of the results DB
@@ -53,11 +47,15 @@ def _select_xic_peak(target_rt: float,
                      pkrts: List[float], 
                      pkhts: List[float], 
                      pkwts: List[float]
-                     ) -> Tuple[float, float, float] :
+                     ) -> Tuple[Optional[float], Optional[float], Optional[float]] :
     """ 
     select the peak with the highest intensity that is within target_rt_tol of target_rt 
     returns peak_rt, peak_height, peak_fwhm of selected peak
     returns None, None, None if no peaks meet criteria
+
+    NOTE: This is not used anymore because effectively all DIA peaks are processed and the
+          relationship between DIA and DDA precursurs is determined post-hoc based on their
+          m/z and RT. But keeping this definition here for reference. 
     """
     peaks = [(r, h, w) for r, h, w in zip(pkrts, pkhts, pkwts) if abs(r - target_rt) <= target_rt_tol]
     n_peaks = len(peaks)
@@ -93,7 +91,7 @@ def _lerp_together(data_a: Union[Xic, Atd],
     # only lerp together for regions where both datasets overlap (max of mins and min of maxs)
     min_x, max_x = max(min(x_a), min(x_b)), min(max(x_a), max(x_b))
     x = np.arange(min_x, max_x + dx, dx)
-    return x, np.interp(x, x_a, y_a), np.interp(x, x_b, y_b)
+    return x, np.interp(x, x_a, y_a), np.interp(x, x_b, y_b)  # type: ignore
 
 
 def _decon_distance(pre_data: Union[Xic, Atd], 
@@ -120,7 +118,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
                            pre_xic_rt: float, 
                            pre_xic_wt: float, 
                            pre_atd: Atd, 
-                           params: DiaDeconvoluteMs2PeaksParams
+                           params: DiaParams
                            ) -> Tuple[List[Tuple[bool, Optional[float], Optional[float]]],
                                       List[Tuple[Optional[Xic], Optional[Atd]]]] :
     """
@@ -151,6 +149,8 @@ def _deconvolute_ms2_peaks(rdr: MZA,
     raws : ``list(tuple(array or None, array or None))``
         list of optional raw array data for fragment XICs and ATDs
     """
+    # unpack parameters
+    P = params.deconvolute_ms2_peaks
     deconvoluted = []
     raws = []
     for ms2_mz in sel_ms2_mzs:
@@ -159,19 +159,19 @@ def _deconvolute_ms2_peaks(rdr: MZA,
         ms2_xic = None
         atd_dist = None
         ms2_atd = None
-        mz_tol = tol_from_ppm(ms2_mz, params.mz_ppm)
+        mz_tol = tol_from_ppm(ms2_mz, params.deconvolute_ms2_peaks.mz_ppm)
         mz_bounds = (ms2_mz - mz_tol, ms2_mz + mz_tol)
         rt_bounds = (pre_xic_rt - pre_xic_wt, pre_xic_rt + pre_xic_wt)
         # extract fragment XIC 
         ms2_xic = rdr.collect_xic_arrays_by_mz(*mz_bounds, rt_bounds=rt_bounds, mslvl=2)
         # compute XIC distance
-        xic_dist = _decon_distance(pre_xic, ms2_xic, params.xic_dist_metric, 0.05)
-        if xic_dist <= params.xic_dist_threshold:
+        xic_dist = _decon_distance(pre_xic, ms2_xic, P.xic_dist_metric, 0.05)
+        if xic_dist <= P.xic_dist_threshold:
             # extract fragment ATD 
             ms2_atd = rdr.collect_atd_arrays_by_rt_mz(*mz_bounds, *rt_bounds, mslvl=2)
             # compute ATD distance
-            atd_dist = _decon_distance(pre_atd, ms2_atd, params.atd_dist_metric, 0.25)
-            if atd_dist <= params.atd_dist_threshold:
+            atd_dist = _decon_distance(pre_atd, ms2_atd, P.atd_dist_metric, 0.25)
+            if atd_dist <= P.atd_dist_threshold:
                 # accept fragment
                 flag = True
         deconvoluted.append((flag, xic_dist, atd_dist))
@@ -216,7 +216,8 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
     )
     cur.execute(dia_precursors_qry, dia_pre_qdata)
     # fetch the DIA feature ID that we just added
-    dia_pre_id: int = cur.lastrowid
+    dia_pre_id = cur.lastrowid
+    assert dia_pre_id is not None
     # add the fragments to the db
     dia_frag_qry = """--beginsql
         INSERT INTO DIAFragments VALUES (?,?,?,?,?,?,?)
@@ -238,7 +239,8 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
         # optionally add some raw data
         if store_blobs:
             # grab the fragment identifier
-            dia_frag_id: int = cur.lastrowid
+            dia_frag_id = cur.lastrowid
+            assert dia_frag_id is not None, "last row ID should not be none"
             for farr, raw_type in [(fxic, "DIA_FRAG_XIC"), (fatd, "DIA_FRAG_ATD")]:
                 if farr is not None:
                     fblob: bytes = np.array(farr).tobytes()
@@ -280,7 +282,7 @@ def _single_target_analysis(n: int,
                             dia_file_id: MzaFileId, 
                             dda_pid: int, 
                             dda_mz: float, 
-                            dda_rt: float, 
+                            dda_rts: str, 
                             dda_ms2_n_peaks: Optional[int], 
                             params: DiaParams, 
                             debug_flag: Optional[str], debug_cb: Optional[Callable]
@@ -290,36 +292,36 @@ def _single_target_analysis(n: int,
     
     Parameters
     ----------
-    n : ``int``
+    n 
         total number of DDA targets we are processing
-    i : ``int``
+    i 
         index of DDA target we are currently processing
-    rdr : ``mzapy.MZA``
+    rdr 
         MZA instance for extracting raw data
-    cur : ``ResultsDbCursor``
+    cur
         cursor for querying into results database
-    dia_file_id : ``int``
+    dia_file_id
         DIA data file ID
-    dda_pid : ``int``
+    dda_pid 
         ID of the DDA precursor we are currently processing
-    dda_mz : ``float``
+    dda_mz 
         precursor m/z of the DDA precursor we are currently processing
-    dda_rt : ``float``
-        retention time of the DDA precursor we are currently processing
+    dda_rts 
+        retention time(s) of the DDA precursor we are currently processing, comma separated string
     dda_ms2_n_peaks : ``int`` or ``None``
         number of MS2 peaks in the DDA MS/MS spectrum for the precursor we are currently processing, 
         can be None in cases where there were no MS/MS scans found for the precursor
-    params : ``DiaParams``
+    params 
         DIA analysis params 
-    debug_flag : ``str``, optional
+    debug_flag
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    debug_cb
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    n_features : ``int``
+    n_features 
         number of features extracted
     """
     # TODO: If ignoring the DDA precursor RT works, then get rid of all of the RT-related stuff left over in
@@ -332,13 +334,15 @@ def _single_target_analysis(n: int,
     --endsql"""
     n_features: int = 0
     pid = os.getpid()
-    msg = f"({i + 1}/{n}) DDA precursor ID: {dda_pid}, m/z: {dda_mz:.4f}, RT: {dda_rt} min -> "
+    msg = f"({i + 1}/{n}) DDA precursor ID: {dda_pid}, m/z: {dda_mz:.4f}, RT: {dda_rts} min -> "
     # extract the XIC, fit 
     # still use some bounds on XIC extraction, saves time
-    dda_rts = [float(_) for _ in dda_rt.split(",")]
-    rt_bounds = (min(dda_rts) - params.extract_and_fit_chrom_params.rt_tol, 
-                 max(dda_rts) + params.extract_and_fit_chrom_params.rt_tol)
-    pre_mzt = tol_from_ppm(dda_mz, params.extract_and_fit_chrom_params.mz_ppm)
+    _dda_rts: List[float] = [float(_) for _ in dda_rts.split(",")]
+    assert params.extract_and_fit_chroms.rt_tol is not None, "extract_and_fit_chroms.rt_tol must be set"
+    rt_bounds = (min(_dda_rts) - params.extract_and_fit_chroms.rt_tol, 
+                 max(_dda_rts) + params.extract_and_fit_chroms.rt_tol)
+    assert params.extract_and_fit_chroms.mz_ppm is not None, "the m/z ppm parameter must be set"
+    pre_mzt = tol_from_ppm(dda_mz, params.extract_and_fit_chroms.mz_ppm)
     pre_xic = rdr.collect_xic_arrays_by_mz(dda_mz - pre_mzt, dda_mz + pre_mzt, rt_bounds=rt_bounds)
     # handle case where XIC is empty 
     # (tight enough bounds and high enough threshold can do that)
@@ -346,11 +350,11 @@ def _single_target_analysis(n: int,
         debug_handler(debug_flag, debug_cb, msg +  'empty XIC', pid)
         return 0
     pre_pkrts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_xic,
-                                                          params.extract_and_fit_chrom_params.min_rel_height,
-                                                          params.extract_and_fit_chrom_params.min_abs_height,
-                                                          params.extract_and_fit_chrom_params.fwhm_min,
-                                                          params.extract_and_fit_chrom_params.fwhm_max,
-                                                          params.extract_and_fit_chrom_params.max_peaks, 
+                                                          params.extract_and_fit_chroms.min_rel_height,
+                                                          params.extract_and_fit_chroms.min_abs_height,
+                                                          params.extract_and_fit_chroms.fwhm.min,
+                                                          params.extract_and_fit_chroms.fwhm.max,
+                                                          params.extract_and_fit_chroms.max_peaks, 
                                                           True)
     # determine the closest XIC peak (if any)
     # target_rt = dda_rt + params.select_chrom_peaks_params.target_rt_shift
@@ -371,11 +375,11 @@ def _single_target_analysis(n: int,
             debug_handler(debug_flag, debug_cb, msg +  'empty ATD', pid)
             return 0
         pre_pkdts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_atd, 
-                                                              params.atd_fit_params.min_rel_height,
-                                                              params.atd_fit_params.min_abs_height,
-                                                              params.atd_fit_params.fwhm_min,
-                                                              params.atd_fit_params.fwhm_max,
-                                                              params.atd_fit_params.max_peaks, 
+                                                              params.extract_and_fit_atds.min_rel_height,
+                                                              params.extract_and_fit_atds.min_abs_height,
+                                                              params.extract_and_fit_atds.fwhm.min,
+                                                              params.extract_and_fit_atds.fwhm.max,
+                                                              params.extract_and_fit_atds.max_peaks, 
                                                               True)
         # consider each ATD peak as separate features
         for atd_dt, atd_ht, atd_wt in zip(pre_pkdts, pre_pkhts, pre_pkwts):
@@ -406,11 +410,11 @@ def _single_target_analysis(n: int,
                                                       mz_bounds=[min_fmz - 1, max_fmz + 1])
                 if len(ms2[0]) > 1:
                     dia_ms2_peaks = find_peaks_1d_localmax(*ms2,
-                                                        params.ms2_fit_params.min_rel_height,
-                                                        params.ms2_fit_params.min_abs_height,
-                                                        params.ms2_fit_params.fwhm_min,
-                                                        params.ms2_fit_params.fwhm_max,
-                                                        params.ms2_fit_params.min_dist)
+                                                           params.extract_and_fit_ms2_spectra.min_rel_height,
+                                                           params.extract_and_fit_ms2_spectra.min_abs_height,
+                                                           params.extract_and_fit_ms2_spectra.fwhm.min,
+                                                           params.extract_and_fit_ms2_spectra.fwhm.max,
+                                                           params.extract_and_fit_ms2_spectra.peak_min_dist)
                     n_ms2_peaks = len(dia_ms2_peaks[0])
                     if n_ms2_peaks > 0:
                         dtmsg += f"# DIA MS2 peaks: {n_ms2_peaks} -> "
@@ -434,7 +438,7 @@ def _single_target_analysis(n: int,
                             deconvoluted, frag_raws = _deconvolute_ms2_peaks(rdr, 
                                                                             sel_ms2_mzs, 
                                                                             pre_xic, xic_rt, xic_wt, pre_atd,
-                                                                            params.deconvolute_ms2_peaks_params)
+                                                                            params)
                             dtmsg += f" -> deconvoluted: {len([_ for _ in deconvoluted if _[0]])}"
             debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
