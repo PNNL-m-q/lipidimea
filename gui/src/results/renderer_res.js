@@ -30,6 +30,7 @@ window.api.receive('return-decon-blob-data', (data) => {
 
 
 // Create Deconvoluted Table when receiving this data
+
 window.api.receive('database-table-data', (data, isMapping, error, filepath) => {
   const tableContainer = document.getElementById('deconvoluted-frags-table');
   const errorMessageElement = document.getElementById('error-message');
@@ -39,7 +40,7 @@ window.api.receive('database-table-data', (data, isMapping, error, filepath) => 
   const tableMainContainer = document.getElementById('main-table-container');
   if (error) {
       // Hide the table in case of an error
-      tableMainContainer.style.border = "none";
+      tableMainContainer.style.border = "none";  
       tableContainer.style.display = "none";
       xicDistVal.style.display = "none";
       atdDistVal.style.display = "none";
@@ -66,21 +67,47 @@ window.api.receive('database-table-data', (data, isMapping, error, filepath) => 
   if (isMapping) {
       showDeconTable(data);
   } else {
-      showMainTable(data);
+    // This is where the main table is initially started up.
+      showMainTable(data);  
   }
 });
 
 
-// Create MS1 plot when receving this data
-window.api.receive('return-ms1-blob-data', (data) => {
-  if(data.error) {
-    console.error("Error while processing blob data in main process:", data.error);
+// // Create MS1 plot when receving this data
+// window.api.receive('return-ms1-blob-data', (data) => {
+//   if(data.error) {
+//     console.error("Error while processing blob data in main process:", data.error);
+//     return;
+//   }
+//   const ms1Pairs = data.ms1Array;
+//   displayMS1Plot(ms1Pairs);
+// });
+
+
+window.api.receive('raw-blob-result', (data) => {
+  if (data.error) {
+    console.error(`Error fetching blob (${data.rawType}):`, data.error);
     return;
   }
-  const ms1Pairs = data.ms1Array;
-  displayMS1Plot(ms1Pairs);
+  if (data.data) {
+    const { x, y } = data.data;
+    const pairs = x.map((val, i) => [val, y[i]]);
+    // Choose the appropriate plot based on rawType:
+    switch (data.rawType) {
+      case 'DIA_PRE_MS1':
+        displayMS1Plot(pairs);
+        break;
+      case 'DIA_PRE_XIC':
+        displayXicPlot(pairs);
+        break;
+      case 'DIA_PRE_ATD':
+        displayATDPlot(pairs);
+        break;
+      default:
+        console.warn("Unknown rawType received:", data.rawType);
+    }
+  }
 });
-
 
 // Create Annotation Table when receiving this data
 window.api.receive('database-annotation-data', (data, isMapping, error, filepath) => {
@@ -121,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.api.receive('selected-database-path', (result) => {
     //filePath = result;
     window.api.send('fetch-database-table', result);
-    window.api.send('fetch-annotation-table', result);
+    // window.api.send('fetch-annotation-table', result);
     // load all the rest of the elements
   });
 });
@@ -241,6 +268,8 @@ function getDIAWidth(mzValue, DeconTableMzSet) {
 
 // Generate Normal Distribution Data for fitted lines in Plots
 function generateGaussianData(mean, height, width) {
+  console.log(`Here are the 3 values. mean: ${mean}, width: ${width}, height: ${height}`)
+
   mean = parseFloat(mean);
   width = parseFloat(width); 
   height = parseFloat(height);
@@ -357,15 +386,16 @@ function showMainTable(data) {
           tableRow.classList.add('selected');
 
           selectedRowValue = {
-              id: id,
-              diaDeconFragIds: row['dia_decon_frag_ids']
+            id: row['dia_pre_id']
+              // id: id,
+              // diaDeconFragIds: row['dia_decon_frag_ids']
           };
-
+          console.log(`row['dt']: ${row['dt']}`)
           const mzValueElement = document.getElementById('mz-value');
           const DIArtValueElement = document.getElementById('dia-rt-value');
-          const dtValueElement = document.getElementById('dia-dt-value');
-          const DTpkhtValueElement = document.getElementById('dia-dt-pkht-value');
-          const DTfwhmValueElement = document.getElementById('dia-dt-fwhm-value');
+          const dtValueElement = document.getElementById('dt');
+          const DTpkhtValueElement = document.getElementById('dt-pkht');
+          const DTfwhmValueElement = document.getElementById('dt-fwhm');
           const DTpsnrValueElement = document.getElementById('dia-dt-psnr-value');
           const DIArtPKHTValueElement = document.getElementById('dia-rt-pkht-value');
           const DIArtFWHMValueElement = document.getElementById('dia-rt-fwhm-value');
@@ -377,11 +407,12 @@ function showMainTable(data) {
           const PreDIAatdValueElement = document.getElementById('dia-atd-value');
           const PreDIAxicValueElement = document.getElementById('dia-xic-value');
 
+
           mzValueElement.textContent = formatDecimalValue(row['m/z']);
           DIArtValueElement.textContent = formatDecimalValue(row['RT']);
-          dtValueElement.textContent = formatDecimalValue(row['dia_dt']);
-          DTpkhtValueElement.textContent = formatDecimalValue(row['dia_dt_pkht']);
-          DTfwhmValueElement.textContent = formatDecimalValue(row['dia_dt_fwhm']);
+          dtValueElement.textContent = formatDecimalValue(row['dt']);
+          DTpkhtValueElement.textContent = formatDecimalValue(row['dt_pkht']);
+          DTfwhmValueElement.textContent = formatDecimalValue(row['dt_fwhm']);
           DTpsnrValueElement.textContent = formatDecimalValue(row['dia_dt_psnr']);
           DIArtPKHTValueElement.textContent = formatDecimalValue(row['dia_rt_pkht']);
           DIArtFWHMValueElement.textContent = formatDecimalValue(row['dia_rt_fwhm']);
@@ -395,44 +426,54 @@ function showMainTable(data) {
 
           window.api.send('fetch-mapping-table', selectedRowValue);
 
+
+          currentFeatId = selectedRowValue.id 
+          window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_MS1' });
+          window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
+          window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });        
+
+
+          // or something like this
+          // window.api.send('fetch-raw-blob', { featId: row['dia_pre_id'], rawType: 'DIA_PRE_XIC' });
+
+
           // TODO: Fetch blob data for the selected DIA feature ID from index.js
           //        Process blob data can just fetch the blob data from database (based on feat ID)
           //        then process and return it.
 
-          window.api.send('process-xic-blob-data', {
-            dia_xic: row['dia_xic']
-          });
+          // window.api.send('process-xic-blob-data', {
+          //   dia_xic: row['dia_xic']
+          // });
 
-          window.api.send('process-atd-blob-data', {
-            dia_atd: row['dia_atd']
-          });
+          // window.api.send('process-atd-blob-data', {
+          //   dia_atd: row['dia_atd']
+          // });
 
-          window.api.send('process-ms1-blob-data', {
-            dia_ms1: row['dia_ms1']
-          });
+          // window.api.send('process-ms1-blob-data', {
+          //   dia_ms1: row['dia_ms1']
+          // });
 
 
-          showMappedFeatureTable(data,row['DDA Feature ID']);
-          console.log("error now")
-          console.log(row['dda_ms2_peaks'])
-          console.log(row['dia_ms2_peaks'])          
-          if (row['dda_ms2_peaks'] !== null || row['dia_ms2_peaks'] !== null) {
-            const ddaData = parsePeaks(row['dda_ms2_peaks'])
-            const diaData = parsePeaks(row['dia_ms2_peaks'])
+          // showMappedFeatureTable(data,row['DDA Feature ID']);  # removed this Table
+          // console.log(row['dda_ms2_peaks'])
+          // console.log(row['dia_ms2_peaks'])          
+          // if (row['dda_ms2_peaks'] !== null || row['dia_ms2_peaks'] !== null) {
+          //   const ddaData = parsePeaks(row['dda_ms2_peaks'])
+          //   const diaData = parsePeaks(row['dia_ms2_peaks'])
 
-            // This a patch fix. If time, find better fix.
-            // Race conditions make it so this is rendered before DeconTable
-            // So the delay allows DeconTable to be generated first.
-            setTimeout(() => {
-              document.getElementById("bidirectional-plot").style.display = "flex";
-              document.getElementById('error-message-bidirectional-plot').style.display = "none";
-              plotBidirectionalColumn(ddaData, diaData);
-            }, 200);
-          }
-          else { 
-            document.getElementById("bidirectional-plot").style.display = "none";
-            document.getElementById('error-message-bidirectional-plot').style.display = "flex";
-          }
+          //   // This a patch fix. If time, find better fix.
+          //   // Race conditions make it so this is rendered before DeconTable
+          //   // So the delay allows DeconTable to be generated first.
+          //   setTimeout(() => {
+          //     document.getElementById("bidirectional-plot").style.display = "flex";
+          //     document.getElementById('error-message-bidirectional-plot').style.display = "none";
+          //     plotBidirectionalColumn(ddaData, diaData);
+          //   }, 200);
+          // }
+          // else { 
+          //   document.getElementById("bidirectional-plot").style.display = "none";
+          //   document.getElementById('error-message-bidirectional-plot').style.display = "flex";
+          // }
 
             const resultsDisplay = document.getElementById('below-table-content');
             resultsDisplay.style.display = 'block';
@@ -525,67 +566,67 @@ function showDeconTable(data) {
   tableContainer.appendChild(table);
 }
 
-
+// Remove this table 
 // Create Mapped Feature Table
-function showMappedFeatureTable(data,dda_mapped) {
-  const tableContainer = document.getElementById('table-dda-mapped-dia');
-  tableContainer.innerHTML = ''; 
+// function showMappedFeatureTable(data,dda_mapped) {
+//   const tableContainer = document.getElementById('table-dda-mapped-dia');
+//   tableContainer.innerHTML = ''; 
 
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  const tbody = document.createElement('tbody');
+//   const table = document.createElement('table');
+//   const thead = document.createElement('thead');
+//   const tbody = document.createElement('tbody');
 
-  // Add table headers
-  const headers = ['DIA Feature ID', 'DIA Data File'];
-  const headerRow = document.createElement('tr');
-  headers.forEach((header) => {
-      const th = document.createElement('th');
-      th.textContent = header;
-      headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
+//   // Add table headers
+//   const headers = ['DIA Feature ID', 'DIA Data File'];
+//   const headerRow = document.createElement('tr');
+//   headers.forEach((header) => {
+//       const th = document.createElement('th');
+//       th.textContent = header;
+//       headerRow.appendChild(th);
+//   });
+//   thead.appendChild(headerRow);
 
-  // Add table rows
-  data.forEach((row) => {
-    if (row['DDA Feature ID'] === dda_mapped) {
-      const tableRow = document.createElement('tr');
-      headers.forEach((header) => {
-          const td = document.createElement('td');
-          td.textContent = row[header];
-          tableRow.appendChild(td);
-      });
+//   // Add table rows
+//   data.forEach((row) => {
+//     if (row['DDA Feature ID'] === dda_mapped) {
+//       const tableRow = document.createElement('tr');
+//       headers.forEach((header) => {
+//           const td = document.createElement('td');
+//           td.textContent = row[header];
+//           tableRow.appendChild(td);
+//       });
 
-      tableRow.addEventListener('click', function() {
-          // Remove the previous selection if any
-          const previousSelectedRow = tbody.querySelector('.selected');
-          if (previousSelectedRow) {
-              previousSelectedRow.classList.remove('selected');
-          }
+//       tableRow.addEventListener('click', function() {
+//           // Remove the previous selection if any
+//           const previousSelectedRow = tbody.querySelector('.selected');
+//           if (previousSelectedRow) {
+//               previousSelectedRow.classList.remove('selected');
+//           }
 
-          // Set the current row as selected
-          tableRow.classList.add('selected');
+//           // Set the current row as selected
+//           tableRow.classList.add('selected');
 
-          highlightRowInMainTable(row['DIA Feature ID']);
-      });
+//           highlightRowInMainTable(row['DIA Feature ID']);
+//       });
 
-      // Add hover effect to each row
-      tableRow.addEventListener('mouseover', () => {
-          tableRow.classList.add('hover');
-      });
+//       // Add hover effect to each row
+//       tableRow.addEventListener('mouseover', () => {
+//           tableRow.classList.add('hover');
+//       });
 
-      tableRow.addEventListener('mouseout', () => {
-          tableRow.classList.remove('hover');
-      });
+//       tableRow.addEventListener('mouseout', () => {
+//           tableRow.classList.remove('hover');
+//       });
 
-      // Add more functionalities as required for each row
-      tbody.appendChild(tableRow);
-    }
-  });
+//       // Add more functionalities as required for each row
+//       tbody.appendChild(tableRow);
+//     }
+//   });
 
-  table.appendChild(thead);
-  table.appendChild(tbody);
-  tableContainer.appendChild(table);
-}
+//   table.appendChild(thead);
+//   table.appendChild(tbody);
+//   tableContainer.appendChild(table);
+// }
 
 // Create Annotation Table
 function showAnnotationTable(data) {
@@ -912,9 +953,9 @@ Highcharts.chart('arrival-time-plot', {
     },
     {
       data: generateGaussianData(
-          document.getElementById('dia-dt-value').textContent,
-          document.getElementById('dia-dt-pkht-value').textContent,
-          document.getElementById('dia-dt-fwhm-value').textContent
+          document.getElementById('dt').textContent,
+          document.getElementById('dt-pkht').textContent,
+          document.getElementById('dt-fwhm').textContent
         ),
       type: 'line',
       name: 'Fit (DIA)',

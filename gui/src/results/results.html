@@ -47,8 +47,8 @@
           <div class="plot-half-split"> 
             <div id="annotation-table" class="plot-full-top"></div>
             <div id="error-message-annotation" style="color: black;"></div>
-            <span class="label" >Other DIA Features from the selected DDA Feature</span>
-            <div class="top-table" id="table-dda-mapped-dia" class="plot-full-bot"></div>
+            <!-- <span class="label" >Other DIA Features from the selected DDA Feature</span>  # Remove this
+            <div class="top-table" id="table-dda-mapped-dia" class="plot-full-bot"></div> -->
           </div>
           <!-- Bidirectional DDA/DIA Plot -->
           <div class="plot-half">
@@ -83,9 +83,9 @@
           <div class="plot-quarter">
             <!-- Arrival Time Distribution Plot -->
             <div id="arrival-time-plot"></div>
-            <div><span class="label">Arrival Time:</span> <span class="info" id="dia-dt-value"></span></div>
-            <div><span class="label">Height:</span> <span class="info" id="dia-dt-pkht-value"></span></div>
-            <div><span class="label">FWHM:</span> <span class="info" id="dia-dt-fwhm-value"></span></div>
+            <div><span class="label">Arrival Time:</span> <span class="info" id="dt"></span></div>
+            <div><span class="label">Height:</span> <span class="info" id="dt-pkht"></span></div>
+            <div><span class="label">FWHM:</span> <span class="info" id="dt-fwhm"></span></div>
             <div><span class="label">SNR:</span> <span class="info" id="dia-dt-psnr-value"></span></div>
             <!-- Hidden Elements - Currently needed as references for things in renderer_res. -->
             <!-- Note to self - remove these after updating renderer_res. -->

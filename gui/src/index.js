@@ -6,6 +6,7 @@ const fs = require('fs');
 const sqlite3 = require('sqlite3');
 const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
+const { PassThrough } = require('stream');
 
 // This variable will hold the path to the sql database in Results. 
 // It is globally defined because it is called frequently.
@@ -283,43 +284,63 @@ ipcMain.on('open-database-dialog', (event, options) => {
     });
 });
 
+
+let mainTableCache = null;
+
 // Run main SQL Query and return results.
 ipcMain.on('fetch-database-table', (event, filePath) => {
   const db = new sqlite3.Database(filePath);
-  console.log("LOG: index.js: Fetch data");
-    db.all(`
+  console.log("LOG: index.js: Fetch data in 'fetch-database-table' function");
+  // Old version:
+//   SELECT 
+//   dda_feat_id AS "DDA Feature ID", 
+//   dda_f AS "DDA Data File", 
+//   dia_feat_id AS "DIA Feature ID", 
+//   dia_f AS "DIA Data File", 
+//   mz AS "m/z", 
+//   dia_rt AS RT, 
+//   dt AS "Arrival Time", 
+//   dia_decon_frag_ids, 
+//   dia_xic, 
+//   dia_atd, 
+//   dt AS dia_dt, 
+//   dia_dt_pkht, 
+//   dia_dt_fwhm, 
+//   dia_dt_psnr, 
+//   dia_rt_pkht, 
+//   dia_rt_fwhm, 
+//   dia_rt_psnr,
+//   dda_rt_pkht, 
+//   dda_rt_fwhm, 
+//   dda_rt_psnr, 
+//   dda_rt, 
+//   dda_ms2_peaks, 
+//   dia_ms2_peaks, 
+//   dia_ms1 
+// FROM _CombinedFeaturesForGUI
+
+  // New Version
+  db.all(`
     SELECT 
-      dda_feat_id AS "DDA Feature ID", 
-      dda_f AS "DDA Data File", 
-      dia_feat_id AS "DIA Feature ID", 
-      dia_f AS "DIA Data File", 
-      mz AS "m/z", 
-      dia_rt AS RT, 
-      dt AS "Arrival Time", 
-      dia_decon_frag_ids, 
-      dia_xic, 
-      dia_atd, 
-      dt AS dia_dt, 
-      dia_dt_pkht, 
-      dia_dt_fwhm, 
-      dia_dt_psnr, 
-      dia_rt_pkht, 
-      dia_rt_fwhm, 
-      dia_rt_psnr,
-      dda_rt_pkht, 
-      dda_rt_fwhm, 
-      dda_rt_psnr, 
-      dda_rt, 
-      dda_ms2_peaks, 
-      dia_ms2_peaks, 
-      dia_ms1 
-    FROM _CombinedFeaturesForGUI
+        dia_pre_id,
+        dfile_id,
+        mz,
+        rt,
+        dt,
+        ccs,
+        dt_pkht,
+        dt_pkht * dt_fwhm * 0.338831 AS peak_area,
+        dt_psnr,
+        dt_fwhm
+    FROM 
+        DIAPrecursors
     `, (error, data) => {
     if (error) {
       console.error('Error fetching data from the database:', error);
       event.reply('database-table-data', data, false, error.message, databasePath);
     } else {
-      event.reply('database-table-data', data, false);
+      mainTableCache = data;
+      event.reply('database-table-data', data);
     }
 
     db.close((closeError) => {
@@ -331,57 +352,129 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
 });
 
 
-// Run SQL Query to get blobs and info for decon frags
-ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
-  const db = new sqlite3.Database(dbPath); // Access the global dbPath variable here
-  console.log("LOG: index.js: Fetch mapping data");
 
-  if (!selectedRowValue.diaDeconFragIds || selectedRowValue.diaDeconFragIds.trim() === "") {
-    // Handle the case where diaDeconFragIds is empty or doesn't have a value
-    console.error('No IDs provided for fetching mapping data.');
-    event.reply('database-table-data', [], true, "No IDs provided");
-    return;
-  }
 
-  const selectedIDs = selectedRowValue.diaDeconFragIds.split(' ').map(id => id.trim()).filter(Boolean);
-  const placeholders = selectedIDs.map(() => '?').join(',');
-  const combinedFeaturesQuery = `
-  SELECT 
-      c.dia_xic, 
-      c.dia_atd,
-      d.decon_frag_id, 
-      d.mz, 
-      d.xic_dist, 
-      d.atd_dist, 
-      d.xic, 
-      d.atd 
-  FROM CombinedFeatures c
-  JOIN DIADeconFragments d 
-  ON (' ' || c.dia_decon_frag_ids || ' ') LIKE ('% ' || d.decon_frag_id || ' %')
-  WHERE d.decon_frag_id IN (${placeholders})
-`;
 
-  db.all(combinedFeaturesQuery, selectedIDs, (error, data) => {
+function fetchRawBlob(featId, rawType, callback) {
+  // Open the database using the global dbPath.
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT raw_data 
+    FROM Raw 
+    WHERE feat_id_type = 'dia_pre_id' 
+      AND feat_id = ? 
+      AND raw_type = ?
+  `;
+  db.get(query, [featId, rawType], (error, row) => {
     if (error) {
-      console.error('Error fetching mapping data from the database:', error);
-      event.reply('database-table-data', data, true, error.message);
+      console.error(`Error fetching ${rawType} blob for feature ${featId}:`, error);
+      callback(error);
     } else {
-      event.reply('database-table-data', data, true);
+      // Return the blob data (or null if not found)
+      callback(null, row ? row.raw_data : null);
     }
+    db.close();
+  });
+}
 
-    db.close((closeError) => {
-      if (closeError) {
-        console.error('Error closing the database:', closeError);
+
+// IPC handler for fetching raw blob data.
+ipcMain.on('fetch-raw-blob', (event, { featId, rawType }) => {
+  fetchRawBlob(featId, rawType, (error, blob) => {
+    if (error) {
+      event.reply('raw-blob-result', { rawType, error: error.message });
+    } else {
+      if (blob) {
+        try {
+          // Convert the blob into a float array and then split it into x and y arrays.
+          const floatArray = blobToFloatArray(blob);
+          const unpackedData = unpackData(floatArray);
+          // Send the processed data (x and y arrays) back to the renderer.
+          event.reply('raw-blob-result', { rawType, data: unpackedData });
+        } catch (ex) {
+          console.error(`Error processing ${rawType} blob for feature ${featId}:`, ex);
+          event.reply('raw-blob-result', { rawType, error: ex.message });
+        }
+      } else {
+        // If no blob is found, reply with a null data field.
+        event.reply('raw-blob-result', { rawType, data: null });
       }
-    });
+    }
   });
 });
+
+
+
+
+// // Run SQL Query to get blobs and info for decon frags
+// ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
+//   const db = new sqlite3.Database(dbPath); // Access the global dbPath variable here
+//   console.log("LOG: index.js: Fetch data for 'fetch-mapping-table' function");
+
+//   if (!selectedRowValue.diaDeconFragIds || selectedRowValue.diaDeconFragIds.trim() === "") {
+//     // Handle the case where diaDeconFragIds is empty or doesn't have a value
+//     console.error('No IDs provided for fetching mapping data.');
+//     // event.reply('database-table-data', [], true, "No IDs provided");       # Removed this in update
+//     return;
+//   }
+
+//   const selectedIDs = selectedRowValue.diaDeconFragIds.split(' ').map(id => id.trim()).filter(Boolean);
+//   const placeholders = selectedIDs.map(() => '?').join(',');
+//   // Old Version
+//   const combinedFeaturesQuery = `
+//   SELECT 
+//       c.dia_xic, 
+//       c.dia_atd,
+//       d.decon_frag_id, 
+//       d.mz, 
+//       d.xic_dist, 
+//       d.atd_dist, 
+//       d.xic, 
+//       d.atd 
+//   FROM CombinedFeatures c
+//   JOIN DIADeconFragments d 
+//   ON (' ' || c.dia_decon_frag_ids || ' ') LIKE ('% ' || d.decon_frag_id || ' %')
+//   WHERE d.decon_frag_id IN (${placeholders})
+// `;
+// // New code to integrate somehow
+// // SELECT 
+// //     raw_n,     -- number of points in the raw arrays, if that is useful, can omit otherwise
+// //     raw_data   -- raw array data as BLOB
+// // FROM 
+// //     Raw
+// // WHERE 
+// //     -- <RAW_TYPE> can be one of "DIA_PRE_MS1", "DIA_PRE_XIC", "DIA_PRE_ATD", 
+// //     -- "DIA_FRAG_XIC", "DIA_FRAG_ATD" depending on what data is needed
+// //     -- You may need to check that a BLOB is actually returned from the 
+// //     -- query, since it is not guaranteed that every DIA precursor will have
+// //     -- all of the BLOB data stored (in fact, there is a parameter that controls
+// //     -- whether any BLOB data is even stored in the first place)
+// //     raw_type == "<RAW_TYPE>"          
+// //     AND feat_id_type == "dia_pre_id"
+// //     AND feat_id = <dia_precursor_id>                 -- use the DIA precursor ID to select the raw data 
+
+//   db.all(combinedFeaturesQuery, selectedIDs, (error, data) => {
+//     if (error) {
+//       console.error('Error fetching mapping data from the database:', error);
+//       // event.reply('database-table-data', data, true, error.message);
+//     } else {
+//       // event.reply('database-table-data', data, true);
+//       //pass
+//     }
+
+//     db.close((closeError) => {
+//       if (closeError) {
+//         console.error('Error closing the database:', closeError);
+//       }
+//     });
+//   });
+// });
 
 
 // Run SQL Query to get annotation table
 ipcMain.on('fetch-annotation-table', (event, filePath) => {
   const db = new sqlite3.Database(filePath);
-  console.log("LOG: index.js: Fetch data");
+  console.log("LOG: index.js: Fetch data in 'fetch-annotation-table' function");
 
   db.all('SELECT * FROM Lipids', (error, data) => {
     if (error) {
