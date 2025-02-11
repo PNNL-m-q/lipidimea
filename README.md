@@ -33,10 +33,10 @@
         - [x] annotation
     - [x] additional configs used in annotation should be loaded if the corresponding attribute of `AnnotationParams` is `None`, and the constants with paths to the default configs should be defined in `lipidimea.annotation` module 
     - [ ] perform testing to validate that updated code is working as expected
-        - [ ] unit tests
+        - [x] unit tests
             - [x] parameters loading from/writing config files (`lipidimea.test.params`)
-            - [ ] DDA data extraction and processing (`lipidimea.test.msms.dda`)
-            - [ ] DIA data extraction and processing (`lipidimea.test.msms.dia`)
+            - [x] DDA data extraction and processing (`lipidimea.test.msms.dda`)
+            - [x] DIA data extraction and processing (`lipidimea.test.msms.dia`)
             - [x] lipid annotation (`lipidimea.test.annotation`)
         - [ ] integration tests
 - [ ] implement CLI for running data analysis

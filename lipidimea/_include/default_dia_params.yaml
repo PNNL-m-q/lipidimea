@@ -1,6 +1,6 @@
 extract_and_fit_chroms: 
   min_rel_height: 0.2
-  min_abs_height: 1.e4
+  min_abs_height: 1.e+4
   fwhm: 
     min: 0.03
     max: 0.3
@@ -10,7 +10,7 @@ extract_and_fit_chroms:
   rt_tol: 0.75
 extract_and_fit_atds:
   min_rel_height: 0.2
-  min_abs_height: 1.e4
+  min_abs_height: 1.e+4
   fwhm: 
     min: 0.3
     max: 3.
@@ -20,7 +20,7 @@ extract_and_fit_atds:
   rt_tol: null
 extract_and_fit_ms2_spectra:
   min_rel_height: 0.001
-  min_abs_height: 1.e3
+  min_abs_height: 1.e+3
   fwhm:
     min: 0.02
     max: 0.2
