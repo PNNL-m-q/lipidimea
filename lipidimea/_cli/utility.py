@@ -8,6 +8,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 import argparse
 
+from lipidimea.params import DdaParams, DiaParams, AnnotationParams
 from lipidimea.util import create_results_db
 
 
@@ -22,10 +23,37 @@ _PARAMS_DESCRIPTION = """
 
 def _setup_params_subparser(parser: argparse.ArgumentParser):
     """ setup subparser for utility params subcommand """
+    parser.add_argument(
+        "--default-dda",
+        metavar="CONFIG",
+        dest="DDA_CONFIG",
+        default=None,
+        help="load the default DDA parameters config (YAML), write to specified path"
+    )
+    parser.add_argument(
+        "--default-dia",
+        metavar="CONFIG",
+        dest="DIA_CONFIG",
+        default=None,
+        help="load the default DIA parameters config (YAML), write to specified path"
+    )
+    parser.add_argument(
+        "--default-ann",
+        metavar="CONFIG",
+        dest="ANN_CONFIG",
+        default=None,
+        help="load the default lipid annotation parameters config (YAML), write to specified path"
+    )
 
 
 def _params_run(args: argparse.Namespace):
     """ run function for utility params subcommand """
+    if args.DDA_CONFIG is not None:
+        DdaParams.load_default().write_config(args.DDA_CONFIG, include_unchanged=True)
+    if args.DIA_CONFIG is not None:
+        DiaParams.load_default().write_config(args.DIA_CONFIG, include_unchanged=True)
+    if args.ANN_CONFIG is not None:
+        AnnotationParams.load_default().write_config(args.ANN_CONFIG, include_unchanged=True)
 
 
 #------------------------------------------------------------------------------
