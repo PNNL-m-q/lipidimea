@@ -114,8 +114,7 @@ def setup_utility_subparser(parser: argparse.ArgumentParser):
 
 
 def utility_run(args: argparse.Namespace): 
-    """
-    """
+    """ run function for utility subcommand """
     match args.utility_subcommand:
         case "params":
             _params_run(args)
