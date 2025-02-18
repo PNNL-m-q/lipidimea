@@ -53,17 +53,16 @@ def setup_dda_subparser(parser: argparse.ArgumentParser):
 
 def dda_run(args: argparse.Namespace):
     """ perform DDA data extraction and processing """
-    print(args)
     # load the parameters
     params = DdaParams.from_config(args.PARAMS_CONFIG)
     # extract the DDA features
     if args.n_proc > 1:
-        extract_dda_features_multiproc(
+        _ = extract_dda_features_multiproc(
             args.DDA_MZA, args.RESULTS_DB, params, n_proc=args.n_proc, debug_flag="text_pid"
         )
     else:
         for dda_data_file in args.DDA_MZA:
-            extract_dda_features(
+            _ = extract_dda_features(
                 dda_data_file, args.RESULTS_DB, params, debug_flag="text"
             )
     # consolidate DDA features after extraction

@@ -6,7 +6,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 """
 
 
-from typing import List, Tuple, Union, Optional, Any, Callable, Dict
+from typing import List, Tuple, Union, Optional, Callable, Dict
 import sqlite3
 import os
 import errno
@@ -285,7 +285,8 @@ def _single_target_analysis(n: int,
                             dda_rts: str, 
                             dda_ms2_n_peaks: Optional[int], 
                             params: DiaParams, 
-                            debug_flag: Optional[str], debug_cb: Optional[Callable]
+                            debug_flag: Optional[str], 
+                            debug_cb: Optional[Callable]
                             ) -> int :
     """
     Perform a complete analysis of DIA data for a single target DDA feature 
@@ -466,7 +467,8 @@ def _single_target_analysis(n: int,
 def extract_dia_features(dia_data_file: MzaFilePath, 
                          results_db: ResultsDbPath, 
                          params: DiaParams, 
-                         debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None,
+                         debug_flag: Optional[str] = None, 
+                         debug_cb: Optional[Callable] = None,
                          mza_io_threads: int = 4,
                          ) -> int :
     """
@@ -519,7 +521,7 @@ def extract_dia_features(dia_data_file: MzaFilePath,
             msg = f"extract_dda_features: invalid type for dda_data_file ({type(dia_data_file)})"
             raise ValueError(msg)
     # initialize the data file reader
-    rdr: MZA = MZA(dia_data_file, io_threads=mza_io_threads, cache_scan_data=True)
+    rdr = MZA(dia_data_file, io_threads=mza_io_threads, cache_scan_data=True)
     # get all of the DDA features, these will be the targets for the DIA data analysis
     # NOTE: We group by precursor m/z, keep all dda_pre_ids, and sum together ms2_n_peaks which
     #       means that we are only going by unique m/z value and combining all the rest of the 
@@ -571,7 +573,8 @@ def extract_dia_features_multiproc(dia_data_files: List[MzaFilePath],
                                    results_db: ResultsDbPath, 
                                    params: DiaParams, 
                                    n_proc: int, 
-                                   debug_flag: Optional[str] = None, debug_cb: Optional[Callable] = None,
+                                   debug_flag: Optional[str] = None, 
+                                   debug_cb: Optional[Callable] = None,
                                    mza_io_threads: int = 4
                                    ) -> Dict[str, int] :
     """
