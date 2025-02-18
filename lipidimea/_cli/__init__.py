@@ -58,7 +58,7 @@ def _setup_top_level_parser():
             description=DIA_DESCRIPTION
         )
     )
-    # set up annotation subparser
+    # set up annotate subparser
     setup_annotate_subparser(
             _subparsers.add_parser(
             "annotate", 

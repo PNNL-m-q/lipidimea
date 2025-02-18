@@ -91,7 +91,6 @@ def _setup_list_subparser(parser: argparse.ArgumentParser):
     )
     
 
-
 _QUERIES = {
     "file_id": """--beginsql
         SELECT
@@ -104,6 +103,7 @@ _QUERIES = {
             dfile_name
     --endsql"""
 }
+
 
 def _list_run(args: argparse.Namespace):
     """ run function for dia list subcommand """
@@ -151,16 +151,16 @@ def _setup_ccs_subparser(parser: argparse.ArgumentParser):
         help="beta CCS calibration parameter"
     )
     parser.add_argument(
-        "DFILE_IDS",
+        "DFILE_ID",
         nargs="+",
         type=int,
-        help="DIA data files to process (.mza)"
+        help="DIA data file IDs to apply CCS calibration to"
     )
     
 
 def _ccs_run(args: argparse.Namespace):
     """ run function for dia calibrate_ccs subcommand """
-    for dfid in args.DFILE_IDS:
+    for dfid in args.DFILE_ID:
         add_calibrated_ccs_to_dia_features(
             args.RESULTS_DB, dfid, args.T_FIX, args.BETA
         )
