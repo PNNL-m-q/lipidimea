@@ -20,7 +20,9 @@ from mzapy import MZA
 from mzapy.peaks import find_peaks_1d_gauss, find_peaks_1d_localmax, calc_gauss_psnr
 
 from lipidimea.msms._util import apply_args_and_kwargs, tol_from_ppm
-from lipidimea.util import debug_handler, add_data_file_to_db
+from lipidimea.util import (
+    debug_handler, add_data_file_to_db, AnalysisStep, update_analysis_log, check_analysis_log
+)
 from lipidimea.params import (
     DiaParams
 )
@@ -508,6 +510,9 @@ def extract_dia_features(dia_data_file: MzaFilePath,
     # increase timeout to avoid errors from database locked by another process
     con = sqlite3.connect(results_db, timeout=300)  
     cur = con.cursor()
+    # check that DDA feature extraction and consolidation have been completed first
+    check_analysis_log(cur, AnalysisStep.DDA_EXT)
+    check_analysis_log(cur, AnalysisStep.DDA_CONS)
     # check if the dia_data_file is a path (str) or file ID from the results database (int)
     match dia_data_file:
         case int():
@@ -553,6 +558,16 @@ def extract_dia_features(dia_data_file: MzaFilePath,
         con.commit()
     # commit DB changes at the end of the analysis? No.
     #con.commit()
+    # update the analysis log
+    update_analysis_log(
+        cur, 
+        AnalysisStep.DIA_EXT,
+        {
+            "DIA file ID": dia_file_id,
+            "precursors": n_dia_features,
+        }
+    )
+    con.commit()
     # clean up
     con.close()
     rdr.close()
@@ -655,6 +670,8 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
     # connect to the database
     con = sqlite3.connect(results_db) 
     cur1, cur2 = con.cursor(), con.cursor()  # one cursor to select data, another to update the db with ccs
+    # check that DIA feature extraction has been completed first
+    check_analysis_log(cur1, AnalysisStep.DIA_EXT)
     # select out the IDs, m/zs and arrival times of the features
     sel_qry = """--beginsql
         SELECT dia_pre_id, mz, dt FROM DIAPrecursors WHERE dfile_id=?
@@ -664,6 +681,16 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
     --endsql"""
     for dia_pre_id, mz, dt in cur1.execute(sel_qry, (dfile_id,)).fetchall():
         cur2.execute(upd_qry, (ccs(mz, dt, t_fix, beta), dia_pre_id))
+    # update the analysis log
+    update_analysis_log(
+        cur1, 
+        AnalysisStep.CCS_CAL,
+        {
+            "DIA file ID": dfile_id,
+            "t_fix": t_fix,
+            "beta": beta,
+        }
+    )
     # clean up
     con.commit()
     con.close()

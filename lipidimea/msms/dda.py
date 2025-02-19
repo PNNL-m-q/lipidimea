@@ -27,7 +27,9 @@ from lipidimea.typing import (
 from lipidimea.msms._util import (
     apply_args_and_kwargs, ppm_from_delta_mz, tol_from_ppm
 )
-from lipidimea.util import add_data_file_to_db, debug_handler
+from lipidimea.util import (
+    add_data_file_to_db, debug_handler, AnalysisStep, update_analysis_log, check_analysis_log
+)
 from lipidimea.params import (
     DdaParams
 )
@@ -375,6 +377,7 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
                                                        params, 
                                                        debug_flag, debug_cb)
     precursors: List[DdaPrecursor]
+    n_precursors = len(precursors)
     spectra: List[Optional[Ms2]]
     # do not need the reader anymore
     rdr.close()
@@ -384,11 +387,20 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
     cur: ResultsDbCursor = con.cursor()
     # add precursors and MS/MS spectra to database
     _add_precursors_and_fragments_to_db(cur, precursors, spectra, debug_flag, debug_cb)
+    # update the analysis log
+    update_analysis_log(
+        cur, 
+        AnalysisStep.DDA_EXT,
+        {
+            "DDA file ID": dda_file_id,
+            "precursors": n_precursors
+        }
+    )
     # close database connection
     con.commit()
     con.close()
     # return the number of features extracted
-    return len(precursors)
+    return n_precursors
     
 
 def extract_dda_features_multiproc(dda_data_files: List[MzaFilePath], 
@@ -479,6 +491,8 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     # connect to the database
     con: ResultsDbConnection = sqlite3.connect(results_db)
     cur: ResultsDbCursor = con.cursor()
+    # check that DDA feature extraction has been completed first
+    check_analysis_log(cur, AnalysisStep.DDA_EXT)
     # step 1, create groups of features based on similar m/z and RT
     qry_sel = """--beginsql
         SELECT dda_pre_id, mz, rt, rt_pkht, ms2_n_scans FROM DDAPrecursors
@@ -557,6 +571,15 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     --endsql"""
     for fid in drop_fids:
         cur.execute(qry_drop, (fid,))
+    # update the analysis log
+    update_analysis_log(
+        cur, 
+        AnalysisStep.DDA_CONS,
+        {
+            "DDA precursors before": n_dda_features,
+            "DDA precursors after": n_post
+        }
+    )
     # commit changes to the database
     con.commit()
     con.close()
