@@ -17,7 +17,7 @@ from lipidimea.msms.dda import (
 
 
 DDA_DESCRIPTION = """
-    TODO: This is a longer description for the dda subcommand
+    DDA data extraction and processing
 """
 
 

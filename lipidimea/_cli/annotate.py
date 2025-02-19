@@ -15,7 +15,7 @@ from lipidimea.annotation import (
 
 
 ANNOTATE_DESCRIPTION = """
-    TODO: This is a longer description for the dia subcommand
+    Add lipid annotations to DIA features
 """
 
 

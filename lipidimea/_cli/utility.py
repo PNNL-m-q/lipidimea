@@ -17,7 +17,7 @@ from lipidimea.util import create_results_db, export_results_table
 
 
 _PARAMS_DESCRIPTION = """
-    TODO: description for the utility params subcommand
+    Load default parameter configs
 """
 
 
@@ -61,7 +61,7 @@ def _params_run(args: argparse.Namespace):
 
 
 _CREATE_DB_DESCRIPTION = """
-    TODO: description for the utility create_db subcommand
+    Initialize the results database
 """
 
 
@@ -84,7 +84,7 @@ def _setup_create_db_subparser(parser: argparse.ArgumentParser):
 
 
 _EXPORT_DESCRIPTION = """
-    TODO: description for the utility export subcommand
+    Export analysis results to CSV
 """
 
 
@@ -172,7 +172,7 @@ def _export_run(args: argparse.Namespace):
 
 
 UTILITY_DESCRIPTION = """
-    TODO: This is a longer description for the utility subcommand
+    General utilities
 """
 
 

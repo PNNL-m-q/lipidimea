@@ -19,7 +19,7 @@ from lipidimea._cli.annotate import ANNOTATE_DESCRIPTION, setup_annotate_subpars
 
 
 _TOP_LEVEL_DESCRIPTION = """
-    TODO: Top-level description for CLI
+    Lipidomics Integrated Multi-Experiment Analysis tool
 """
 
 

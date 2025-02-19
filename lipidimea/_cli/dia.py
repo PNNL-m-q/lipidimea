@@ -24,7 +24,7 @@ from lipidimea.msms.dia import (
 
 
 _PROCESS_DESCRIPTION = """
-    TODO: description for dia process subcommand
+    Extract and process DIA data
 """
 
 
@@ -72,7 +72,7 @@ def _process_run(args: argparse.Namespace):
 
 
 _LIST_DESCRIPTION = """
-    TODO: description for dia list subcommand
+    Fetch information about processed DIA data
 """
 
 
@@ -130,7 +130,7 @@ def _list_run(args: argparse.Namespace):
 
 
 _CCS_DESCRIPTION = """
-    TODO: description for dia calibrate_ccs subcommand
+    Add calibrated CCS to DIA precursors
 """
 
 
@@ -171,7 +171,7 @@ def _ccs_run(args: argparse.Namespace):
 
 
 DIA_DESCRIPTION = """
-    TODO: This is a longer description for the dia subcommand
+    DIA data extraction and processing and related functions
 """
 
 
