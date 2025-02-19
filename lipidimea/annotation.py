@@ -25,7 +25,9 @@ from scipy.optimize import curve_fit
 from lipidimea.typing import (
     ScdbLipidId, ResultsDbPath, ResultsDbCursor, YamlFilePath
 )
-from lipidimea.util import debug_handler, INCLUDE_DIR
+from lipidimea.util import (
+    debug_handler, INCLUDE_DIR, AnalysisStep, update_analysis_log, check_analysis_log
+)
 from lipidimea.msms._util import tol_from_ppm
 from lipidimea.params import AnnotationParams
 from lipidimea._lipidlib.lipids import LMAPS, get_c_u_combos, Lipid, LipidWithChains
@@ -373,6 +375,8 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
+    # check that DIA feature extraction has been completed first
+    check_analysis_log(cur, AnalysisStep.DIA_EXT)
     # iterate through DIA features and get putative annotations
     qry_sel = """--beginsql
         SELECT dia_pre_id, mz FROM DIAPrecursors
@@ -409,6 +413,16 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     # report how many features were annotated
     debug_handler(debug_flag, debug_cb, 
                   f"ANNOTATED: {n_feats_annotated} / {n_feats} DIA features ({n_anns} annotations total)")
+    # update analysis log
+    update_analysis_log(
+        cur, 
+        AnalysisStep.LIPID_ANN,
+        {
+            "level": "sum composition",
+            "features annotated": n_feats_annotated,
+            "annotations": n_anns
+        }
+    )
     # clean up
     scdb.close()
     con.commit()
@@ -461,6 +475,8 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
         rt_ranges = yaml.safe_load(yf)
     con = connect(results_db) 
     cur = con.cursor()
+    # check that initial lipid annotations have already been added
+    check_analysis_log(cur, AnalysisStep.LIPID_ANN)
     # iterate through annotations, check if the RT is within specified range 
     anns_to_del = []  # track annotation IDs to delete
     qry_sel = """--beginsql
@@ -492,6 +508,16 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
     --endsql"""
     for ann_id in anns_to_del:
         cur.execute(qry_del, (ann_id,))
+    # update analysis log
+    update_analysis_log(
+        cur,
+        AnalysisStep.LIPID_ANN,
+        {
+            "filter": "retention time range",
+            "kept": n_kept,
+            "filtered": n_filt
+        }
+    )
     # clean up
     con.commit()
     con.close()
@@ -589,6 +615,10 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
                   "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS CCS TRENDS ...")
     con = connect(results_db) 
     cur = con.cursor()
+    # make sure CCS calibration has been performed
+    check_analysis_log(cur, AnalysisStep.CCS_CAL)
+    # check that initial lipid annotations have already been added
+    check_analysis_log(cur, AnalysisStep.LIPID_ANN)
     # queries
     lm_sub_qry = """--beginsql
         SELECT DISTINCT
@@ -702,6 +732,20 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
     --endsql"""
     for lid in drop_lids:
         cur.execute(qry_del, (lid,))
+    # update analysis log
+    update_analysis_log(
+        cur, 
+        AnalysisStep.LIPID_ANN,
+        {
+            "filter": "CCS subclass trends",
+            "kept": n_kept_lit + n_kept_obs,
+            "filtered": n_filt_lit + n_filt_obs,
+            "kept (literature)": n_kept_lit,
+            "filtered (literature)": n_filt_lit,
+            "kept (observed)": n_kept_obs,
+            "filtered (observed)": n_filt_obs,
+        }
+    )
     # clean up
     con.commit()
     con.close()
@@ -901,6 +945,8 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     # connect to  results database
     con = connect(results_db) 
     cur = con.cursor()
+    # check that initial lipid annotations have already been added
+    check_analysis_log(cur, AnalysisStep.LIPID_ANN)
     n_anns = cur.execute('SELECT COUNT(*) FROM Lipids;').fetchall()[0][0]
     # iterate through annotations, see if there are annotatable fragments
     # only select out the annotations that have NULL fragments
@@ -970,6 +1016,15 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
     # go through annotated fragments and update lipid annotations if there is evidence for 
     # presence of specific acyl chains
     _update_lipid_with_chain_info(cur)
+    # update analysis log
+    update_analysis_log(
+        cur,
+        AnalysisStep.LIPID_ANN,
+        {
+            "level": "update with fragmentation rules",
+            "updated": n_update_chains
+        }
+    )
     # clean up
     con.commit()
     con.close()

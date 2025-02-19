@@ -12,6 +12,8 @@ from typing import (
     Optional, Callable, Dict, Union, Tuple, List, Generator, Any, Literal
 )
 import sqlite3
+import enum
+import json
 
 import polars as pl
 
@@ -21,6 +23,10 @@ from lipidimea.typing import (
 
 
 INCLUDE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_include")
+
+
+#------------------------------------------------------------------------------
+# results database
 
 
 # define path to results DB schema file
@@ -90,6 +96,51 @@ def add_data_file_to_db(cur: ResultsDbCursor,
     return rowid
 
 
+class AnalysisStep(enum.Enum):
+    DDA_EXT = "DDA feature extraction"
+    DDA_CONS = "DDA feature consolidation"
+    DIA_EXT = "DIA feature extraction"
+    CCS_CAL = "CCS calibration"
+    LIPID_ANN = "lipid annotation"
+
+
+def check_analysis_log(cur: ResultsDbCursor,
+                       step: AnalysisStep
+                       ) -> None :
+    """
+    Raise a RuntimeError if the specified step has not been completed
+    """
+    qry = """--beginsql
+        SELECT step FROM AnalysisLog;
+    --endsql"""
+    if (step.value,) not in cur.execute(qry).fetchall():
+        cur.connection.close()
+        raise RuntimeError(f"analysis step {step.value} not found in results database")
+    
+
+def update_analysis_log(cur: ResultsDbCursor,
+                        step: AnalysisStep, 
+                        notes: Optional[Dict[str, Union[str, int, float]]] = None
+                        ) -> None :
+    """
+    update analysis log in results database, include optional notes as dict with key:value pairs 
+    (gets converted to JSON)
+    """
+    qry = """--beginsql
+        INSERT INTO AnalysisLog VALUES (?,?,?);
+    --endsql"""
+    qdata = (
+        None,  # n gets autoincremented, keeps track of step completion order
+        step.value,
+        json.dumps(notes, indent=2) if notes is not None else None
+    )
+    _ = cur.execute(qry, qdata)
+
+
+#------------------------------------------------------------------------------
+# debug handler
+
+
 def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: str,
                   pid: Optional[int] = None
                   ) -> None :
@@ -131,6 +182,9 @@ def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: 
                 ve = '_debug_handler: debug_flag was set to "textcb" or "textcb_pid" but no debug_cb was provided'
                 raise ValueError(ve)
 
+
+#------------------------------------------------------------------------------
+# results export
 
 def _map_dfile_names_to_ids(data_file_names: List[str],
                             cur: ResultsDbCursor
@@ -471,6 +525,7 @@ def export_results_table(results_db: ResultsDbPath,
     alias_mapping = _setup_alias_mapping(cur, data_file_aliases)
     # upack the intermediate data structure into tabular format (as a polars dataframe)
     df = _unpack_intermediate_results(grouped, alias_mapping, include_unknowns)  
-    # (filter dataframe? replace NAs?)
+    # TODO: (filter dataframe? replace NAs?)
     df.write_csv(out_csv)
     return df.shape[0]
+

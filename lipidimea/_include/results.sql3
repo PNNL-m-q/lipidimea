@@ -13,6 +13,18 @@ CREATE TABLE _TableDescriptions (
 );
 
 
+-- table for tracking which analysis steps have been completed
+CREATE TABLE AnalysisLog (
+    n INTEGER PRIMARY KEY,
+    step TEXT NOT NULL,
+    notes TEXT
+) STRICT;
+INSERT INTO _TableDescriptions VALUES
+    ('AnalysisLog', 'n', 'order of completion, automatically incremented'),
+    ('AnalysisLog', 'step', 'specify the analysis step'),
+    ('AnalysisLog', 'notes', 'additional notes (JSON)');
+
+
 ----------- Metadata --------------
 
 -- table for tracking data files
