@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.api.receive('selected-database-path', (result) => {
     //filePath = result;
     window.api.send('fetch-database-table', result);
-    // window.api.send('fetch-annotation-table', result);
+    window.api.send('fetch-annotation-table', result);  // why did I comment this out?
     // load all the rest of the elements
   });
 });
@@ -391,32 +391,32 @@ function showMainTable(data) {
               // diaDeconFragIds: row['dia_decon_frag_ids']
           };
           console.log(`row['dt']: ${row['dt']}`)
-          const mzValueElement = document.getElementById('mz-value');
-          const DIArtValueElement = document.getElementById('dia-rt-value');
+          console.log(`row['rt']: ${row['rt']}`)
+          const mzValueElement = document.getElementById('mz');
+          const DIArtValueElement = document.getElementById('rt');
           const dtValueElement = document.getElementById('dt');
-          const DTpkhtValueElement = document.getElementById('dt-pkht');
-          const DTfwhmValueElement = document.getElementById('dt-fwhm');
-          const DTpsnrValueElement = document.getElementById('dia-dt-psnr-value');
-          const DIArtPKHTValueElement = document.getElementById('dia-rt-pkht-value');
-          const DIArtFWHMValueElement = document.getElementById('dia-rt-fwhm-value');
-          const DIArtPSNRValueElement = document.getElementById('dia-rt-psnr-value');
-          const DDArtValueElement = document.getElementById('dda-rt-value');
-          const DDArtPKHTValueElement = document.getElementById('dda-rt-pkht-value');
-          const DDArtFWHMValueElement = document.getElementById('dda-rt-fwhm-value');
-          const DDArtPSNRValueElement = document.getElementById('dda-rt-psnr-value');
-          const PreDIAatdValueElement = document.getElementById('dia-atd-value');
-          const PreDIAxicValueElement = document.getElementById('dia-xic-value');
+          const DTpkhtValueElement = document.getElementById('dt_pkht');
+          const DTfwhmValueElement = document.getElementById('dt_fwhm');
+          const DTpsnrValueElement = document.getElementById('dt_psnr');
+          const DIArtPKHTValueElement = document.getElementById('rt_pkht');
+          const DIArtFWHMValueElement = document.getElementById('rt_fwhm');
+          const DIArtPSNRValueElement = document.getElementById('rt_psnr');
+          const DDArtValueElement = document.getElementById('dda_rt_value');
+          const DDArtPKHTValueElement = document.getElementById('dda_rt_pkht_value');
+          const DDArtFWHMValueElement = document.getElementById('dda_rt_fwhm_value');
+          const DDArtPSNRValueElement = document.getElementById('dda_rt_psnr_value');
+          const PreDIAatdValueElement = document.getElementById('dia_atd_value');
+          const PreDIAxicValueElement = document.getElementById('dia_xic_value');
 
-
-          mzValueElement.textContent = formatDecimalValue(row['m/z']);
-          DIArtValueElement.textContent = formatDecimalValue(row['RT']);
+          mzValueElement.textContent = formatDecimalValue(row['mz']);
+          DIArtValueElement.textContent = formatDecimalValue(row['rt']);
           dtValueElement.textContent = formatDecimalValue(row['dt']);
           DTpkhtValueElement.textContent = formatDecimalValue(row['dt_pkht']);
           DTfwhmValueElement.textContent = formatDecimalValue(row['dt_fwhm']);
           DTpsnrValueElement.textContent = formatDecimalValue(row['dia_dt_psnr']);
-          DIArtPKHTValueElement.textContent = formatDecimalValue(row['dia_rt_pkht']);
-          DIArtFWHMValueElement.textContent = formatDecimalValue(row['dia_rt_fwhm']);
-          DIArtPSNRValueElement.textContent = formatDecimalValue(row['dia_rt_psnr']);
+          DIArtPKHTValueElement.textContent = formatDecimalValue(row['rt_pkht']);
+          DIArtFWHMValueElement.textContent = formatDecimalValue(row['rt_fwhm']);
+          DIArtPSNRValueElement.textContent = formatDecimalValue(row['rt_psnr']);
           DDArtValueElement.textContent = formatDecimalValue(row['dda_rt']);
           DDArtPKHTValueElement.textContent = formatDecimalValue(row['dda_rt_pkht']);
           DDArtFWHMValueElement.textContent = formatDecimalValue(row['dda_rt_fwhm']);
@@ -424,15 +424,34 @@ function showMainTable(data) {
           PreDIAatdValueElement.textContent = row['dia_xic'];
           PreDIAxicValueElement.textContent = row['dia_atd'];
 
+
+          // window.diaMs2Data = row['dia_pre_id'];
+
+
+
           window.api.send('fetch-mapping-table', selectedRowValue);
 
 
           currentFeatId = selectedRowValue.id 
+          
           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_MS1' });
+
+          console.log(`document.getElementById('rt').textContent is: ${document.getElementById('rt').textContent}`)
           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });        
 
 
+
+          currentFeatDiaPreID = row['dia_pre_id'];
+
+          // Request DIA MS2 spectrum for this DIA precursor.
+          window.api.send('fetch-dia-ms2', currentFeatDiaPreID);
+
+
+          //  Extracted Ion Chromatogram 
+          const currentDIA_mz = parseFloat(row['mz']);  // ensure this is the DIA mz value
+          window.api.send('fetch-dda-features', { diaMz: currentDIA_mz, tolerance: 0.01 });
+          
           // or something like this
           // window.api.send('fetch-raw-blob', { featId: row['dia_pre_id'], rawType: 'DIA_PRE_XIC' });
 
@@ -454,7 +473,27 @@ function showMainTable(data) {
           // });
 
 
-          // showMappedFeatureTable(data,row['DDA Feature ID']);  # removed this Table
+          // showMappedFeatureTable(data,row['DDA Feature ID']);  #Old table now removed
+
+
+
+          // Bi Directional plot
+          // After setting currentFeatId from the selected row (for DIA)
+          // currentFeatId = selectedRowValue.dia_pre_id;  // This is the DIA precursor id
+          // // Request DIA MS2 spectrum
+          // window.api.send('fetch-dia-ms2', currentFeatId);
+
+          // // For the DDA side, assume you have stored the corresponding DDA precursor id somewhere.
+          // // For example, if you store it in the DDA Features table selection,
+          // // you can call this after the user clicks a DDA feature row:
+          // // (For demonstration, here we assume that once a DDA feature is selected, its id is in variable currentDDAId)
+          // window.api.send('fetch-dda-ms2', currentDDAId);
+
+
+
+
+
+
           // console.log(row['dda_ms2_peaks'])
           // console.log(row['dia_ms2_peaks'])          
           // if (row['dda_ms2_peaks'] !== null || row['dia_ms2_peaks'] !== null) {
@@ -568,6 +607,8 @@ function showDeconTable(data) {
 
 // Remove this table 
 // Create Mapped Feature Table
+// Totally replace this with a table that maps the DIA m/z to DDA m/z within a range of .01.
+// Add  clicks so when changing this table it replots EIC Table for for Fit (DDA) and MS2 Spectra Centroid
 // function showMappedFeatureTable(data,dda_mapped) {
 //   const tableContainer = document.getElementById('table-dda-mapped-dia');
 //   tableContainer.innerHTML = ''; 
@@ -586,46 +627,46 @@ function showDeconTable(data) {
 //   });
 //   thead.appendChild(headerRow);
 
-//   // Add table rows
-//   data.forEach((row) => {
-//     if (row['DDA Feature ID'] === dda_mapped) {
-//       const tableRow = document.createElement('tr');
-//       headers.forEach((header) => {
-//           const td = document.createElement('td');
-//           td.textContent = row[header];
-//           tableRow.appendChild(td);
-//       });
+  // // Add table rows
+  // data.forEach((row) => {
+  //   if (row['DDA Feature ID'] === dda_mapped) {
+  //     const tableRow = document.createElement('tr');
+  //     headers.forEach((header) => {
+  //         const td = document.createElement('td');
+  //         td.textContent = row[header];
+  //         tableRow.appendChild(td);
+  //     });
 
-//       tableRow.addEventListener('click', function() {
-//           // Remove the previous selection if any
-//           const previousSelectedRow = tbody.querySelector('.selected');
-//           if (previousSelectedRow) {
-//               previousSelectedRow.classList.remove('selected');
-//           }
+  //     tableRow.addEventListener('click', function() {
+  //         // Remove the previous selection if any
+  //         const previousSelectedRow = tbody.querySelector('.selected');
+  //         if (previousSelectedRow) {
+  //             previousSelectedRow.classList.remove('selected');
+  //         }
 
-//           // Set the current row as selected
-//           tableRow.classList.add('selected');
+  //         // Set the current row as selected
+  //         tableRow.classList.add('selected');
 
-//           highlightRowInMainTable(row['DIA Feature ID']);
-//       });
+  //         highlightRowInMainTable(row['DIA Feature ID']);
+  //     });
 
-//       // Add hover effect to each row
-//       tableRow.addEventListener('mouseover', () => {
-//           tableRow.classList.add('hover');
-//       });
+  //     // Add hover effect to each row
+  //     tableRow.addEventListener('mouseover', () => {
+  //         tableRow.classList.add('hover');
+  //     });
 
-//       tableRow.addEventListener('mouseout', () => {
-//           tableRow.classList.remove('hover');
-//       });
+  //     tableRow.addEventListener('mouseout', () => {
+  //         tableRow.classList.remove('hover');
+  //     });
 
-//       // Add more functionalities as required for each row
-//       tbody.appendChild(tableRow);
-//     }
-//   });
+  //     // Add more functionalities as required for each row
+  //     tbody.appendChild(tableRow);
+  //   }
+  // });
 
-//   table.appendChild(thead);
-//   table.appendChild(tbody);
-//   tableContainer.appendChild(table);
+  // table.appendChild(thead);
+  // table.appendChild(tbody);
+  // tableContainer.appendChild(table);
 // }
 
 // Create Annotation Table
@@ -954,8 +995,8 @@ Highcharts.chart('arrival-time-plot', {
     {
       data: generateGaussianData(
           document.getElementById('dt').textContent,
-          document.getElementById('dt-pkht').textContent,
-          document.getElementById('dt-fwhm').textContent
+          document.getElementById('dt_pkht').textContent,
+          document.getElementById('dt_fwhm').textContent
         ),
       type: 'line',
       name: 'Fit (DIA)',
@@ -1050,7 +1091,9 @@ function displayXicPlot(xicPairs) {
         enabled: false
     }
 };
-Highcharts.chart('ion-chromatogram-plot', {
+
+
+window.icpPlot = Highcharts.chart('ion-chromatogram-plot', {
     ...chartOptions,
     title: null,
     series: [{
@@ -1066,9 +1109,9 @@ Highcharts.chart('ion-chromatogram-plot', {
   },
   {
       data: generateGaussianData(
-            document.getElementById('dia-rt-value').textContent, 
-            document.getElementById('dia-rt-pkht-value').textContent, 
-            document.getElementById('dia-rt-fwhm-value').textContent
+            document.getElementById('rt').textContent, 
+            document.getElementById('rt_pkht').textContent, 
+            document.getElementById('rt_fwhm').textContent
             ),
       type: 'line',
       name: 'Fit (DIA)',
@@ -1078,20 +1121,31 @@ Highcharts.chart('ion-chromatogram-plot', {
           enabled: false
       }
   },
+  // {
+  //     data: generateGaussianData(
+  //       document.getElementById('dda_rt_value').textContent,
+  //       document.getElementById('dda_rt_pkht_value').textContent,
+  //       document.getElementById('dda_rt_fwhm_value').textContent
+  //       ),
+  //     type: 'line',
+  //     name: 'Fit (DDA)',
+  //     color: '#808080', 
+  //     dashStyle: 'dash',
+  //     marker: {
+  //         enabled: false
+  //     }
+  // }
   {
-      data: generateGaussianData(
-        document.getElementById('dda-rt-value').textContent,
-        document.getElementById('dda-rt-pkht-value').textContent,
-        document.getElementById('dda-rt-fwhm-value').textContent
-        ),
-      type: 'line',
-      name: 'Fit (DDA)',
-      color: '#808080', 
-      dashStyle: 'dash',
-      marker: {
-          enabled: false
-      }
-  }],
+    // Here the DDA fit series will be added/updated by updateDDAChromatogramPlotUsingUI()
+    // Optionally, you can initialize it as empty.
+    name: 'Fit (DDA)',
+    data: [],
+    type: 'line',
+    color: '#808080',
+    dashStyle: 'dash',
+    marker: { enabled: false }
+  },
+  ],
     xAxis: {
         ...chartOptions.xAxis,
         title: {
@@ -1107,134 +1161,134 @@ Highcharts.chart('ion-chromatogram-plot', {
 });
 }
 
-
-// Bi-Directional DDA-DIA Plot Generation
-function plotBidirectionalColumn(ddaData, diaData) {
-  const combinedMzValues = Array.from(new Set([...ddaData.map(peak => peak.mz), ...diaData.map(peak => peak.mz)])).sort((a, b) => a - b);
-  DeconTableMzSet = new Set(
-    Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child'))
-    .map(cell => parseFloat(cell.innerText).toFixed(4))
-  );
-  const labelStep = Math.floor(combinedMzValues.length / 5);
-    Highcharts.chart('bidirectional-plot', {
-      chart: {
-        type: 'column',
-        backgroundColor: null,
-        zoomType: 'xy',
-          panning: true,
-          resetZoomButton: {
-            position: {
-                align: 'left', 
-                verticalAlign: 'top', 
-                x: 0,
-                y: 0
-            }}   
-    },
-    credits: {
-        enabled: false  
-    },
-    title: {
-      text: 'DDA & DIA Peaks'
-    },
-    legend: {
-      align: 'right',        
-      verticalAlign: 'top',   
-      layout: 'vertical',
-      floating: true,        
-      x: -10,               
-      y: -10              
-  },
-    xAxis: {
-      min: Math.min(...combinedMzValues),
-      max: Math.max(...combinedMzValues),
-      title: {
-        text: 'm/z'
-      }
-    },
-    yAxis: [{
-      title: {
-        text: 'DDA Intensity'
-      },
-      labels: {
-        formatter: function () {
-          return Math.abs(this.value);
-        }
-      },
-      top: '50%',
-      height: '50%',
-      offset: 0,
-      lineWidth: 1,
-      opposite: false  
-    }, {
-      title: {
-        text: 'DIA Intensity'
-      },
-      labels: {
-        formatter: function () {
-          return this.value;
-        }
-      },
-      top: '0%',
-      height: '50%',
-      offset: 0,
-      lineWidth: 1,
-      opposite: false 
-    }],
-    plotOptions: {
-      column: {
-        pointPadding: 1, 
-        borderWidth: 0,   
-        groupPadding: 0,  
-        shadow: false,
-        allowPointSelect: true,
-        states: {
-          select: {
-            color: '#800080'
-          }}},
-      events: {
-        select: function(event) {
-          if (event.target.color !== DeconTable_MATCH_COLOR) {
-            event.target.select(false, true);
-          }
-        }},
-      series: {
-        cursor: 'pointer',
-        events: {
-          click: function (event) {
-            if (this.name === 'DIA' && event.point.color === DeconTable_MATCH_COLOR) {  
-              selectDeconTableRow(event.point.category);
-            }
-          }
-        }        
-    }
-    },
-    series: [{
-      name: 'DDA',
-      yAxis: 0,
-      data: ddaData.map(peak => ({
-        x: peak.mz, 
-        y: -peak.intensity,
-        color: "#BFA6BF"
-      }))
-    }, {
-      name: 'DIA',
-      yAxis: 1,
-      data: diaData.map(peak => ({
-        x: peak.mz,  
-        y: peak.intensity,
-        color: getDIAColor(peak.mz, DeconTableMzSet),
-        pointWidth: getDIAWidth(peak.mz, DeconTableMzSet)
-      }))
-    }]
-  });
-}
+// Original
+// // Bi-Directional DDA-DIA Plot Generation
+// function plotBidirectionalColumn(ddaData, diaData) {
+//   const combinedMzValues = Array.from(new Set([...ddaData.map(peak => peak.mz), ...diaData.map(peak => peak.mz)])).sort((a, b) => a - b);
+//   DeconTableMzSet = new Set(
+//     Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child'))
+//     .map(cell => parseFloat(cell.innerText).toFixed(4))
+//   );
+//   const labelStep = Math.floor(combinedMzValues.length / 5);
+//     Highcharts.chart('bidirectional-plot', {
+//       chart: {
+//         type: 'column',
+//         backgroundColor: null,
+//         zoomType: 'xy',
+//           panning: true,
+//           resetZoomButton: {
+//             position: {
+//                 align: 'left', 
+//                 verticalAlign: 'top', 
+//                 x: 0,
+//                 y: 0
+//             }}   
+//     },
+//     credits: {
+//         enabled: false  
+//     },
+//     title: {
+//       text: 'DDA & DIA Peaks'
+//     },
+//     legend: {
+//       align: 'right',        
+//       verticalAlign: 'top',   
+//       layout: 'vertical',
+//       floating: true,        
+//       x: -10,               
+//       y: -10              
+//   },
+//     xAxis: {
+//       min: Math.min(...combinedMzValues),
+//       max: Math.max(...combinedMzValues),
+//       title: {
+//         text: 'm/z'
+//       }
+//     },
+//     yAxis: [{
+//       title: {
+//         text: 'DDA Intensity'
+//       },
+//       labels: {
+//         formatter: function () {
+//           return Math.abs(this.value);
+//         }
+//       },
+//       top: '50%',
+//       height: '50%',
+//       offset: 0,
+//       lineWidth: 1,
+//       opposite: false  
+//     }, {
+//       title: {
+//         text: 'DIA Intensity'
+//       },
+//       labels: {
+//         formatter: function () {
+//           return this.value;
+//         }
+//       },
+//       top: '0%',
+//       height: '50%',
+//       offset: 0,
+//       lineWidth: 1,
+//       opposite: false 
+//     }],
+//     plotOptions: {
+//       column: {
+//         pointPadding: 1, 
+//         borderWidth: 0,   
+//         groupPadding: 0,  
+//         shadow: false,
+//         allowPointSelect: true,
+//         states: {
+//           select: {
+//             color: '#800080'
+//           }}},
+//       events: {
+//         select: function(event) {
+//           if (event.target.color !== DeconTable_MATCH_COLOR) {
+//             event.target.select(false, true);
+//           }
+//         }},
+//       series: {
+//         cursor: 'pointer',
+//         events: {
+//           click: function (event) {
+//             if (this.name === 'DIA' && event.point.color === DeconTable_MATCH_COLOR) {  
+//               selectDeconTableRow(event.point.category);
+//             }
+//           }
+//         }        
+//     }
+//     },
+//     series: [{
+//       name: 'DDA',
+//       yAxis: 0,
+//       data: ddaData.map(peak => ({
+//         x: peak.mz, 
+//         y: -peak.intensity,
+//         color: "#BFA6BF"
+//       }))
+//     }, {
+//       name: 'DIA',
+//       yAxis: 1,
+//       data: diaData.map(peak => ({
+//         x: peak.mz,  
+//         y: peak.intensity,
+//         color: getDIAColor(peak.mz, DeconTableMzSet),
+//         pointWidth: getDIAWidth(peak.mz, DeconTableMzSet)
+//       }))
+//     }]
+//   });
+// }
 
 
 
 
 // MS1 Plot Generation
 function displayMS1Plot(ms1Pairs) {
-  const xValue = parseFloat(document.getElementById('mz-value').textContent);
+  const xValue = parseFloat(document.getElementById('mz').textContent);
   const maxYValue = ms1Pairs.reduce((max, pair) => Math.max(max, pair[1]), 0);
   const chartOptions = {
     chart: {
@@ -1337,4 +1391,267 @@ Highcharts.chart('ms1-plot', {
       max: maxYValue  
   }
 });
+}
+
+
+
+
+
+//  New DDA Work
+
+
+window.api.receive('dda-features-result', (data) => {
+  if (data.error) {
+    console.error("Error fetching DDA features:", data.error);
+    return;
+  }
+  showDDAFeaturesTable(data.features);
+});
+
+
+function updateDDAChromatogramPlotUsingUI() {
+  // Get the DDA parameters from the UI.
+  const dda_rt = document.getElementById('dda_rt_value').textContent;
+  const dda_rt_pkht = document.getElementById('dda_rt_pkht_value').textContent;
+  const dda_rt_fwhm = document.getElementById('dda_rt_fwhm_value').textContent;
+  
+  console.log(`Updating DDA fit: rt=${dda_rt}, pkht=${dda_rt_pkht}, fwhm=${dda_rt_fwhm}`);
+  
+  // Generate the Gaussian data using these parameters.
+  const newSeriesData = generateGaussianData(dda_rt, dda_rt_pkht, dda_rt_fwhm);
+  
+  // Use the globally stored chart reference.
+  const chart = window.icpPlot;
+  if (chart) {
+    // Check if a series for the DDA fit already exists.
+    const existing = chart.series.find(s => s.name === 'Fit (DDA)');
+    if (existing) {
+      existing.setData(newSeriesData, true);
+    } else {
+      chart.addSeries({
+        name: 'Fit (DDA)',
+        data: newSeriesData,
+        type: 'line',
+        color: '#808080',
+        dashStyle: 'dash',
+        marker: { enabled: false }
+      }, true);
+    }
+  } else {
+    console.warn("Ion chromatogram chart not found.");
+  }
+}
+
+
+
+window.diaMs2Data = null;
+window.ddaMs2Data = null;
+
+window.api.receive('dia-ms2-result', (data) => {
+  if (data.error) {
+    console.error("Error fetching DIA MS2 data:", data.error);
+    return;
+  }
+  // Store the DIA MS2 data
+  window.diaMs2Data = data.data; // Expected: array of objects {fmz, fint}
+  // If DDA data is already available, plot bidirectional.
+  if (window.ddaMs2Data) {
+    plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
+  }
+});
+
+
+function showDDAFeaturesTable(features) {
+  const container = document.getElementById('dda-features-table');
+  container.innerHTML = ''; // Clear previous content
+
+  if (!features || features.length === 0) {
+    container.innerHTML = '<p>No matching DDA features found.</p>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const tbody = document.createElement('tbody');
+
+  // Define headers to display.
+  const headers = ["dda_pre_id", "mz", "dda_rt", "dda_rt_pkht", "dda_rt_fwhm"];
+  const headerRow = document.createElement('tr');
+  headers.forEach(header => {
+    const th = document.createElement('th');
+    th.textContent = header;
+    headerRow.appendChild(th);
+  });
+  thead.appendChild(headerRow);
+  table.appendChild(thead);
+
+  features.forEach((feature, idx) => {
+    const row = document.createElement('tr');
+    headers.forEach(header => {
+      const td = document.createElement('td');
+      td.textContent = feature[header];
+      row.appendChild(td);
+    });
+    // When a DDA feature row is clicked:
+    row.addEventListener('click', () => {
+      // Clear any previous selection.
+      const prev = container.querySelector('.selected');
+      if (prev) prev.classList.remove('selected');
+      row.classList.add('selected');
+
+      // Update UI elements with DDA values.
+      document.getElementById('dda_rt_value').textContent = feature.dda_rt;
+      document.getElementById('dda_rt_pkht_value').textContent = feature.dda_rt_pkht;
+      document.getElementById('dda_rt_fwhm_value').textContent = feature.dda_rt_fwhm;
+      
+      // Request the DDA MS2 spectrum for the selected DDA feature.
+      const ddaFeatureId = feature['dda_pre_id'];
+      window.api.send('fetch-dda-ms2', ddaFeatureId);
+      updateDDAChromatogramPlotUsingUI();
+    });
+
+    tbody.appendChild(row);
+
+    // Automatically select the first row:
+    if (idx === 0) {
+      // Delay selection slightly to ensure the table is fully built.
+      setTimeout(() => { row.click(); }, 0);
+    }
+  });
+  table.appendChild(tbody);
+  container.appendChild(table);
+}
+
+
+
+window.api.receive('dda-ms2-result', (data) => {
+  if (data.error) {
+    console.error("Error fetching DDA MS2 data:", data.error);
+    return;
+  }
+  // Store the new DDA MS2 data.
+  window.ddaMs2Data = data.data; // Expected: array of objects {fmz, fint}
+  // Now replot the bidirectional MS2 plot if DIA data is available.
+  if (window.diaMs2Data) {
+    plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
+  }
+});
+
+
+
+function plotBidirectionalMS2(ddaData, diaData) {
+  // Ensure both inputs are arrays.
+  ddaData = Array.isArray(ddaData) ? ddaData : [];
+  diaData = Array.isArray(diaData) ? diaData : [];
+  console.log("plotBidirectionalMS2 called with:", ddaData, diaData);
+  
+  // Compute combined m/z values.
+  const combinedMzValues = Array.from(new Set([
+    ...ddaData.map(peak => peak.fmz),
+    ...diaData.map(peak => peak.fmz)
+  ])).sort((a, b) => a - b);
+  
+  // Compute x-axis range with a buffer.
+  const dataMin = Math.min(...combinedMzValues);
+  const dataMax = Math.max(...combinedMzValues);
+  const buffer = (dataMax - dataMin) * 0.05;
+  
+  // Compute maximum absolute intensity for y-axis scaling.
+  const maxDDA = ddaData.length ? Math.max(...ddaData.map(peak => Math.abs(peak.fint))) : 0;
+  const maxDIA = diaData.length ? Math.max(...diaData.map(peak => Math.abs(peak.fint))) : 0;
+  const maxAbs = Math.max(maxDDA, maxDIA);
+  
+  // (Optional) Update the deconvoluted table set if needed.
+  DeconTableMzSet = new Set(
+    Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child'))
+      .map(cell => parseFloat(cell.innerText).toFixed(4))
+  );
+  
+  Highcharts.chart('bidirectional-plot', {
+    chart: {
+      type: 'column',
+      backgroundColor: null,
+      zoomType: 'xy',
+      panning: true,
+      resetZoomButton: {
+        position: { align: 'left', verticalAlign: 'top', x: 0, y: 0 }
+      }
+    },
+    credits: { enabled: false },
+    title: { text: 'DDA & DIA MS2 Peaks' },
+    legend: {
+      align: 'right',
+      verticalAlign: 'top',
+      layout: 'vertical',
+      floating: true,
+      x: -10,
+      y: -10
+    },
+    xAxis: {
+      type: 'linear',
+      min: dataMin - buffer,
+      max: dataMax + buffer,
+      title: { text: 'm/z' },
+      ignoreHiddenSeries: true
+    },
+    yAxis: [{
+      title: { text: 'DDA Intensity' },
+      min: -maxAbs,
+      max: 0,
+      labels: { formatter: function () { return Math.abs(this.value); } },
+      top: '50%',
+      height: '50%',
+      offset: 0,
+      lineWidth: 1,
+      opposite: false
+    }, {
+      title: { text: 'DIA Intensity' },
+      min: 0,
+      max: maxAbs,
+      labels: { formatter: function () { return this.value; } },
+      top: '0%',
+      height: '50%',
+      offset: 0,
+      lineWidth: 1,
+      opposite: false
+    }],
+    plotOptions: {
+      column: {
+        grouping: false,
+        pointPlacement: 'on',
+        pointPadding: 0,
+        borderWidth: 0,
+        shadow: false,
+        allowPointSelect: true,
+        states: { select: { color: '#800080' } }
+      },
+      series: { cursor: 'pointer' }
+    },
+    series: [{
+      name: 'DDA',
+      yAxis: 0,
+      data: ddaData.map(peak => ({
+        x: peak.fmz,
+        y: -peak.fint,
+        color: "#7cb5ec"
+      })),
+      grouping: false,
+      pointPlacement: 'on',
+      pointWidth: 2,
+      legendIndex: 2
+    }, {
+      name: 'DIA',
+      yAxis: 1,
+      data: diaData.map(peak => ({
+        x: peak.fmz,
+        y: peak.fint,
+        color: getDIAColor(peak.fmz, DeconTableMzSet),
+        pointWidth: 2,
+        color: "#BFA6BF"
+      })),
+      grouping: false,
+      pointPlacement: 'on',
+      legendIndex: 1
+    }]
+  });
 }

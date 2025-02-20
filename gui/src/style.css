@@ -355,9 +355,9 @@ height: 250px;
 }
 
 .plot-half-split {
-  display: flex;
+  /* display: flex; */
   flex-direction: column;
-  justify-content: center;
+  /* justify-content: center; */
   align-items: flex-start;
   width: 49%; 
   overflow-y: auto;
@@ -365,12 +365,13 @@ height: 250px;
 }
 
 .plot-full-top {
-  display: flex;
+  /* display: flex; */
   flex-direction: column;
-  justify-content: center;
+  justify-content: top;
   align-items: flex-start;
+  position: sticky;
   width: 100%; 
-  height: 200px;
+  height: 50%;
   overflow-y: auto;
   overflow-x: auto;
 }
@@ -378,10 +379,11 @@ height: 250px;
 .plot-full-bot {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: top;
+  position: sticky;
   align-items: flex-start;
   width: 100%; 
-  height: 100px;
+  height: 50%;
   overflow-y: auto;
   overflow-x: auto;
 }
@@ -442,8 +444,8 @@ height: 250px;
 }
 
 #annotation-table {
-  margin-bottom: 20px; 
-  max-height: 90%;  
+  margin-bottom: 50px; 
+  max-height: 100%;  
   width: 100%;
   overflow-y: auto; 
   overflow-x: auto; 

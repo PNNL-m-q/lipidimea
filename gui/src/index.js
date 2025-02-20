@@ -326,6 +326,9 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
         dfile_id,
         mz,
         rt,
+        rt_pkht,
+        rt_psnr,
+        rt_fwhm,
         dt,
         ccs,
         dt_pkht,
@@ -341,6 +344,8 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
     } else {
       mainTableCache = data;
       event.reply('database-table-data', data);
+      // Use true to display and plot the bottom right stuff. This will be done last.
+      // event.reply('database-table-data', data,true);
     }
 
     db.close((closeError) => {
@@ -514,6 +519,9 @@ function unpackData(floatArray) {
 
 // Process blob data for decon xic and atd tables
 ipcMain.on('process-decon-blob-data', (event, blobs) => {
+
+
+  // This all needs to be replaced. We will need to query Raw based on something...?
   try {
 
     const xic = unpackData(blobToFloatArray(blobs.dia_xic));
@@ -592,4 +600,121 @@ ipcMain.on('process-ms1-blob-data', (event, blobs) => {
     console.error("Error processing the blob data:", err);
     event.reply('return-ms1-blob-data', { error: err.message });
   }
+});
+
+
+
+
+
+
+//  New DDA Work
+
+ipcMain.on('fetch-dda-features', (event, { diaMz, tolerance }) => {
+  const tol = tolerance || 0.01;
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT 
+      dda_pre_id,
+      mz,
+      rt AS dda_rt,
+      rt_pkht AS dda_rt_pkht,
+      rt_fwhm AS dda_rt_fwhm
+    FROM DDAPrecursors
+    WHERE mz BETWEEN ? AND ?
+  `;
+  db.all(query, [diaMz - tol, diaMz + tol], (error, rows) => {
+    if (error) {
+      console.error("Error fetching DDA features from DDAPrecursors:", error);
+      event.reply('dda-features-result', { error: error.message });
+    } else {
+      event.reply('dda-features-result', { features: rows });
+    }
+    db.close();
+  });
+});
+
+
+
+function fetchDDABlob(featId, blobType, callback) {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT raw_data
+    FROM Raw
+    WHERE feat_id_type = 'dda_pre_id'
+      AND feat_id = ?
+      AND raw_type = ?
+  `;
+  db.get(query, [featId, blobType], (error, row) => {
+    if (error) {
+      console.error(`Error fetching ${blobType} blob for DDA feature ${featId}:`, error);
+      callback(error);
+    } else {
+      callback(null, row ? row.raw_data : null);
+    }
+    db.close();
+  });
+}
+
+ipcMain.on('fetch-dda-blob', (event, { featId, blobType }) => {
+  fetchDDABlob(featId, blobType, (error, blob) => {
+    if (error) {
+      event.reply('dda-blob-result', { blobType, error: error.message });
+    } else {
+      if (blob) {
+        try {
+          const floatArray = blobToFloatArray(blob);
+          const unpackedData = unpackData(floatArray);
+          event.reply('dda-blob-result', { blobType, data: unpackedData });
+        } catch (ex) {
+          console.error(`Error processing ${blobType} blob for feature ${featId}:`, ex);
+          event.reply('dda-blob-result', { blobType, error: ex.message });
+        }
+      } else {
+        event.reply('dda-blob-result', { blobType, data: null });
+      }
+    }
+  });
+});
+
+
+
+
+
+
+//  New Bidirectional plot work:
+ipcMain.on('fetch-dia-ms2', (event, dia_pre_id) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT fmz, fint
+    FROM DIAFragments
+    WHERE dia_pre_id = ?
+  `;
+  db.all(query, [dia_pre_id], (error, rows) => {
+    if (error) {
+      console.error("Error fetching DIA MS2 data:", error);
+      event.reply('dia-ms2-result', { error: error.message });
+    } else {
+      event.reply('dia-ms2-result', { data: rows });
+    }
+    db.close();
+  });
+});
+
+// Handler for DDA MS2 data
+ipcMain.on('fetch-dda-ms2', (event, dda_pre_id) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT fmz, fint
+    FROM DDAFragments
+    WHERE dda_pre_id = ?
+  `;
+  db.all(query, [dda_pre_id], (error, rows) => {
+    if (error) {
+      console.error("Error fetching DDA MS2 data:", error);
+      event.reply('dda-ms2-result', { error: error.message });
+    } else {
+      event.reply('dda-ms2-result', { data: rows });
+    }
+    db.close();
+  });
 });
