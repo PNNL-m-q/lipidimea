@@ -1121,23 +1121,7 @@ window.icpPlot = Highcharts.chart('ion-chromatogram-plot', {
           enabled: false
       }
   },
-  // {
-  //     data: generateGaussianData(
-  //       document.getElementById('dda_rt_value').textContent,
-  //       document.getElementById('dda_rt_pkht_value').textContent,
-  //       document.getElementById('dda_rt_fwhm_value').textContent
-  //       ),
-  //     type: 'line',
-  //     name: 'Fit (DDA)',
-  //     color: '#808080', 
-  //     dashStyle: 'dash',
-  //     marker: {
-  //         enabled: false
-  //     }
-  // }
   {
-    // Here the DDA fit series will be added/updated by updateDDAChromatogramPlotUsingUI()
-    // Optionally, you can initialize it as empty.
     name: 'Fit (DDA)',
     data: [],
     type: 'line',
@@ -1409,8 +1393,7 @@ window.api.receive('dda-features-result', (data) => {
 });
 
 
-function updateDDAChromatogramPlotUsingUI() {
-  // Get the DDA parameters from the UI.
+function updateDDAChromatogramPlot() {
   const dda_rt = document.getElementById('dda_rt_value').textContent;
   const dda_rt_pkht = document.getElementById('dda_rt_pkht_value').textContent;
   const dda_rt_fwhm = document.getElementById('dda_rt_fwhm_value').textContent;
@@ -1507,7 +1490,7 @@ function showDDAFeaturesTable(features) {
       // Request the DDA MS2 spectrum for the selected DDA feature.
       const ddaFeatureId = feature['dda_pre_id'];
       window.api.send('fetch-dda-ms2', ddaFeatureId);
-      updateDDAChromatogramPlotUsingUI();
+      updateDDAChromatogramPlot();
     });
 
     tbody.appendChild(row);
@@ -1538,19 +1521,30 @@ window.api.receive('dda-ms2-result', (data) => {
 });
 
 
-
 function plotBidirectionalMS2(ddaData, diaData) {
   // Ensure both inputs are arrays.
   ddaData = Array.isArray(ddaData) ? ddaData : [];
   diaData = Array.isArray(diaData) ? diaData : [];
   console.log("plotBidirectionalMS2 called with:", ddaData, diaData);
+
+  // Check if there is at least one data point.
+  if (ddaData.length === 0 && diaData.length === 0) {
+    // No data: hide the chart container and show error message.
+    document.getElementById("bidirectional-plot").style.display = "none";
+    document.getElementById("error-message-bidirectional-plot").style.display = "block";
+    return; // exit early
+  } else {
+    // Data exists: show the chart container and hide the error message.
+    document.getElementById("bidirectional-plot").style.display = "block";
+    document.getElementById("error-message-bidirectional-plot").style.display = "none";
+  }
   
   // Compute combined m/z values.
   const combinedMzValues = Array.from(new Set([
     ...ddaData.map(peak => peak.fmz),
     ...diaData.map(peak => peak.fmz)
   ])).sort((a, b) => a - b);
-  
+
   // Compute x-axis range with a buffer.
   const dataMin = Math.min(...combinedMzValues);
   const dataMax = Math.max(...combinedMzValues);
@@ -1561,7 +1555,7 @@ function plotBidirectionalMS2(ddaData, diaData) {
   const maxDIA = diaData.length ? Math.max(...diaData.map(peak => Math.abs(peak.fint))) : 0;
   const maxAbs = Math.max(maxDDA, maxDIA);
   
-  // (Optional) Update the deconvoluted table set if needed.
+  // (Optional) Update your deconvoluted table set if needed.
   DeconTableMzSet = new Set(
     Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child'))
       .map(cell => parseFloat(cell.innerText).toFixed(4))
@@ -1646,8 +1640,7 @@ function plotBidirectionalMS2(ddaData, diaData) {
         x: peak.fmz,
         y: peak.fint,
         color: getDIAColor(peak.fmz, DeconTableMzSet),
-        pointWidth: 2,
-        color: "#BFA6BF"
+        pointWidth: 2
       })),
       grouping: false,
       pointPlacement: 'on',
