@@ -35,7 +35,9 @@ const createWindow = () => {
 
 
   // and load the intro.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'intro/intro.html'));
+  // mainWindow.loadFile(path.join(__dirname, 'results/results.html'));
+    mainWindow.loadFile(path.join(__dirname, 'experiment/experiment.html'));
+
 
 
   // Open the DevTools.
@@ -284,42 +286,24 @@ ipcMain.on('open-database-dialog', (event, options) => {
     });
 });
 
-
 let mainTableCache = null;
+let currentDbPath = null;
 
-// Run main SQL Query and return results.
 ipcMain.on('fetch-database-table', (event, filePath) => {
+  // If the file path is different from the cached one, clear the cache.
+  if (currentDbPath !== filePath) {
+    mainTableCache = null;
+    currentDbPath = filePath;
+  }
+  
+  if (mainTableCache !== null) {
+    console.log("Returning cached mainTable data.");
+    event.reply('database-table-data', mainTableCache);
+    return;
+  }
+  
   const db = new sqlite3.Database(filePath);
   console.log("LOG: index.js: Fetch data in 'fetch-database-table' function");
-  // Old version:
-//   SELECT 
-//   dda_feat_id AS "DDA Feature ID", 
-//   dda_f AS "DDA Data File", 
-//   dia_feat_id AS "DIA Feature ID", 
-//   dia_f AS "DIA Data File", 
-//   mz AS "m/z", 
-//   dia_rt AS RT, 
-//   dt AS "Arrival Time", 
-//   dia_decon_frag_ids, 
-//   dia_xic, 
-//   dia_atd, 
-//   dt AS dia_dt, 
-//   dia_dt_pkht, 
-//   dia_dt_fwhm, 
-//   dia_dt_psnr, 
-//   dia_rt_pkht, 
-//   dia_rt_fwhm, 
-//   dia_rt_psnr,
-//   dda_rt_pkht, 
-//   dda_rt_fwhm, 
-//   dda_rt_psnr, 
-//   dda_rt, 
-//   dda_ms2_peaks, 
-//   dia_ms2_peaks, 
-//   dia_ms1 
-// FROM _CombinedFeaturesForGUI
-
-  // New Version
   db.all(`
     SELECT 
         dia_pre_id,
@@ -337,17 +321,14 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
         dt_fwhm
     FROM 
         DIAPrecursors
-    `, (error, data) => {
+  `, (error, data) => {
     if (error) {
       console.error('Error fetching data from the database:', error);
-      event.reply('database-table-data', data, false, error.message, databasePath);
+      event.reply('database-table-data', data, false, error.message, filePath);
     } else {
       mainTableCache = data;
       event.reply('database-table-data', data);
-      // Use true to display and plot the bottom right stuff. This will be done last.
-      // event.reply('database-table-data', data,true);
     }
-
     db.close((closeError) => {
       if (closeError) {
         console.error('Error closing the database:', closeError);
@@ -355,6 +336,8 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
     });
   });
 });
+
+
 
 
 
@@ -685,7 +668,7 @@ ipcMain.on('fetch-dda-blob', (event, { featId, blobType }) => {
 ipcMain.on('fetch-dia-ms2', (event, dia_pre_id) => {
   const db = new sqlite3.Database(dbPath);
   const query = `
-    SELECT fmz, fint
+    SELECT dia_frag_id, fmz, fint
     FROM DIAFragments
     WHERE dia_pre_id = ?
   `;
@@ -716,5 +699,317 @@ ipcMain.on('fetch-dda-ms2', (event, dda_pre_id) => {
       event.reply('dda-ms2-result', { data: rows });
     }
     db.close();
+  });
+});
+
+
+
+
+//  New decon stufffff
+
+// ---------- New: Fetch decon fragments for a given DIA precursor ----------
+ipcMain.on('fetch-decon-fragments', (event, dia_pre_id) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT dia_frag_id, xic_dist, atd_dist
+    FROM DIAFragments
+    WHERE dia_pre_id = ?
+  `;
+  db.all(query, [dia_pre_id], (error, rows) => {
+    if (error) {
+      console.error("Error fetching decon fragments for dia_pre_id", dia_pre_id, error);
+      event.reply('decon-fragments-result', { error: error.message });
+    } else {
+      event.reply('decon-fragments-result', { fragments: rows });
+    }
+    db.close();
+  });
+});
+
+// ---------- New: Function to fetch blob for decon fragments (feat_id_type 'dia_frag_id') ----------
+function fetchRawBlobDecon(featId, rawType, callback) {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT raw_data 
+    FROM Raw 
+    WHERE feat_id_type = 'dia_frag_id'
+      AND feat_id = ?
+      AND raw_type = ?
+  `;
+  db.get(query, [featId, rawType], (error, row) => {
+    if (error) {
+      console.error(`Error fetching ${rawType} blob for decon feature ${featId}:`, error);
+      callback(error);
+    } else {
+      callback(null, row ? row.raw_data : null);
+    }
+    db.close();
+  });
+}
+
+// ---------- New: IPC handler to fetch decon blob data ----------
+ipcMain.on('fetch-decon-raw-blob', (event, { featId, rawType }) => {
+  fetchRawBlobDecon(featId, rawType, (error, blob) => {
+    if (error) {
+      event.reply('decon-raw-blob-result', { rawType, error: error.message });
+    } else {
+      if (blob) {
+        try {
+          const floatArray = blobToFloatArray(blob);
+          const unpackedData = unpackData(floatArray);
+          event.reply('decon-raw-blob-result', { rawType, data: unpackedData });
+        } catch (ex) {
+          console.error(`Error processing ${rawType} blob for decon feature ${featId}:`, ex);
+          event.reply('decon-raw-blob-result', { rawType, error: ex.message });
+        }
+      } else {
+        event.reply('decon-raw-blob-result', { rawType, data: null });
+      }
+    }
+  });
+});
+
+
+
+
+
+
+//   Delete from SQL function
+
+// ipcMain.on('delete-diaprecursor-rows', (event, rowsArray) => {
+//   if (!rowsArray || !rowsArray.length) {
+//     event.reply('delete-diaprecursor-rows-result', { success: false, error: 'No rows specified' });
+//     return;
+//   }
+//   const db = new sqlite3.Database(dbPath);
+//   const placeholders = rowsArray.map(() => '?').join(',');
+//   const query = `DELETE FROM DIAPrecursors WHERE dia_pre_id IN (${placeholders})`;
+//   db.run(query, rowsArray, function(err) {
+//     if (err) {
+//       console.error('Error deleting DIAPrecursor rows:', err);
+//       event.reply('delete-diaprecursor-rows-result', { success: false, error: err.message });
+//     } else {
+//       // Clear the cache so that future fetches re-read the updated table.
+//       mainTableCache = null;
+//       event.reply('delete-diaprecursor-rows-result', { success: true, changes: this.changes });
+//     }
+//     db.close();
+//   });
+// });
+
+ipcMain.on('delete-diaprecursor-rows', (event, rowsArray) => {
+  if (!rowsArray || !rowsArray.length) {
+    event.reply('delete-diaprecursor-rows-result', { success: false, error: 'No rows specified' });
+    return;
+  }
+
+  const db = new sqlite3.Database(dbPath);
+  const prePlaceholders = rowsArray.map(() => '?').join(',');
+
+  db.serialize(() => {
+    db.run("BEGIN TRANSACTION");
+
+    // 1. Retrieve associated fragment IDs from DIAFragments.
+    db.all(`SELECT dia_frag_id FROM DIAFragments WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, (err, fragRows) => {
+      if (err) {
+        db.run("ROLLBACK");
+        event.reply('delete-diaprecursor-rows-result', { success: false, error: err.message });
+        db.close();
+        return;
+      }
+      let fragIds = fragRows && fragRows.length > 0 ? fragRows.map(r => r.dia_frag_id) : [];
+
+      // 2. Retrieve lipid IDs from Lipids (for use in deleting from LipidSumComp).
+      db.all(`SELECT lipid_id FROM Lipids WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, (err2, lipidRows) => {
+        if (err2) {
+          db.run("ROLLBACK");
+          event.reply('delete-diaprecursor-rows-result', { success: false, error: err2.message });
+          db.close();
+          return;
+        }
+        let lipidIds = lipidRows && lipidRows.length > 0 ? lipidRows.map(r => r.lipid_id) : [];
+
+        // 3. Delete from DIAPrecursors.
+        db.run(`DELETE FROM DIAPrecursors WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, function(err3) {
+          if (err3) {
+            db.run("ROLLBACK");
+            event.reply('delete-diaprecursor-rows-result', { success: false, error: err3.message });
+            db.close();
+            return;
+          }
+          // 4. Delete from DIAFragments.
+          db.run(`DELETE FROM DIAFragments WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, function(err4) {
+            if (err4) {
+              db.run("ROLLBACK");
+              event.reply('delete-diaprecursor-rows-result', { success: false, error: err4.message });
+              db.close();
+              return;
+            }
+            // 5. Delete from Lipids.
+            db.run(`DELETE FROM Lipids WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, function(err5) {
+              if (err5) {
+                db.run("ROLLBACK");
+                event.reply('delete-diaprecursor-rows-result', { success: false, error: err5.message });
+                db.close();
+                return;
+              }
+              // 6. Delete from Raw for precursor data.
+              db.run(`DELETE FROM Raw WHERE feat_id_type = 'dia_pre_id' AND feat_id IN (${prePlaceholders})`, rowsArray, function(err6) {
+                if (err6) {
+                  db.run("ROLLBACK");
+                  event.reply('delete-diaprecursor-rows-result', { success: false, error: err6.message });
+                  db.close();
+                  return;
+                }
+                // 7. If there are fragIds, delete from LipidFragments and Raw (for fragment data).
+                const deleteFragRelated = (callback) => {
+                  if (fragIds.length > 0) {
+                    const fragPlaceholders = fragIds.map(() => '?').join(',');
+                    db.run(`DELETE FROM LipidFragments WHERE dia_frag_id IN (${fragPlaceholders})`, fragIds, function(err7) {
+                      if (err7) {
+                        callback(err7);
+                        return;
+                      }
+                      db.run(`DELETE FROM Raw WHERE feat_id_type = 'dia_frag_id' AND feat_id IN (${fragPlaceholders})`, fragIds, function(err8) {
+                        callback(err8);
+                      });
+                    });
+                  } else {
+                    callback(null);
+                  }
+                };
+
+                // 8. If there are lipidIds, delete from LipidSumComp.
+                const deleteLipidSumComp = (callback) => {
+                  if (lipidIds.length > 0) {
+                    const lipidPlaceholders = lipidIds.map(() => '?').join(',');
+                    db.run(`DELETE FROM LipidSumComp WHERE lipid_id IN (${lipidPlaceholders})`, lipidIds, function(err9) {
+                      callback(err9);
+                    });
+                  } else {
+                    callback(null);
+                  }
+                };
+
+                // Execute deletion for frag-related and lipid mapping in series.
+                deleteFragRelated((errFrag) => {
+                  if (errFrag) {
+                    db.run("ROLLBACK");
+                    event.reply('delete-diaprecursor-rows-result', { success: false, error: errFrag.message });
+                    db.close();
+                    return;
+                  }
+                  deleteLipidSumComp((errLipid) => {
+                    if (errLipid) {
+                      db.run("ROLLBACK");
+                      event.reply('delete-diaprecursor-rows-result', { success: false, error: errLipid.message });
+                      db.close();
+                      return;
+                    }
+                    // 9. Commit the transaction.
+                    db.run("COMMIT", function(errCommit) {
+                      if (errCommit) {
+                        db.run("ROLLBACK");
+                        event.reply('delete-diaprecursor-rows-result', { success: false, error: errCommit.message });
+                        db.close();
+                        return;
+                      }
+                      mainTableCache = null;
+                      event.reply('delete-diaprecursor-rows-result', { success: true });
+                      db.close();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+
+
+ipcMain.on('fetch-lipid-fragment-details', (event, lipidId) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+      SELECT frag_rule, supports_fa, diagnostic, dia_frag_id
+      FROM LipidFragments
+      WHERE lipid_id = ?
+  `;
+  db.all(query, [lipidId], (err, rows) => {
+      if (err) {
+          console.error("Error fetching lipid fragments:", err);
+          event.reply('lipid-fragment-details', { error: err.message });
+      } else {
+          event.reply('lipid-fragment-details', { lipidId, details: rows });
+      }
+      db.close();
+  });
+});
+
+
+
+// Delete annotated feature rows (for the annotation table)
+// Expects an array of lipid IDs (from column 0 of the annotation table)
+ipcMain.on('delete-annotated-feature-rows', (event, lipidIds) => {
+  if (!lipidIds || lipidIds.length === 0) {
+    event.reply('delete-annotated-feature-rows-result', { success: false, error: 'No rows specified' });
+    return;
+  }
+  
+  // Open the database using the global dbPath.
+  const db = new sqlite3.Database(dbPath);
+  // Build placeholders for the SQL IN clause.
+  const placeholders = lipidIds.map(() => '?').join(',');
+
+  db.serialize(() => {
+    db.run("BEGIN TRANSACTION");
+    // 1. Delete from LipidFragments.
+    db.run(`DELETE FROM LipidFragments WHERE lipid_id IN (${placeholders})`, lipidIds, function(err) {
+      if (err) {
+        db.run("ROLLBACK");
+        event.reply('delete-annotated-feature-rows-result', { success: false, error: err.message });
+        db.close();
+        return;
+      }
+      // 2. Delete from LipidSumComp.
+      db.run(`DELETE FROM LipidSumComp WHERE lipid_id IN (${placeholders})`, lipidIds, function(err2) {
+        if (err2) {
+          db.run("ROLLBACK");
+          event.reply('delete-annotated-feature-rows-result', { success: false, error: err2.message });
+          db.close();
+          return;
+        }
+        // 3. Delete from Lipids.
+        db.run(`DELETE FROM Lipids WHERE lipid_id IN (${placeholders})`, lipidIds, function(err3) {
+          if (err3) {
+            db.run("ROLLBACK");
+            event.reply('delete-annotated-feature-rows-result', { success: false, error: err3.message });
+            db.close();
+            return;
+          }
+          // Commit the transaction.
+          db.run("COMMIT", function(errCommit) {
+            if (errCommit) {
+              db.run("ROLLBACK");
+              event.reply('delete-annotated-feature-rows-result', { success: false, error: errCommit.message });
+              db.close();
+              return;
+            }
+            // After successful commit, re-query the Lipids table so the renderer can update its annotation table.
+            db.all('SELECT * FROM Lipids', (errFetch, rows) => {
+              if (errFetch) {
+                event.reply('delete-annotated-feature-rows-result', { success: true, error: errFetch.message });
+              } else {
+                event.reply('delete-annotated-feature-rows-result', { success: true, updatedData: rows });
+              }
+              db.close();
+            });
+          });
+        });
+      });
+    });
   });
 });

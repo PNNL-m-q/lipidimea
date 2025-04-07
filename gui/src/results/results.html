@@ -14,7 +14,7 @@
 <!-- Navbar -->
     <div>
         <nav class="menu" style="z-index:1000;">
-          <a href="../intro/intro.html" class="menu-item">Instructions</a>
+          <!-- <a href="../intro/intro.html" class="menu-item">Instructions</a> -->
           <a href="../experiment/experiment.html" class="menu-item">Process Data</a>
           <a href="#../results/results.html" class="menu-item">View Results</a>
         </nav>
@@ -28,10 +28,10 @@
         <!-- <span class="table-header-and-button">Select a SQLite database:</span> -->
         <button class="table-header-and-button" id="show-table-button" onclick="databaseDialog()">Open Results</button>
       <!-- <button id="show-table-button" style="display:none" onclick="databaseDialog()"></button> -->
-      <br><br>
+      <div class="small-break"></div>
       <!-- Main Table from SQLite -->
       <div class="top-table" id="main-table-container"></div>
-      <br><br>
+      <br>
       <!-- Results Section -->
       <div id='below-table-content' style="display: none">
 
@@ -104,8 +104,8 @@
             <div class="left-section">
                 <div id="deconvoluted-frags-table"></div>
                 <div id="error-message" style="color: black;"></div>
-                <div><span class="info" id="xic-dist-value"></span></div>
-                <div><span class="info" id="atd-dist-value"></span></div>
+                <!-- <div><span class="info" id="xic-dist-value"></span></div>
+                <div><span class="info" id="atd-dist-value"></span></div> -->
             </div>
             <div class="right-section" id="plots-container">
               <!-- Deconvoluted Fragment XIC Plot   -->
