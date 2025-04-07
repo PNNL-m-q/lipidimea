@@ -1,6 +1,5 @@
 """
 lipidimea/test/util.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     tests for lipidimea/util.py module
@@ -24,7 +23,7 @@ from lipidimea.util import (
 class Test_ResultsDbSchemaPath(unittest.TestCase):
     """ test for the global storing the path to the results DB schema file """
 
-    def test_RDSP_built_schema_file_exist(self):
+    def test_builtin_schema_file_exist(self):
         """ ensure the results database schema file exists """
         self.assertTrue(os.path.isfile(_RESULTS_DB_SCHEMA))
 
@@ -32,7 +31,7 @@ class Test_ResultsDbSchemaPath(unittest.TestCase):
 class TestCreateResultsDb(unittest.TestCase):
     """ tests for create_results_db function """
 
-    def test_CRD_db_file_creation(self):
+    def test_db_file_creation(self):
         """ makes sure the db file is created """
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
@@ -42,7 +41,7 @@ class TestCreateResultsDb(unittest.TestCase):
             self.assertTrue(os.path.isfile(dbf), 
                             msg="db file should exist after")
     
-    def test_CRD_db_file_already_exists(self):
+    def test_db_file_already_exists(self):
         """ make sure an exception is raised when trying to create the db file but it already exists and overwrite kwarg was not set to True """
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
@@ -58,7 +57,7 @@ class TestCreateResultsDb(unittest.TestCase):
                 self.assertEqual(f.read().strip(), "test", 
                                  msg="existing db file contents should not have been modified")
     
-    def test_CRD_db_file_already_exists_overwrite(self):
+    def test_db_file_already_exists_overwrite(self):
         """ make sure when trying to create the db file but it already exists and overwrite kwarg was set to True that the file does get changed """
         with TemporaryDirectory() as tmp_dir:
             dbf = os.path.join(tmp_dir, "results.db")
@@ -72,7 +71,7 @@ class TestCreateResultsDb(unittest.TestCase):
                 self.assertNotEqual(s, os.stat(dbf), 
                                     msg="existing db file contents should have been overwritten")
                 
-    def test_CRD_strict_option(self):
+    def test_strict_option(self):
         """ make sure the strict option works as intended """
         # first create a database with the default behavior (strict enabled)
         with TemporaryDirectory() as tmp_dir:
@@ -99,7 +98,7 @@ class TestCreateResultsDb(unittest.TestCase):
 class TestDebugHandler(unittest.TestCase):
     """ tests for the debug_handler function """
 
-    def test_DH_textcb_with_no_cb(self):
+    def test_textcb_with_no_cb(self):
         """ calling the debug handler with 'textcb' or 'textcb_pid' without providing a callback should cause a ValueError """
         with self.assertRaises(ValueError,
                                msg="should have gotten a ValueError for not providing a callback"):
@@ -108,7 +107,7 @@ class TestDebugHandler(unittest.TestCase):
                                msg="should have gotten a ValueError for not providing a callback"):
             debug_handler("textcb_pid", None, "this should cause a ValueError")
 
-    def test_DH_text_expected_output(self):
+    def test_text_expected_output(self):
         """ call the debug handler with 'text' and make sure the captured output is correct """
         sio = io.StringIO()
         with contextlib.redirect_stdout(sio):
@@ -118,7 +117,7 @@ class TestDebugHandler(unittest.TestCase):
         self.assertEqual(output, "DEBUG: expected message\n",
                          msg="captured text incorrect")
 
-    def test_DH_text_pid_expected_output(self):
+    def test_text_pid_expected_output(self):
         """ call the debug handler with 'text_pid' and make sure the captured output is correct """
         sio = io.StringIO()
         with contextlib.redirect_stdout(sio):
@@ -132,7 +131,7 @@ class TestDebugHandler(unittest.TestCase):
         """ helper method simulating a debug callback, stores messages in a list in self.__msgs """
         self.__msgs.append(msg)
 
-    def test_DH_textcb_expected_output(self):
+    def test_textcb_expected_output(self):
         """ simulate using a debug callback and make sure the generated messages are correct """
         expected = [
             "DEBUG: message 1",
@@ -146,7 +145,7 @@ class TestDebugHandler(unittest.TestCase):
         self.assertListEqual(self.__msgs, expected,
                              msg="incorrect outputs produced")
 
-    def test_DH_textcb_pid_expected_output(self):
+    def test_textcb_pid_expected_output(self):
         """ simulate using a debug callback with PID and make sure the generated messages are correct """
         expected = [
             "<pid: 420> DEBUG: message 1",
@@ -161,7 +160,19 @@ class TestDebugHandler(unittest.TestCase):
                              msg="incorrect outputs produced")
 
 
-if __name__ == "__main__":
-    # run the tests for this module if invoked directly
-    unittest.main(verbosity=2)
+# group all of the tests from this module into a TestSuite
+_loader = unittest.TestLoader()
+AllTestsUtil = unittest.TestSuite()
+AllTestsUtil.addTests([
+    _loader.loadTestsFromTestCase(Test_ResultsDbSchemaPath),
+    _loader.loadTestsFromTestCase(TestCreateResultsDb),
+    _loader.loadTestsFromTestCase(TestDebugHandler),
+])
+
+
+if __name__ == '__main__':
+    # run all defined TestCases for only this module if invoked directly
+    unittest.TextTestRunner(verbosity=2).run(AllTestsUtil)
+
+
 

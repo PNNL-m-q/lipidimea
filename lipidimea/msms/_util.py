@@ -1,6 +1,5 @@
 """
 lipidimea/msms/_util.py
-
 Dylan Ross (dylan.ross@pnnl.gov)
 
     internal module with utilities related to MSMS data processing

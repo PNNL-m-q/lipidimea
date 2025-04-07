@@ -1,9 +1,8 @@
 """
-lipidimea/test/__main__.py
+lipidimea/test/msms/__main__.py
 Dylan Ross (dylan.ross@pnnl.gov)
 
-    runs unit tests, imports defined test cases from all of the
-    individual test subpackages/modules below
+    runs unit tests for lipidimea.msms subpackage
 """
 
 
