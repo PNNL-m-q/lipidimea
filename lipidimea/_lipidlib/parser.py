@@ -9,7 +9,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 from typing import List, Optional, Tuple, Union, Dict, Any
 import re
 
-from lipidlib.lipids import LMAPS, Lipid, LipidWithChains
+from .lipids import LMAPS, Lipid, LipidWithChains
 
 
 # regex for parsing lipid information from a lipid name in standard abbreviated format

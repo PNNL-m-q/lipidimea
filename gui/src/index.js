@@ -80,27 +80,64 @@ app.on('activate', () => {
 
 // Load on DOM
 // Get Defaults Data
-ipcMain.on('getDefaults', (event) => {
-  const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yaml');
-  console.log('YAML Path:', defaultsPath);
+// ipcMain.on('getDefaults', (event) => {
+//   const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yaml');
+//   console.log('YAML Path:', defaultsPath);
 
-  fs.readFile(defaultsPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading YAML file:', err);
-      event.reply('returnDefaults', null);
-      return;
-    }
+//   fs.readFile(defaultsPath, 'utf8', (err, data) => {
+//     if (err) {
+//       console.error('Error reading YAML file:', err);
+//       event.reply('returnDefaults', null);
+//       return;
+//     }
 
-    try {
-      const returnDefaults = yaml.load(data);
-      console.log('YAML Data:', returnDefaults);
-      event.reply('returnDefaults', returnDefaults);
-    } catch (error) {
-      console.error('Error parsing YAML file:', error);
-      event.reply('returnDefaults', null);
-    }
-  });
+//     try {
+//       const returnDefaults = yaml.load(data);
+//       console.log('YAML Data:', returnDefaults);
+//       event.reply('returnDefaults', returnDefaults);
+//     } catch (error) {
+//       console.error('Error parsing YAML file:', error);
+//       event.reply('returnDefaults', null);
+//     }
+//   });
+// });
+
+ipcMain.on('getDefaults', async (event) => {
+  try {
+    // Build paths
+    const includeDir = path.join(__dirname, '../../lipidimea/_include');
+    const ddaPath  = path.join(includeDir, 'default_dda_params.yaml');
+    const diaPath  = path.join(includeDir, 'default_dia_params.yaml');
+    const annPath  = path.join(includeDir, 'default_ann_params.yaml');
+
+    console.log('getDefaults → loading from:', ddaPath, diaPath, annPath);
+
+    // Read & parse
+    const ddaYaml = fs.readFileSync(ddaPath, 'utf8');
+    const diaYaml = fs.readFileSync(diaPath, 'utf8');
+    const annYaml = fs.readFileSync(annPath, 'utf8');
+
+    const ddaDefaults = yaml.load(ddaYaml);
+    const diaDefaults = yaml.load(diaYaml);
+    const annDefaults = yaml.load(annYaml);
+
+    console.log('getDefaults → ddaDefaults keys:', Object.keys(ddaDefaults));
+    console.log('getDefaults → diaDefaults keys:', Object.keys(diaDefaults));
+    console.log('getDefaults → annDefaults keys:', Object.keys(annDefaults));
+
+    // Reply with the merged object
+    event.reply('returnDefaults', {
+      dda: ddaDefaults,
+      dia: diaDefaults,
+      annotation: annDefaults
+    });
+
+  } catch (err) {
+    console.error('getDefaults ERROR:', err);
+    event.reply('returnDefaults', null);
+  }
 });
+
 
 // Trigger on "Save Params as file" Button
 // Open dialog to enter file name and search for save directory.
@@ -141,33 +178,69 @@ ipcMain.on('open-directory-dialog', (event) => {
 });
 
 
-// pyinstaller version
+// // pyinstaller version
+// ipcMain.on('run-python-yamlwriter', (event, options) => {
+//   const inputNumber = options.args;
+//   let savePath;
+//   if (options.location && options.name) {
+//       // If location and name are provided, construct the save path
+//       savePath = path.join(options.location, options.name + ".yaml");
+//   } else {
+//       // Otherwise, use the path directly from options
+//       savePath = options.path;
+//   }
+//   console.log('yamlwriter input values:', inputNumber);
+
+//   // Point to the standalone executable produced by PyInstaller
+//   let pythonExecutable = path.join(__dirname, '../dist', 'yamlwriter');
+
+//   const spawn = require('child_process').spawn;
+//   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), savePath]);
+
+//   pythonProcess.stdout.on('data', (data) => {
+//     console.log(`Python script result: ${data}`);
+//     event.reply('python-result-yamlwriter', data.toString());
+//   });
+
+//   pythonProcess.stderr.on('data', (data) => {
+//     console.error(`Python Error: ${data}`);
+//   });
+// });
+
+
+
 ipcMain.on('run-python-yamlwriter', (event, options) => {
-  const inputNumber = options.args;
+  // Determine where to write
+  const data    = options.args;
+  const saveDir = options.location || null;
+  const base    = options.name    || null;
+  const explicitPath = options.path || null;
+
   let savePath;
-  if (options.location && options.name) {
-      // If location and name are provided, construct the save path
-      savePath = path.join(options.location, options.name + ".yaml");
+  if (saveDir && base) {
+    savePath = path.join(saveDir, base + '.yml');
+  } else if (explicitPath) {
+    savePath = explicitPath;
   } else {
-      // Otherwise, use the path directly from options
-      savePath = options.path;
+    event.reply('python-result-yamlwriter', 'ERROR: no valid path provided to write YAML');
+    return;
   }
-  console.log('yamlwriter input values:', inputNumber);
 
-  // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, '../dist', 'yamlwriter');
-
-  const spawn = require('child_process').spawn;
-  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), savePath]);
-
-  pythonProcess.stdout.on('data', (data) => {
-    console.log(`Python script result: ${data}`);
-    event.reply('python-result-yamlwriter', data.toString());
-  });
-
-  pythonProcess.stderr.on('data', (data) => {
-    console.error(`Python Error: ${data}`);
-  });
+  try {
+    // Dump the object to YAML
+    const yamlStr = yaml.dump(data, {
+      noRefs:        true,
+      sortKeys:      false,
+      lineWidth:     120,
+      noCompatMode:  true
+    });
+    // Write it out
+    fs.writeFileSync(savePath, yamlStr, 'utf8');
+    event.reply('python-result-yamlwriter', `Wrote parameter file to ${savePath}\n`);
+  } catch (err) {
+    console.error('YAML write error:', err);
+    event.reply('python-result-yamlwriter', `ERROR writing YAML: ${err.message}\n`);
+  }
 });
 
 
@@ -244,24 +317,61 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
 // });
 
 
-// pyinstaller version
-ipcMain.on('run-python-experiment', (event, options) => {
-  const inputNumber = options.args;
-  console.log('Experiment input values:', inputNumber);
+// // pyinstaller version
+// ipcMain.on('run-python-experiment', (event, options) => {
+//   const inputNumber = options.args;
+//   console.log('Experiment input values:', inputNumber);
 
-  // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, '../dist', 'experiment');
+//   // Point to the standalone executable produced by PyInstaller
+//   let pythonExecutable = path.join(__dirname, '../dist', 'experiment');
 
-  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber)]);
+//   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber)]);
 
-  pythonProcess.stdout.on('data', (data) => {
-    console.log(`Python script result: ${data}`);
-    event.reply('python-result-experiment', data.toString());
-  });
+//   pythonProcess.stdout.on('data', (data) => {
+//     console.log(`Python script result: ${data}`);
+//     event.reply('python-result-experiment', data.toString());
+//   });
 
-  pythonProcess.stderr.on('data', (data) => {
-    console.error(`Python Error: ${data}`);
-  });
+//   pythonProcess.stderr.on('data', (data) => {
+//     console.error(`Python Error: ${data}`);
+//   });
+// });
+
+// const { spawn } = require('child_process');
+
+// Compute the Python project root: two levels up from gui/src
+const PY_PROJECT_ROOT = path.resolve(__dirname, '..', '..');
+
+ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
+  for (const { cmd, desc } of steps) {
+    event.reply('python-result-experiment', `\n>>> ${desc}\n`);
+    try {
+      await new Promise((resolve, reject) => {
+        // spawn python3.12 with cwd set to the repo root
+        const child = spawn(
+          'python3.12',
+          ['-m', 'lipidimea', ...cmd],
+          { cwd: PY_PROJECT_ROOT, env: process.env }
+        );
+
+        child.stdout.on('data', data => {
+          event.reply('python-result-experiment', data.toString());
+        });
+        child.stderr.on('data', data => {
+          event.reply('python-result-experiment', data.toString());
+        });
+        child.on('close', code => {
+          code === 0
+            ? resolve()
+            : reject(new Error(`${desc} failed (exit ${code})`));
+        });
+      });
+    } catch (err) {
+      event.reply('python-result-experiment', `\nERROR: ${err.message}\n`);
+      return;  // stop the sequence on first error
+    }
+  }
+  event.reply('python-result-experiment', '\nExperiment complete.\n');
 });
 
 

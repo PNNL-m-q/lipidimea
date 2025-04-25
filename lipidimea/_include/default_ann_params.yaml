@@ -1,19 +1,121 @@
-ionization: null   
-sum_comp: 
-  fa_c: 
-    min: 12
-    max: 24
-  fa_odd_c: true
-  mz_ppm: 40.
-  config: null
-rt_range_config: null
-ccs_trends: 
-  percent: 5.
-  config: null
-frag_rules: 
+# Annotation defaults with GUI metadata
+
+# Section header for UI
+display_name: "Lipid annotation"
+
+# Ionization mode
+ionization:
+  default: null
+  display_name: "Ionization mode"
+  type: str
+  description: "Ionization mode data was acquired in (POS or NEG)"
+  advanced: false
+
+# Sum composition annotation
+sum_comp:
+  display_name: "Sum composition annotation"
   fa_c:
-    min: 12
-    max: 24
-  fa_odd_c: true
-  mz_ppm: 80.
-  config: null
+    default:
+      min: 12
+      max: 24
+    display_name: "FA chain length range"
+    type: "range"
+    description: "Minimum and maximum number of carbons in FA chains"
+    advanced: false
+  fa_odd_c:
+    default: true
+    display_name: "Include odd-carbon FAs"
+    type: bool
+    description: "Whether to include odd-carbon fatty acids"
+    advanced: false
+  mz_ppm:
+    default: 40.0
+    display_name: "m/z PPM tolerance"
+    type: float
+    description: "Tolerance for sum composition m/z matching"
+    advanced: false
+  config:
+    default: null
+    display_name: "Sum composition config file"
+    type: str
+    description: "Optional path to sum composition config"
+    advanced: true
+
+# RT range configuration
+config_file:
+  display_name: "Configuration File"
+  rt_range_config:
+    default: null
+    display_name: "RT range config file"
+    type: str
+    description: "Optional path to retention time range config"
+    advanced: false
+
+# CCS trends
+ccs_trends:
+  display_name: "CCS trends"
+  percent:
+    default: 5.0
+    display_name: "CCS percentile"
+    type: float
+    description: "Percentile for CCS trend calculation"
+    advanced: false
+  config:
+    default: null
+    display_name: "CCS trends config file"
+    type: str
+    description: "Optional path to CCS trends configuration"
+    advanced: true
+
+# Fragmentation rules
+frag_rules:
+  display_name: "Fragmentation rules"
+  fa_c:
+    default:
+      min: 12
+      max: 24
+    display_name: "Fragment FA chain length range"
+    type: "range"
+    description: "Range of FA chain lengths for fragment rules"
+    advanced: false
+  fa_odd_c:
+    default: true
+    display_name: "Include odd-carbon fragment FAs"
+    type: bool
+    description: "Include odd-carbon fatty acids in fragmentation rules"
+    advanced: false
+  mz_ppm:
+    default: 80.0
+    display_name: "Fragment m/z PPM tolerance"
+    type: float
+    description: "Tolerance for fragment m/z matching"
+    advanced: false
+  config:
+    default: null
+    display_name: "Fragmentation rules config file"
+    type: str
+    description: "Optional path to fragmentation rules config"
+    advanced: true
+
+
+
+
+# ionization: null   
+# sum_comp: 
+#   fa_c: 
+#     min: 12
+#     max: 24
+#   fa_odd_c: true
+#   mz_ppm: 40.
+#   config: null
+# rt_range_config: null
+# ccs_trends: 
+#   percent: 5.
+#   config: null
+# frag_rules: 
+#   fa_c:
+#     min: 12
+#     max: 24
+#   fa_odd_c: true
+#   mz_ppm: 80.
+#   config: null

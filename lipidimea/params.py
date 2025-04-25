@@ -75,6 +75,14 @@ class _ExtractAndFitMs2Spectra:
         if type(self.fwhm) is dict:
             self.fwhm = _Range(**self.fwhm)
 
+@dataclass
+class _MS2PeakMatching:
+    mz_ppm: float
+
+@dataclass
+class _StoreData:
+    blob: bool
+
 
 @dataclass
 class _ConsolidateDdaFeats:
@@ -131,16 +139,28 @@ def _load_yaml(config: YamlFilePath
     return cfg
 
 
-def _load_default(param_type: _ParamType
-                  ) -> Dict[str, Any] : 
-    """ Load the default parameters from built-in configuration files as nested dict """
-    match param_type:
-        case _ParamType.DDA: 
-            return _load_yaml(_DEFAULT_DDA_CONFIG)
-        case _ParamType.DIA: 
-            return  _load_yaml(_DEFAULT_DIA_CONFIG)
-        case _ParamType.ANN:
-            return _load_yaml(_DEFAULT_ANN_CONFIG)
+# def _load_default(param_type: _ParamType
+#                   ) -> Dict[str, Any] : 
+#     """ Load the default parameters from built-in configuration files as nested dict """
+#     match param_type:
+#         case _ParamType.DDA: 
+#             return _load_yaml(_DEFAULT_DDA_CONFIG)
+#         case _ParamType.DIA: 
+#             return  _load_yaml(_DEFAULT_DIA_CONFIG)
+#         case _ParamType.ANN:
+#             return _load_yaml(_DEFAULT_ANN_CONFIG)
+
+def _load_default(param_type: _ParamType) -> Dict[str, Any]:
+    # Load the raw YAML (with UI metadata)
+    raw = {
+        _ParamType.DDA:  _DEFAULT_DDA_CONFIG,
+        _ParamType.DIA:  _DEFAULT_DIA_CONFIG,
+        _ParamType.ANN:  _DEFAULT_ANN_CONFIG
+    }[param_type]
+    cfg = _load_yaml(raw)
+    # Strip out all UI‐only fields, leaving just the pure values
+    clean_cfg = _strip_ui_metadata(cfg)
+    return clean_cfg
 
 
 def _from_config(config: YamlFilePath,
@@ -192,7 +212,39 @@ def _from_config(config: YamlFilePath,
         case _ParamType.DIA: 
             return DiaParams(**params)
         case _ParamType.ANN:
+            print(params)
             return AnnotationParams(**params)
+        
+def _strip_ui_metadata(cfg: Any) -> Any:
+    """
+    Recursively strip out GUI‑only keys (display_name, type, description, advanced),
+    unwrap any { default: … } wrappers, and convert any numeric strings
+    (including scientific notation) into floats.
+    """
+    # 1) If it’s not a dict, try to convert strings to float
+    if not isinstance(cfg, dict):
+        if isinstance(cfg, str):
+            try:
+                return float(cfg)
+            except ValueError:
+                pass
+        return cfg
+
+    ui_keys = {'display_name', 'type', 'description', 'advanced'}
+
+    # 2) If this dict is a metadata wrapper, unwrap it
+    if 'default' in cfg and any(k in cfg for k in ui_keys):
+        return _strip_ui_metadata(cfg['default'])
+
+    # 3) Otherwise, recurse into children, dropping any UI keys
+    return {
+        k: _strip_ui_metadata(v)
+        for k, v in cfg.items()
+        if k not in ui_keys
+    }
+    
+
+
 
 
 def _write_config(current_dc: Params,
@@ -279,9 +331,9 @@ class DiaParams:
     extract_and_fit_chroms: _ExtractAndFitChroms
     extract_and_fit_atds: _ExtractAndFitChroms
     extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
-    ms2_peak_matching_ppm: float
+    ms2_peak_matching: _MS2PeakMatching
     deconvolute_ms2_peaks: _DeconvoluteMs2Peaks
-    store_blobs: bool
+    store: _StoreData
 
     def __post_init__(self):
         if type(self.extract_and_fit_chroms) is dict:
@@ -290,8 +342,13 @@ class DiaParams:
             self.extract_and_fit_atds = _ExtractAndFitChroms(**self.extract_and_fit_atds)
         if type(self.extract_and_fit_ms2_spectra) is dict:
             self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
+        if type(self.ms2_peak_matching) is dict:
+            self.ms2_peak_matching = _MS2PeakMatching(**self.ms2_peak_matching)
         if type(self.deconvolute_ms2_peaks) is dict:
             self.deconvolute_ms2_peaks = _DeconvoluteMs2Peaks(**self.deconvolute_ms2_peaks)
+        if type(self.store) is dict:
+            self.store = _StoreData(**self.store)
+
 
     # --- static methods ---
 
@@ -316,7 +373,7 @@ class AnnotationParams:
     """ class for organizing lipid annotation parameters """
     ionization: Optional[str]   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
     sum_comp: _AnnotationComponent
-    rt_range_config: Optional[YamlFilePath]
+    config_file: Optional[dict]
     ccs_trends: _CcsTrends
     frag_rules: _AnnotationComponent
 

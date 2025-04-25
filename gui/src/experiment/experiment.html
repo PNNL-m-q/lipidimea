@@ -43,6 +43,7 @@
                 <label for="experiment-type-dia-advanced">DIA</label>
                 <input type="checkbox" id="experiment-type-annotate-advanced" name="experiment-type" value="Annotate" checked>
                 <label for="experiment-type-annotate-advanced">Annotate</label>
+                
 
                 <!-- DDA File Upload -->
                 <div id="dda-file-region">
@@ -68,7 +69,7 @@
                     </div>
                 </div>
   
-                <!-- Database File Upload -->
+                <!-- Database File Upload
                 <div class="file-area">
                   <h2>Lipid ID Database Selection (Optional)</h2>
                       <button id="select-button-database">Select File</button>
@@ -76,9 +77,9 @@
                   <div class="file-section">
                       <input type="file" id="database-file-input" style="display: none;" >
                       <ul id="file-list-database" style="list-style-type: none;"></ul>
-                  </div>
+                  </div> -->
 
-                <!-- Annotation File Upload -->
+                <!-- Annotation File Upload
                 <div id="annotate-file-region">
                 <div class="file-area">
                     <h2>Annotation Parameter File (Optional)</h2>
@@ -88,7 +89,59 @@
                         <input type="file" id="annotation-file-input" style="display: none;" >
                         <ul id="file-list-annotation" style="list-style-type: none;"></ul>
                     </div>
+                </div> -->
+
+                <!-- Fragmentation Rules Config File (Optional) -->
+
+                <div id="frag-rules-config-file-region">
+                    <div class="file-area">
+                    <h2>Fragmentation Rules Config File (Optional)</h2>
+                    <button id="select-button-frag-rules-config">Select File</button>
+                    </div>
+                    <div class="file-section">
+                    <input type="file" id="frag-rules-config-file-input" style="display: none;">
+                    <ul id="file-list-frag-rules-config" style="list-style-type: none;"></ul>
+                    </div>
                 </div>
+                
+                <!-- CCS Trends Config File (Optional) -->
+                <div id="ccs-trends-config-file-region">
+                    <div class="file-area">
+                    <h2>CCS Trends Config File (Optional)</h2>
+                    <button id="select-button-ccs-trends-config">Select File</button>
+                    </div>
+                    <div class="file-section">
+                    <input type="file" id="ccs-trends-config-file-input" style="display: none;">
+                    <ul id="file-list-ccs-trends-config" style="list-style-type: none;"></ul>
+                    </div>
+                </div>
+                
+                <!-- RT Range Config File (Optional) -->
+                <div id="rt-range-config-file-region">
+                    <div class="file-area">
+                    <h2>RT Range Config File (Optional)</h2>
+                    <button id="select-button-rt-range-config">Select File</button>
+                    </div>
+                    <div class="file-section">
+                    <input type="file" id="rt-range-config-file-input" style="display: none;">
+                    <ul id="file-list-rt-range-config" style="list-style-type: none;"></ul>
+                    </div>
+                </div>
+                
+                <!-- Sum Composition Config File (Optional) -->
+                <div id="sum-comp-config-file-region">
+                    <div class="file-area">
+                    <h2>Sum Composition Config File (Optional)</h2>
+                    <button id="select-button-sum-comp-config">Select File</button>
+                    </div>
+                    <div class="file-section">
+                    <input type="file" id="sum-comp-config-file-input" style="display: none;">
+                    <ul id="file-list-sum-comp-config" style="list-style-type: none;"></ul>
+                    </div>
+                </div>
+                
+
+
 
             </div>
 
@@ -216,6 +269,19 @@
                             <label for="behavior-custom">Custom File(s)</label>
                         </div>
                 </div>
+
+                <!-- Calibration Button -->
+                <div class="section-container" id="calibrate-options">
+                    <label class="section-label">Calibrate DIA</label>
+                    <div class="radio-option">
+                      <input type="radio" id="calibrate-yes" name="calibrate" value="yes">
+                      <label for="calibrate-yes">Yes</label>
+                    </div>
+                    <div class="radio-option">
+                      <input type="radio" id="calibrate-no" name="calibrate" value="no" checked>
+                      <label for="calibrate-no">No</label>
+                    </div>
+                  </div>
                 
 
                 <!-- Note to self - update this button/checkbox. -->

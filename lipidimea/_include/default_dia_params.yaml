@@ -1,38 +1,242 @@
-extract_and_fit_chroms: 
-  min_rel_height: 0.2
-  min_abs_height: 1.e+4
-  fwhm: 
-    min: 0.03
-    max: 0.3
-  max_peaks: 3
-  min_psnr: null
-  mz_ppm: 40.
-  rt_tol: 0.75
-extract_and_fit_atds:
-  min_rel_height: 0.2
-  min_abs_height: 1.e+4
-  fwhm: 
-    min: 0.3
-    max: 3.
-  max_peaks: 2
-  min_psnr: null
-  mz_ppm: null
-  rt_tol: null
-extract_and_fit_ms2_spectra:
-  min_rel_height: 0.001
-  min_abs_height: 1.e+3
+# DIA defaults with GUI metadata
+
+display_name: "DIA data analysis"
+
+# Chromatogram extraction and fitting
+extract_and_fit_chroms:
+  display_name: "Chromatogram extraction and fitting"
+  min_rel_height:
+    default: 0.2
+    display_name: "Min. relative peak height"
+    type: float
+    description: "Minimum relative height for chromatogram fitting"
+    advanced: true
+  min_abs_height:
+    default: 1e+4
+    display_name: "Min. absolute peak height"
+    type: float
+    description: "Minimum absolute height for chromatogram fitting"
+    advanced: true
   fwhm:
-    min: 0.02
-    max: 0.2
-  peak_min_dist: 0.2
-  pre_mz_ppm: 60.
-  mz_bin_min: 50.
-  mz_bin_size: 0.05
-ms2_peak_matching_ppm: 80.
-deconvolute_ms2_peaks: 
-  mz_ppm: 40.
-  xic_dist_threshold: 0.75
-  atd_dist_threshold: 0.5
-  xic_dist_metric: cosine
-  atd_dist_metric: cosine
-store_blobs: True
+    default:
+      min: 0.03
+      max: 0.3
+    display_name: "Chromatogram FWHM"
+    type: "range"
+    description: "Full width at half max for chromatogram peaks"
+    advanced: true
+  max_peaks:
+    default: 3
+    display_name: "Max peaks"
+    type: int
+    description: "Maximum number of chromatogram peaks to fit"
+    advanced: false
+  min_psnr:
+    default: null
+    display_name: "Min. PSNR"
+    type: float
+    description: "Minimum signal-to-noise ratio filter"
+    advanced: true
+  mz_ppm:
+    default: 40.0
+    display_name: "m/z PPM tolerance"
+    type: float
+    description: "Tolerance for m/z alignment"
+    advanced: false
+  rt_tol:
+    default: 0.75
+    display_name: "RT tolerance"
+    type: float
+    description: "Retention time tolerance for chromatogram fitting"
+    advanced: false
+
+# ATD extraction and fitting
+extract_and_fit_atds:
+  display_name: "ATD extraction and fitting"
+  min_rel_height:
+    default: 0.2
+    display_name: "Min. relative peak height"
+    type: float
+    description: "Minimum relative height for ATD peak fitting"
+    advanced: true
+  min_abs_height:
+    default: 1e+4
+    display_name: "Min. absolute peak height"
+    type: float
+    description: "Minimum absolute height for ATD peak fitting"
+    advanced: true
+  fwhm:
+    default:
+      min: 0.3
+      max: 3.0
+    display_name: "ATD FWHM"
+    type: "range"
+    description: "Full width at half max for ATD peaks"
+    advanced: true
+  max_peaks:
+    default: 2
+    display_name: "Max peaks"
+    type: int
+    description: "Maximum number of ATD peaks to fit"
+    advanced: false
+  min_psnr:
+    default: null
+    display_name: "Min. PSNR"
+    type: float
+    description: "Minimum signal-to-noise ratio filter"
+    advanced: true
+  mz_ppm:
+    default: null
+    display_name: "m/z PPM tolerance"
+    type: float
+    description: "Tolerance for m/z alignment"
+    advanced: true
+  rt_tol:
+    default: null
+    display_name: "RT tolerance"
+    type: float
+    description: "Retention time tolerance for ATD fitting"
+    advanced: true
+
+# MS2 spectrum extraction and fitting
+extract_and_fit_ms2_spectra:
+  display_name: "MS2 spectrum extraction and fitting"
+  min_rel_height:
+    default: 0.001
+    display_name: "Min. relative MS2 peak height"
+    type: float
+    description: "Minimum relative height for MS2 peak fitting"
+    advanced: true
+  min_abs_height:
+    default: 1e+3
+    display_name: "Min. absolute MS2 peak height"
+    type: float
+    description: "Minimum absolute height for MS2 peak fitting"
+    advanced: true
+  fwhm:
+    default:
+      min: 0.02
+      max: 0.2
+    display_name: "MS2 peak FWHM"
+    type: "range"
+    description: "Full width at half max for MS2 peaks"
+    advanced: true
+  peak_min_dist:
+    default: 0.2
+    display_name: "Min. MS2 peak distance"
+    type: float
+    description: "Minimum distance between MS2 peaks"
+    advanced: false
+  pre_mz_ppm:
+    default: 60.0
+    display_name: "Precursor m/z PPM tolerance"
+    type: float
+    description: "Tolerance for selecting MS2 scans by precursor m/z"
+    advanced: false
+  mz_bin_min:
+    default: 50.0
+    display_name: "Min. MS2 m/z bin"
+    type: float
+    description: "Minimum m/z for MS2 binning"
+    advanced: false
+  mz_bin_size:
+    default: 0.05
+    display_name: "MS2 m/z bin size"
+    type: float
+    description: "Bin size for MS2 spectrum binning"
+    advanced: false
+
+# MS2 peak matching
+ms2_peak_matching:
+  display_name: "MS2 Peak Matching"
+  mz_ppm:
+    default: 80.0
+    display_name: "PPM tolerance"
+    type: float
+    description: "Tolerance for matching MS2 peaks between DDA and DIA spectra"
+    advanced: false
+
+# MS2 fragment deconvolution
+deconvolute_ms2_peaks:
+  display_name: "MS2 fragment deconvolution"
+  mz_ppm:
+    default: 40.0
+    display_name: "m/z PPM tolerance"
+    type: float
+    description: "Tolerance for deconvoluting fragment m/z"
+    advanced: false
+  xic_dist_threshold:
+    default: 0.75
+    display_name: "XIC distance threshold"
+    type: float
+    description: "Threshold for XIC deconvolution"
+    advanced: true
+  atd_dist_threshold:
+    default: 0.5
+    display_name: "ATD distance threshold"
+    type: float
+    description: "Threshold for ATD deconvolution"
+    advanced: true
+  xic_dist_metric:
+    default: "cosine"
+    display_name: "XIC distance metric"
+    type: str
+    description: "Metric for XIC deconvolution"
+    advanced: true
+  atd_dist_metric:
+    default: "cosine"
+    display_name: "ATD distance metric"
+    type: str
+    description: "Metric for ATD deconvolution"
+    advanced: true
+
+# Store raw DIA profiles
+store:
+  display_name: "Store Raw Data"
+  blob:
+    default: true
+    display_name: "Store raw DIA profiles"
+    type: bool
+    description: "Whether to store raw XIC/ATD/MS1/MS2 profiles"
+    advanced: false
+
+
+
+# extract_and_fit_chroms: 
+#   min_rel_height: 0.2
+#   min_abs_height: 1.e+4
+#   fwhm: 
+#     min: 0.03
+#     max: 0.3
+#   max_peaks: 3
+#   min_psnr: null
+#   mz_ppm: 40.
+#   rt_tol: 0.75
+# extract_and_fit_atds:
+#   min_rel_height: 0.2
+#   min_abs_height: 1.e+4
+#   fwhm: 
+#     min: 0.3
+#     max: 3.
+#   max_peaks: 2
+#   min_psnr: null
+#   mz_ppm: null
+#   rt_tol: null
+# extract_and_fit_ms2_spectra:
+#   min_rel_height: 0.001
+#   min_abs_height: 1.e+3
+#   fwhm:
+#     min: 0.02
+#     max: 0.2
+#   peak_min_dist: 0.2
+#   pre_mz_ppm: 60.
+#   mz_bin_min: 50.
+#   mz_bin_size: 0.05
+# ms2_peak_matching_ppm: 80.
+# deconvolute_ms2_peaks: 
+#   mz_ppm: 40.
+#   xic_dist_threshold: 0.75
+#   atd_dist_threshold: 0.5
+#   xic_dist_metric: cosine
+#   atd_dist_metric: cosine
+# store_blobs: True
