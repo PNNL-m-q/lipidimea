@@ -1,12 +1,75 @@
 const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
 const path = require('path');
-const { PythonShell } = require('python-shell');
+// const { PythonShell } = require('python-shell');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const sqlite3 = require('sqlite3');
 const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
 const { PassThrough } = require('stream');
+
+
+
+
+// Resolve paths differently in dev vs packaged
+const LIPIDIMEA_ROOT = app.isPackaged
+  ? path.join(process.resourcesPath)
+  : path.resolve(__dirname, '..', '..', 'lipidimea');
+
+// Similarly, pick the right embedded binary:
+
+const PYTHON_CLI = app.isPackaged
+  ? path.join(process.resourcesPath, "lipidimea")   // <── absolute
+  : path.join(__dirname, "lipidimea");
+  // Error Degubign...
+  
+
+function safeReaddir(dir) {
+  try { return fs.readdirSync(dir).sort(); }
+  catch { return []; }               // unreadable ⇒ empty
+}
+
+function safeIsDir(p) {
+  try { return fs.statSync(p).isDirectory(); }
+  catch { return false; }
+}
+
+function listDir(dir, depth, indent = "") {
+  let out = [];
+  for (const name of safeReaddir(dir)) {
+    const full = path.join(dir, name);
+    out.push(indent + name);
+    if (depth > 0 && safeIsDir(full)) {
+      out = out.concat(listDir(full, depth - 1, indent + "  "));
+    }
+  }
+  return out;
+}
+
+ipcMain.on("debug-list-paths", (event, { baseDir, maxDepth = 2 }) => {
+  // default: app’s own Resources folder (safe, always readable)
+  const base   = path.resolve(baseDir || process.resourcesPath);
+  const parent = path.resolve(base, "..");
+
+  const txt =
+      "# ls .\n"          + listDir(base,   0).join("\n") +
+    "\n\n# ls ./*\n"       + listDir(base,   1).join("\n") +
+    "\n\n# ls ./*/*\n"     + listDir(base,   2).join("\n") +
+    `\n\n# ls ..   (${parent})\n` + listDir(parent, 0).join("\n");
+
+  event.reply("debug-list-paths-result", txt);
+});
+
+
+
+
+
+
+
+
+// const isMac = process.platform === 'darwin';
+// const exeSuffix = isMac ? '' : '.exe';
+// const EXP_EXE  = path.join(__dirname, '..', 'dist', `experiment${exeSuffix}`);
 
 // This variable will hold the path to the sql database in Results. 
 // It is globally defined because it is called frequently.
@@ -104,11 +167,16 @@ app.on('activate', () => {
 
 ipcMain.on('getDefaults', async (event) => {
   try {
-    // Build paths
-    const includeDir = path.join(__dirname, '../../lipidimea/_include');
-    const ddaPath  = path.join(includeDir, 'default_dda_params.yaml');
-    const diaPath  = path.join(includeDir, 'default_dia_params.yaml');
-    const annPath  = path.join(includeDir, 'default_ann_params.yaml');
+
+    // In development the lipidimea folder lives in your repo root;
+    // when packaged it gets copied into Resources/lipidimea
+    const includeDir = app.isPackaged
+      ? path.join(process.resourcesPath, '_include')
+      : path.join(__dirname, '..', '..', '_include'); 
+
+    const ddaPath = path.join(includeDir, 'default_dda_params.yaml');
+    const diaPath = path.join(includeDir, 'default_dia_params.yaml');
+    const annPath = path.join(includeDir, 'default_ann_params.yaml');
 
     console.log('getDefaults → loading from:', ddaPath, diaPath, annPath);
 
@@ -125,7 +193,6 @@ ipcMain.on('getDefaults', async (event) => {
     console.log('getDefaults → diaDefaults keys:', Object.keys(diaDefaults));
     console.log('getDefaults → annDefaults keys:', Object.keys(annDefaults));
 
-    // Reply with the merged object
     event.reply('returnDefaults', {
       dda: ddaDefaults,
       dia: diaDefaults,
@@ -137,6 +204,7 @@ ipcMain.on('getDefaults', async (event) => {
     event.reply('returnDefaults', null);
   }
 });
+
 
 
 // Trigger on "Save Params as file" Button
@@ -209,7 +277,7 @@ ipcMain.on('open-directory-dialog', (event) => {
 
 
 
-ipcMain.on('run-python-yamlwriter', (event, options) => {
+ipcMain.on('write-yaml', (event, options) => {
   // Determine where to write
   const data    = options.args;
   const saveDir = options.location || null;
@@ -245,6 +313,7 @@ ipcMain.on('run-python-yamlwriter', (event, options) => {
 
 
 
+
 // Generic function for opening dialog to select a file
 ipcMain.on('open-file-dialog', (event, options) => {
   const window = BrowserWindow.getFocusedWindow();
@@ -262,13 +331,6 @@ ipcMain.on('open-file-dialog', (event, options) => {
     });
 });
 
-
-// Is this still in use?
-// ipcMain.handle('read-file-content', (event, filePath) => {
-//   // Read the content of the file and return the data
-//   const fileContent = readFile(filePath);
-//   return fileContent;
-// });
 
 
 // Function to load in yaml data
@@ -295,80 +357,63 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
 
 
 
-// Run python script to run the lipidimea workflow
-// ipcMain.on('run-python-experiment', (event, options) => {
-//   const inputNumber = options.args;
-//   console.log('Experiment input values:', inputNumber);
-
-//   let pythonExecutable = path.join(__dirname, 'embeddedPythonMac', 'python3.11');
-//   const pyshell = new PythonShell(path.join(__dirname, 'experiment.py'), {
-//     pythonPath: pythonExecutable,
-//     args: [JSON.stringify(inputNumber)], 
-//   });
-
-//   pyshell.on('message', (result) => {
-//     console.log('Python script result:', result);
-//     event.reply('python-result-experiment', result);
-//   });
-
-//   pyshell.end((err) => {
-//     if (err) throw err;
-//   });
-// });
 
 
-// // pyinstaller version
-// ipcMain.on('run-python-experiment', (event, options) => {
-//   const inputNumber = options.args;
-//   console.log('Experiment input values:', inputNumber);
 
-//   // Point to the standalone executable produced by PyInstaller
-//   let pythonExecutable = path.join(__dirname, '../dist', 'experiment');
 
-//   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber)]);
+function lsOnce(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true })
+           .map(d => (d.isDirectory() ? "📁 " : "   ") + d.name);
+}
 
-//   pythonProcess.stdout.on('data', (data) => {
-//     console.log(`Python script result: ${data}`);
-//     event.reply('python-result-experiment', data.toString());
-//   });
+ipcMain.handle("ls-dir",      (_, dir=".") => lsOnce(dir));
+ipcMain.handle("ls-star",     (_, dir=".") =>
+  lsOnce(dir).flatMap(name => [name, ...lsOnce(path.join(dir, name.trim().slice(2))).map("  ↳ " + String)])
+);
+ipcMain.handle("ls-star-star", async (_, dir=".") => {
+  const first = await ipcMain.handle("ls-star", null, dir);
+  return first.flatMap(line => {
+    if (!line.startsWith("📁")) return [line];
+    const sub = lsOnce(path.join(dir, line.slice(2).trim()))
+                .map("    ↳ " + String);
+    return [line, ...sub];
+  });
+});
 
-//   pythonProcess.stderr.on('data', (data) => {
-//     console.error(`Python Error: ${data}`);
-//   });
-// });
-
-// const { spawn } = require('child_process');
-
-// Compute the Python project root: two levels up from gui/src
-const PY_PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 
 ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
   for (const { cmd, desc } of steps) {
     event.reply('python-result-experiment', `\n>>> ${desc}\n`);
     try {
-      await new Promise((resolve, reject) => {
-        // spawn python3.12 with cwd set to the repo root
-        const child = spawn(
-          'python3.12',
-          ['-m', 'lipidimea', ...cmd],
-          { cwd: PY_PROJECT_ROOT, env: process.env }
-        );
 
-        child.stdout.on('data', data => {
-          event.reply('python-result-experiment', data.toString());
+      console.log('process.resourcesPath', process.resourcesPath)
+      console.log('LIPIDIMEA_ROOT', LIPIDIMEA_ROOT)
+      console.log('PYTHON_CLI', PYTHON_CLI)
+
+
+      // ls(); 
+      // lsStarStar(process.resourcesPath);
+
+      try { fs.chmodSync(PYTHON_CLI, 0o755); } catch (e) {}
+
+      await new Promise((resolve, reject) => {
+        const child = spawn(PYTHON_CLI, cmd, {
+          cwd: LIPIDIMEA_ROOT,   // fine to leave this as Resources or anything else
+          env: process.env
         });
-        child.stderr.on('data', data => {
-          event.reply('python-result-experiment', data.toString());
-        });
-        child.on('close', code => {
-          code === 0
-            ? resolve()
-            : reject(new Error(`${desc} failed (exit ${code})`));
-        });
+
+
+
+        child.stdout.on('data', d => event.reply('python-result-experiment', d.toString()));
+        child.stderr.on('data', d => event.reply('python-result-experiment', d.toString()));
+        child.on('close', code => code === 0
+          ? resolve()
+          : reject(new Error(`${desc} failed (exit ${code})`))
+        );
       });
     } catch (err) {
       event.reply('python-result-experiment', `\nERROR: ${err.message}\n`);
-      return;  // stop the sequence on first error
+      return;
     }
   }
   event.reply('python-result-experiment', '\nExperiment complete.\n');
@@ -504,71 +549,6 @@ ipcMain.on('fetch-raw-blob', (event, { featId, rawType }) => {
 
 
 
-// // Run SQL Query to get blobs and info for decon frags
-// ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
-//   const db = new sqlite3.Database(dbPath); // Access the global dbPath variable here
-//   console.log("LOG: index.js: Fetch data for 'fetch-mapping-table' function");
-
-//   if (!selectedRowValue.diaDeconFragIds || selectedRowValue.diaDeconFragIds.trim() === "") {
-//     // Handle the case where diaDeconFragIds is empty or doesn't have a value
-//     console.error('No IDs provided for fetching mapping data.');
-//     // event.reply('database-table-data', [], true, "No IDs provided");       # Removed this in update
-//     return;
-//   }
-
-//   const selectedIDs = selectedRowValue.diaDeconFragIds.split(' ').map(id => id.trim()).filter(Boolean);
-//   const placeholders = selectedIDs.map(() => '?').join(',');
-//   // Old Version
-//   const combinedFeaturesQuery = `
-//   SELECT 
-//       c.dia_xic, 
-//       c.dia_atd,
-//       d.decon_frag_id, 
-//       d.mz, 
-//       d.xic_dist, 
-//       d.atd_dist, 
-//       d.xic, 
-//       d.atd 
-//   FROM CombinedFeatures c
-//   JOIN DIADeconFragments d 
-//   ON (' ' || c.dia_decon_frag_ids || ' ') LIKE ('% ' || d.decon_frag_id || ' %')
-//   WHERE d.decon_frag_id IN (${placeholders})
-// `;
-// // New code to integrate somehow
-// // SELECT 
-// //     raw_n,     -- number of points in the raw arrays, if that is useful, can omit otherwise
-// //     raw_data   -- raw array data as BLOB
-// // FROM 
-// //     Raw
-// // WHERE 
-// //     -- <RAW_TYPE> can be one of "DIA_PRE_MS1", "DIA_PRE_XIC", "DIA_PRE_ATD", 
-// //     -- "DIA_FRAG_XIC", "DIA_FRAG_ATD" depending on what data is needed
-// //     -- You may need to check that a BLOB is actually returned from the 
-// //     -- query, since it is not guaranteed that every DIA precursor will have
-// //     -- all of the BLOB data stored (in fact, there is a parameter that controls
-// //     -- whether any BLOB data is even stored in the first place)
-// //     raw_type == "<RAW_TYPE>"          
-// //     AND feat_id_type == "dia_pre_id"
-// //     AND feat_id = <dia_precursor_id>                 -- use the DIA precursor ID to select the raw data 
-
-//   db.all(combinedFeaturesQuery, selectedIDs, (error, data) => {
-//     if (error) {
-//       console.error('Error fetching mapping data from the database:', error);
-//       // event.reply('database-table-data', data, true, error.message);
-//     } else {
-//       // event.reply('database-table-data', data, true);
-//       //pass
-//     }
-
-//     db.close((closeError) => {
-//       if (closeError) {
-//         console.error('Error closing the database:', closeError);
-//       }
-//     });
-//   });
-// });
-
-
 // Run SQL Query to get annotation table
 ipcMain.on('fetch-annotation-table', (event, filePath) => {
   const db = new sqlite3.Database(filePath);
@@ -694,9 +674,6 @@ ipcMain.on('process-ms1-blob-data', (event, blobs) => {
     event.reply('return-ms1-blob-data', { error: err.message });
   }
 });
-
-
-
 
 
 
@@ -880,32 +857,6 @@ ipcMain.on('fetch-decon-raw-blob', (event, { featId, rawType }) => {
 });
 
 
-
-
-
-
-//   Delete from SQL function
-
-// ipcMain.on('delete-diaprecursor-rows', (event, rowsArray) => {
-//   if (!rowsArray || !rowsArray.length) {
-//     event.reply('delete-diaprecursor-rows-result', { success: false, error: 'No rows specified' });
-//     return;
-//   }
-//   const db = new sqlite3.Database(dbPath);
-//   const placeholders = rowsArray.map(() => '?').join(',');
-//   const query = `DELETE FROM DIAPrecursors WHERE dia_pre_id IN (${placeholders})`;
-//   db.run(query, rowsArray, function(err) {
-//     if (err) {
-//       console.error('Error deleting DIAPrecursor rows:', err);
-//       event.reply('delete-diaprecursor-rows-result', { success: false, error: err.message });
-//     } else {
-//       // Clear the cache so that future fetches re-read the updated table.
-//       mainTableCache = null;
-//       event.reply('delete-diaprecursor-rows-result', { success: true, changes: this.changes });
-//     }
-//     db.close();
-//   });
-// });
 
 ipcMain.on('delete-diaprecursor-rows', (event, rowsArray) => {
   if (!rowsArray || !rowsArray.length) {

@@ -828,8 +828,36 @@ function WriteCategoryYaml(containerId, categoryKey, name, saveLoc) {
     name:       name,
     location:   saveLoc
   };
-  window.api.send("run-python-yamlwriter", options);
+  window.api.send("write-yaml", options);
   outputBox.innerText += `Wrote ${categoryKey.toUpperCase()} config to ${saveLoc}/${name}.yaml\n`;
+
+
+
+  const paths = [];
+  (function collect(obj, prefix = "") {
+    for (const [k, v] of Object.entries(obj)) {
+      if (typeof v === "string" && /[\\/]/.test(v)) {
+        paths.push(`${prefix}${k}: ${v}`);
+      } else if (v && typeof v === "object") {
+        collect(v, `${prefix}${k}.`);
+      }
+    }
+  })(section);
+
+  outputBox.innerText +=
+      `Wrote ${categoryKey.toUpperCase()} config → ${saveLoc}/${name}.yaml\n`
+    + (paths.length
+          ? "Paths used:\n  " + paths.join("\n  ") + "\n"
+          : "(no paths found)\n");
+
+
+  window.api.send("debug-list-paths", { maxDepth: 2 });
+  // window.api.send("debug-list-paths", {
+  //   // you can change these; keep them simple JSON-serialisable
+  //   baseDir : ".",   // current working dir
+  //   maxDepth: 2      // 0 = ls ., 1 = ls ./*, 2 = ls ./*/*   (we’ll also do "..")
+  // });
+          
 }
 
 
@@ -900,7 +928,7 @@ function WriteToYaml(containerId, name, location) {
     options.location = location;
   }
 
-  window.api.send('run-python-yamlwriter', options);
+  window.api.send('write-yaml', options);
 }
 
 
@@ -1760,3 +1788,14 @@ function UpdateCalibrateOptions() {
   document.getElementById("calibrate-options").style.display =
     isDIA ? "flex" : "none";
 }
+
+
+
+
+
+window.api.receive("debug-list-paths-result", listing => {
+  outputBox.innerText +=
+    "\n─── directory snapshots ───\n" +
+    listing +
+    "\n───────────────────────────\n";
+});
