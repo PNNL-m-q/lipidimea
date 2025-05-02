@@ -1,0 +1,102 @@
+name: Build & Package GUI + Python CLI - Starting with Mac
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-python:
+    name: Build lipidimea CLI (macOS)
+    runs-on: macos-13
+    outputs:
+      cli-binary-path: ${{ steps.freeze.outputs.binary }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install lipidimea + deps
+        run: |
+          python3 -m pip install --upgrade pip
+          pip install .
+          pip install \
+            h5py \
+            hdf5plugin \
+            pandas \
+            numpy \
+            scipy \
+            matplotlib \
+            pyyaml \
+            "mzapy>=1.8.0" \
+            polars-lts-cpu
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Freeze CLI with PyInstaller
+        id: freeze
+        working-directory: lipidimea
+        run: |
+          pyinstaller \
+            --noconfirm \
+            --onefile \
+            --name lipidimea \
+            --add-data "_include:lipidimea/_include" \
+            __main__.py
+          echo "::set-output name=binary::dist/lipidimea"
+
+
+      - name: ls
+        run: |
+          ls
+          ls *
+          ls ..
+          ls ../..
+          
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lipidimea-cli
+          path: lipidimea/dist/lipidimea
+
+  build-gui:
+    name: Package Electron GUI (macOS x64)
+    needs: build-python
+    runs-on: macos-13
+    defaults:
+      run:
+        working-directory: gui
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download frozen CLI
+        uses: actions/download-artifact@v4
+        with:
+          name: lipidimea-cli
+          path: gui/bin
+
+      - name: Make CLI executable
+        run: chmod +x bin/lipidimea
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install GUI dependencies
+        run: npm install
+
+      - name: Build + package for macOS (x64)
+        run: npm run make-x64
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-gui
+          path: /Users/runner/work/lipid_gui_private/lipid_gui_private/gui/out/make/dia_dda_application-0.12.26-x64.dmg

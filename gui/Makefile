@@ -3,17 +3,22 @@
 # default rule, list all of the defined rules
 .PHONY: list
 list:
-	@LC_ALL=C $(MAKE) -pRrq -f $(firstword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/(^|\n)# Files(\n|$$)/,/(^|\n)# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | grep -E -v -e '^[^[:alnum:]]' -e '^$@$$'
+	@LC_ALL=C $(MAKE) -pRrq -f $(firstword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/(^|\n)# Files(\n|$$)/,/(^|\n)# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | grep -E -v -e '^[^[:alnum:]]' -e '^$$@$$'
 
-# build the GUI app for macos on Intel
+# build the GUI app for macOS on Intel
 app_darwin_x64: dist/experiment dist/yamlwriter docs version
-	@echo "-> building GUI app for MacOS (Intel)"
-	@npm run make-x64
+	@echo "-> building GUI app for macOS (Intel)"
+	@npm run make-mac-x64
 
-# build the GUI app for macos on ARM
+# build the GUI app for macOS on ARM
 app_darwin_arm64: dist/experiment dist/yamlwriter docs version
-	@echo "-> building GUI app for MacOS (ARM)"
-	@npm run make-arm64
+	@echo "-> building GUI app for macOS (ARM)"
+	@npm run make-mac-arm64
+
+# build the GUI app for Windows (x64)
+app_win32_x64: dist/experiment dist/yamlwriter docs version
+	@echo "-> building GUI app for Windows (x64)"
+	@npm run make-win32-x64
 
 # get the dependencies and devDependencies for the GUI app
 deps:
@@ -48,4 +53,3 @@ clean:
 	@echo "-> removing everything under dist/ and out/"
 	@rm -rf dist/*
 	@rm -rf out/*
-

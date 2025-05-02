@@ -28,60 +28,38 @@
     "forge": {
       "packagerConfig": {
         "asar": false,
-        "platform": "darwin",
         "extraResource": [
-          "../lipidimea"
+          "bin/lipidimea",
+          "../lipidimea/_include"
         ]
       },
       "makers": [
         {
           "name": "@electron-forge/maker-dmg",
-          "config": {
-            "outDir": "./out/make/x64"
-          },
-          "platforms": [
-            "darwin"
-          ],
+          "config": { "outDir": "./out/make/x64" },
+          "platforms": ["darwin"],
           "arch": "x64"
         },
         {
           "name": "@electron-forge/maker-dmg",
-          "config": {
-            "outDir": "./out/make/arm64"
-          },
-          "platforms": [
-            "darwin"
-          ],
+          "config": { "outDir": "./out/make/arm64" },
+          "platforms": ["darwin"],
           "arch": "arm64"
         },
         {
           "name": "@electron-forge/maker-zip",
-          "config": {
-            "outDir": "./out/make/x64"
-          },
-          "platforms": [
-            "darwin"
-          ],
+          "config": { "outDir": "./out/make/x64" },
+          "platforms": ["darwin"],
           "arch": "x64"
         },
         {
           "name": "@electron-forge/maker-zip",
-          "config": {
-            "outDir": "./out/make/arm64"
-          },
-          "platforms": [
-            "darwin"
-          ],
+          "config": { "outDir": "./out/make/arm64" },
+          "platforms": ["darwin"],
           "arch": "arm64"
         },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
+        { "name": "@electron-forge/maker-deb", "config": {} },
+        { "name": "@electron-forge/maker-rpm", "config": {} }
       ]
     }
   },
