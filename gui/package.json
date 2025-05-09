@@ -16,7 +16,8 @@
     "rebuild-x64": "electron-rebuild -w sqlite3 --arch=x64",
     "rebuild-arm64": "electron-rebuild -w sqlite3 --arch=arm64",
     "package-x64": "electron-forge package --arch=x64 --platform=darwin",
-    "package-arm64": "electron-forge package --arch=arm64 --platform=darwin"
+    "package-arm64": "electron-forge package --arch=arm64 --platform=darwin",
+    "make-win32-x64": "electron-forge make --arch=x64 --platform=win32 --out-dir=out/make/win32-x64"
   },
   "keywords": [],
   "author": {
@@ -39,6 +40,15 @@
           "config": { "outDir": "./out/make/x64" },
           "platforms": ["darwin"],
           "arch": "x64"
+        },
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "dia_dda_application"
+          },
+          "platforms": [
+            "win32"
+          ]
         },
         {
           "name": "@electron-forge/maker-dmg",

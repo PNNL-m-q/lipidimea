@@ -1,4 +1,5 @@
-name: Build & Package GUI + Python CLI - Starting with Mac
+# .github/workflows/build.yml
+name: Build & Package GUI + Python CLI
 
 on:
   push:
@@ -95,8 +96,109 @@ jobs:
       - name: Build + package for macOS (x64)
         run: npm run make-x64
 
+      - name: ls
+        run: |
+          ls
+          ls *
+          ls */*
+          ls */*/*
+          ls ..
+          ls ../..
+
       - name: Upload macOS DMG
         uses: actions/upload-artifact@v4
         with:
           name: macos-gui
-          path: /Users/runner/work/lipid_gui_private/lipid_gui_private/gui/out/make/dia_dda_application-0.12.26-x64.dmg
+          path: ${{ github.workspace }}/gui/out/**/make/**/*.dmg
+          # path: /Users/runner/work/lipid_gui_private/lipid_gui_private/gui/out/make/dia_dda_application-0.12.26-x64.dmg
+
+
+
+  build-python-win:
+    name: Build lipidimea CLI (Windows x64)
+    runs-on: windows-latest
+    outputs:
+      cli-binary-path: ${{ steps.freeze.outputs.binary }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install lipidimea + deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          pip install h5py hdf5plugin pandas numpy scipy matplotlib pyyaml "mzapy>=1.8.0" polars-lts-cpu
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Freeze CLI with PyInstaller
+        id: freeze
+        working-directory: lipidimea
+        run: |
+          pyinstaller --noconfirm --onefile --name lipidimea --add-data "_include;lipidimea/_include" __main__.py
+          echo "binary=dist/lipidimea.exe" >> %GITHUB_OUTPUT%
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lipidimea-cli-win
+          path: lipidimea/dist/lipidimea.exe
+
+
+  build-gui-win:
+    name: Package Electron GUI (Windows x64)
+    needs: build-python-win
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: gui
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download frozen CLI
+        uses: actions/download-artifact@v4
+        with:
+          name: lipidimea-cli-win
+          path: gui/bin                    # ⇒ gui/bin/lipidimea.exe
+
+      - name: Duplicate CLI so packager finds bin/lipidimea
+        run: |
+          copy bin\lipidimea.exe bin\lipidimea
+
+      - name: Make CLI executable 
+        run: |
+          icacls bin\\lipidimea.exe /grant Everyone:RX
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install GUI dependencies
+        run: npm install
+
+      - name: Build + package for Windows
+        run: npm run make-win32-x64
+
+      - name: ls
+        run: |
+          ls
+          ls *
+          ls */*
+          ls */*/*
+          ls ..
+          ls ../..
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-gui
+          path: |
+            ${{ github.workspace }}\gui\out\make\squirrel.windows\x64\*.exe
+            ${{ github.workspace }}\gui\out\make\squirrel.windows\x64\*.nupkg

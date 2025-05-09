@@ -28,6 +28,7 @@ _DEFAULT_ANN_CONFIG = os.path.join(INCLUDE_DIR, "default_ann_params.yaml")
 # and AnnotationParams dataclasses. 
 
 
+
 @dataclass
 class _Range:
     min: float
@@ -38,7 +39,19 @@ class _Range:
 class _IntRange:
     min: int
     max: int
+    
+@dataclass
+class _Display:
+    display_name: str
 
+
+@dataclass
+class _Precursor:
+    precursor_mz: _Range
+
+    def __post_init__(self):
+        if type(self.precursor_mz) is dict:
+            self.precursor_mz = _Range(**self.precursor_mz)
 
 @dataclass
 class _ExtractAndFitChroms:
@@ -215,7 +228,7 @@ def _from_config(config: YamlFilePath,
             print(params)
             return AnnotationParams(**params)
         
-def _strip_ui_metadata(cfg: Any) -> Any:
+def _strip_ui_metadata(cfg: Any, *, _depth: int = 0) -> Any:
     """
     Recursively strip out GUI‑only keys (display_name, type, description, advanced),
     unwrap any { default: … } wrappers, and convert any numeric strings
@@ -230,19 +243,21 @@ def _strip_ui_metadata(cfg: Any) -> Any:
                 pass
         return cfg
 
-    ui_keys = {'display_name', 'type', 'description', 'advanced'}
-
     # 2) If this dict is a metadata wrapper, unwrap it
-    if 'default' in cfg and any(k in cfg for k in ui_keys):
-        return _strip_ui_metadata(cfg['default'])
+    if 'default' in cfg:
+        return _strip_ui_metadata(cfg['default'], _depth=_depth)
 
-    # 3) Otherwise, recurse into children, dropping any UI keys
+
+    # 3) Otherwise, recurse into children, dropping GUI‑only keys
+    gui_only = {'type', 'description', 'advanced'}
+    if _depth > 0:          #   <── drop `display_name` once we’re inside any section
+        gui_only.add('display_name')
+
     return {
-        k: _strip_ui_metadata(v)
+        k: _strip_ui_metadata(v, _depth=_depth + 1)
         for k, v in cfg.items()
-        if k not in ui_keys
+        if k not in gui_only
     }
-    
 
 
 
@@ -289,15 +304,16 @@ def _write_config(current_dc: Params,
 @dataclass
 class DdaParams:
     """ class for organizing DDA data processing parameters """
-    precursor_mz: _Range
+    display_name: _Display
+    precursor: _Precursor
     extract_and_fit_chroms: _ExtractAndFitChroms
     consolidate_chrom_feats: _ConsolidateChromFeats
     extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
     consolidate_dda_feats: _ConsolidateDdaFeats
 
     def __post_init__(self):
-        if type(self.precursor_mz) is dict:
-            self.precursor_mz = _Range(**self.precursor_mz)
+        if type(self.precursor) is dict:
+            self.precursor = _Precursor(**self.precursor)
         if type(self.extract_and_fit_chroms) is dict:
             self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
         if type(self.consolidate_chrom_feats) is dict:
@@ -328,6 +344,7 @@ class DdaParams:
 @dataclass
 class DiaParams:
     """ class for organizing DIA data processing parameters """
+    display_name: _Display
     extract_and_fit_chroms: _ExtractAndFitChroms
     extract_and_fit_atds: _ExtractAndFitChroms
     extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
@@ -371,6 +388,7 @@ class DiaParams:
 @dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
+    display_name: _Display
     ionization: Optional[str]   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
     sum_comp: _AnnotationComponent
     config_file: Optional[dict]

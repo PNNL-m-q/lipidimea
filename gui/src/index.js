@@ -10,19 +10,22 @@ const { PassThrough } = require('stream');
 
 
 
-
 // Resolve paths differently in dev vs packaged
 const LIPIDIMEA_ROOT = app.isPackaged
   ? path.join(process.resourcesPath)
-  : path.resolve(__dirname, '..', '..', 'lipidimea');
+  : path.resolve(__dirname, '..', '..');
 
-// Similarly, pick the right embedded binary:
+// Select the right embedded binary
 
-const PYTHON_CLI = app.isPackaged
-  ? path.join(process.resourcesPath, "lipidimea")   // <── absolute
-  : path.join(__dirname, "lipidimea");
+// const PYTHON_CLI = app.isPackaged
+//   ? path.join(process.resourcesPath, "lipidimea")   // <── absolute
+//   : path.join(__dirname, '..','..',"python3.12");
   // Error Degubign...
-  
+
+const exe = process.platform === 'win32' ? 'lipidimea.exe' : 'lipidimea';
+const PYTHON_CLI = app.isPackaged
+  ? path.join(process.resourcesPath, exe)
+  : path.join(__dirname, '..','..',"python3.12");
 
 function safeReaddir(dir) {
   try { return fs.readdirSync(dir).sort(); }
@@ -172,7 +175,10 @@ ipcMain.on('getDefaults', async (event) => {
     // when packaged it gets copied into Resources/lipidimea
     const includeDir = app.isPackaged
       ? path.join(process.resourcesPath, '_include')
-      : path.join(__dirname, '..', '..', '_include'); 
+      : path.join(__dirname, '..','..','lipidimea', '_include'); 
+
+    console.log("app.isPackaged:")
+    console.log(app.isPackaged)
 
     const ddaPath = path.join(includeDir, 'default_dda_params.yaml');
     const diaPath = path.join(includeDir, 'default_dia_params.yaml');
@@ -395,14 +401,12 @@ ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
       // lsStarStar(process.resourcesPath);
 
       try { fs.chmodSync(PYTHON_CLI, 0o755); } catch (e) {}
-
-      await new Promise((resolve, reject) => {
-        const child = spawn(PYTHON_CLI, cmd, {
-          cwd: LIPIDIMEA_ROOT,   // fine to leave this as Resources or anything else
-          env: process.env
-        });
-
-
+      if (app.isPackaged) {
+        await new Promise((resolve, reject) => {
+          const child = spawn(PYTHON_CLI, cmd, {
+            cwd: LIPIDIMEA_ROOT,   // fine to leave this as Resources or anything else
+            env: process.env
+          });
 
         child.stdout.on('data', d => event.reply('python-result-experiment', d.toString()));
         child.stderr.on('data', d => event.reply('python-result-experiment', d.toString()));
@@ -411,6 +415,22 @@ ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
           : reject(new Error(`${desc} failed (exit ${code})`))
         );
       });
+
+    } else {
+
+      await new Promise((resolve, reject) => {
+        const child = spawn(
+          'python3.12',
+          ['-m', 'lipidimea', ...cmd],
+          { cwd: LIPIDIMEA_ROOT, env: process.env }
+        );
+    
+        child.stdout.on('data', d => event.reply('python-result-experiment', d.toString()));
+        child.stderr.on('data', d => event.reply('python-result-experiment', d.toString()));
+        child.on('close', code => code === 0 ? resolve()
+                                             : reject(new Error(`${desc} failed (exit ${code})`)));
+      });
+    }
     } catch (err) {
       event.reply('python-result-experiment', `\nERROR: ${err.message}\n`);
       return;

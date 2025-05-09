@@ -81,7 +81,7 @@ const inputsColumnAdvanced = document.getElementById("duo-inputs-column-both-adv
 const ParamEmptyGeneral = document.getElementById("param-empty-gen");
 const ParamEmptyAdvanced= document.getElementById("param-empty-adv");
 const databaseOptions = document.getElementById('db-options');
-const saveParamsOptions = document.getElementById('save-params');
+// const saveParamsOptions = document.getElementById('save-params');
 
 
 
@@ -113,20 +113,21 @@ for (let type in checkboxes) {
 document.addEventListener('DOMContentLoaded', () => {
   window.api.send('getDefaults');
   UpdateCalibrateOptions();
+  document.getElementById('calibrate-yes').checked = true;
 });
 
 
 // Listener for uploading params 
-document.addEventListener('DOMContentLoaded', () => {
-  const uploadDataButton = document.getElementById('upload-data-button-general');
-  uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//   const uploadDataButton = document.getElementById('upload-data-button-general');
+//   uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
+// });
 
 // Listener for uploading params 
-document.addEventListener('DOMContentLoaded', () => {
-  const uploadDataButton = document.getElementById('upload-data-button-advanced');
-  uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
-});
+// document.addEventListener('DOMContentLoaded', () => {
+//   const uploadDataButton = document.getElementById('upload-data-button-advanced');
+//   uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
+// });
 
 
 if (selectButtonDDA) {
@@ -221,8 +222,20 @@ if (fileInputSumCompConfig) {
 //   });
 // }
 
+
+
+const DISPLAY_TITLES = {
+  dda        : "DDA data analysis",
+  dia        : "DIA data analysis",
+  annotation : "Lipid annotation",
+};
+
+
+
+
+
 databaseOptions.addEventListener("change", UpdateExpName);
-saveParamsOptions.addEventListener("change", UpdateExpName);
+// saveParamsOptions.addEventListener("change", UpdateExpName);
 
 // Call the synchronizeCheckboxes function when the page is loaded
 document.addEventListener('DOMContentLoaded', synchronizeCheckboxes);
@@ -503,6 +516,7 @@ function createInput(paramMeta, id, parentNode, otherTab) {
     msg.textContent = 'Select in "Run Experiment" Tab.';
     msg.style.gridColumn = '2';
     msg.style.fontStyle = 'italic';
+    msg.style.alignSelf  = 'center';
     parentNode.appendChild(msg);
     return;
   }
@@ -512,6 +526,7 @@ function createInput(paramMeta, id, parentNode, otherTab) {
     msg.textContent = 'Select file in "File Upload" Tab.';
     msg.style.gridColumn = '2';
     msg.style.fontStyle = 'italic';
+    msg.style.alignSelf  = 'center';
     parentNode.appendChild(msg);
     return;
   }
@@ -828,7 +843,16 @@ function WriteCategoryYaml(containerId, categoryKey, name, saveLoc) {
     name:       name,
     location:   saveLoc
   };
+
+  const yamlPayload = {
+    display_name : DISPLAY_TITLES[categoryKey] ?? categoryKey,
+    ...section                     // ← the existing param object you built
+  };
+  
+  options.args = yamlPayload;      // send this instead of just `section`
   window.api.send("write-yaml", options);
+
+  // window.api.send("write-yaml", options);
   outputBox.innerText += `Wrote ${categoryKey.toUpperCase()} config to ${saveLoc}/${name}.yaml\n`;
 
 
@@ -937,55 +961,231 @@ window.api.receive('file-dialog-selection', (filePath) => {
   window.api.send('file-dialog-selection', filePath);
 });
 
-// Receive data to update parameter values 
-window.api.receive('file-content', (fileContent) => {
-  populateInputsFromYaml(fileContent);
-});
+// // Receive data to update parameter values 
+// window.api.receive('file-content', (fileContent) => {
+//   populateInputsFromYaml(fileContent);
+// });
+
+// window.api.receive('file-content', yamlObj => {
+//   if (!yamlObj || typeof yamlObj !== 'object') {
+//     alert('File is not valid YAML.');
+//     return;
+//   }
+
+//   const title      = yamlObj.display_name || '';
+//   const headerKey  = TITLE_TO_HEADER[title];
+//   if (!headerKey) {
+//     alert('Unrecognised section title in YAML: ' + title);
+//     return;
+//   }
+
+//   // strip the title key then apply parameters
+//   const paramTree  = { ...yamlObj };
+//   delete paramTree.display_name;
+
+//   const generalGrid  = document.getElementById('duo-inputs-column-both-general');
+//   const advancedGrid = document.getElementById('duo-inputs-column-both-advanced');
+//   applyYaml(paramTree, headerKey, [generalGrid, advancedGrid]);
+
+//   // refresh visibility because check‑boxes might have toggled
+//   handleCheckboxChange();
+// });
+
+// // Load Parameter Values from personal file.
+// function handleuploadDataButtonClick() {
+//   window.api.send('open-file-dialog', {
+//     filters: [{ name: 'YAML Files', extensions: ['yaml', 'yml'] }],
+//     properties: ['openFile'],
+//   });
+// }
+
+// // Change param values to match inputs
+// function populateInputsFromYaml(yamlData) {
+//   // Helper function to set input values based on keys in the data
+//   function setInputValues(inputElements, data) {
+//       for (let i = 0; i < inputElements.length; i++) {
+//           const inputElem = inputElements[i];
+//           const value = data[inputElem.id];
+//           if (value !== undefined) {
+//               inputElem.value = value;
+//           }
+//       }
+//   }
+
+//   // Helper function to flatten the nested structure into a single object
+//   function flattenYamlData(data) {
+//       let flatData = {};
+//       for (const [key, value] of Object.entries(data)) {
+//           if (typeof value === 'object') {
+//               flatData = {...flatData, ...flattenYamlData(value)};
+//           } else {
+//               flatData[key] = value;
+//           }
+//       }
+//       return flatData;
+//   }
+
+//   const flattenedData = flattenYamlData(yamlData);
+
+//   let inputsColumn;
+//   inputsColumn = document.getElementById('duo-inputs-column-both-advanced');
+//   setInputValues(Array.from(inputsColumn.getElementsByTagName('input')), flattenedData);
+
+//   inputsColumn = document.getElementById('duo-inputs-column-both-general');
+//   setInputValues(Array.from(inputsColumn.getElementsByTagName('input')), flattenedData);
+// }
 
 
-// Load Parameter Values from personal file.
-function handleuploadDataButtonClick() {
-  window.api.send('open-file-dialog', {
-    filters: [{ name: 'YAML Files', extensions: ['yaml', 'yml'] }],
-    properties: ['openFile'],
+
+/* ------------------------------------------------------------------ */
+/*  LOAD PARAMETER FILE – scoped to its own section                   */
+/* ------------------------------------------------------------------ */
+/* ==================================================================== */
+/*  LOAD PARAMETER FILE — scope writes to the correct top‑level section */
+/* ==================================================================== */
+/* ==================================================================== */
+/*  LOAD PARAMETER FILE – header + sub‑group aware                      */
+/* ==================================================================== */
+
+const TITLE_TO_HEADER = {
+  "DDA data analysis" : "dda",
+  "DIA data analysis" : "dia",
+  "Lipid annotation"  : "annotation",
+};
+
+/* ---------- DOM helpers -------------------------------------------- */
+
+// returns "dda" / "dia" / "annotation" for this element
+function findSection(el) {
+  let cur = el;
+  while (cur) {
+    if (cur.tagName === 'P' &&
+        ['dda','dia','annotation','misc'].includes(cur.id))
+      return cur.id;
+    cur = cur.previousElementSibling;
+  }
+  return null;
+}
+
+// returns sub‑group id (e.g. "extract_and_fit_ms2_spectra") or null
+function findSubGroup(el) {
+  let cur = el;
+  while (cur) {
+    if (cur.key === 'Ignore') return cur.id;          // our sub‑headers
+    if (cur.tagName === 'P' &&
+        ['dda','dia','annotation','misc'].includes(cur.id))
+      return null;                                    // hit section header
+    cur = cur.previousElementSibling;
+  }
+  return null;
+}
+
+/* ---------- low‑level writers -------------------------------------- */
+
+function writeScalar(id, value, headerKey, subgroupKey) {
+  document.querySelectorAll(`#${CSS.escape(id)}`).forEach(el => {
+    if (findSection(el)  !== headerKey)  return;
+    if (findSubGroup(el) !== subgroupKey) return;
+
+    if (el.type === 'checkbox') el.checked = Boolean(value);
+    else                        el.value   = value ?? '';
+    el.dispatchEvent(new Event('change'));
   });
 }
 
-// Change param values to match inputs
-function populateInputsFromYaml(yamlData) {
-  // Helper function to set input values based on keys in the data
-  function setInputValues(inputElements, data) {
-      for (let i = 0; i < inputElements.length; i++) {
-          const inputElem = inputElements[i];
-          const value = data[inputElem.id];
-          if (value !== undefined) {
-              inputElem.value = value;
-          }
-      }
-  }
+function writeRange(id, obj, headerKey, subgroupKey) {
+  ['min','max'].forEach(suffix => {
+    const sel = `#${CSS.escape(id)}_${suffix}`;
+    document.querySelectorAll(sel).forEach(el => {
+      if (findSection(el)  !== headerKey)  return;
+      if (findSubGroup(el) !== subgroupKey) return;
 
-  // Helper function to flatten the nested structure into a single object
-  function flattenYamlData(data) {
-      let flatData = {};
-      for (const [key, value] of Object.entries(data)) {
-          if (typeof value === 'object') {
-              flatData = {...flatData, ...flattenYamlData(value)};
-          } else {
-              flatData[key] = value;
-          }
-      }
-      return flatData;
-  }
-
-  const flattenedData = flattenYamlData(yamlData);
-
-  let inputsColumn;
-  inputsColumn = document.getElementById('duo-inputs-column-both-advanced');
-  setInputValues(Array.from(inputsColumn.getElementsByTagName('input')), flattenedData);
-
-  inputsColumn = document.getElementById('duo-inputs-column-both-general');
-  setInputValues(Array.from(inputsColumn.getElementsByTagName('input')), flattenedData);
+      el.value = obj[suffix] ?? '';
+      el.dispatchEvent(new Event('change'));
+    });
+  });
 }
+
+/* ---------- schema helpers ----------------------------------------- */
+
+function isDefaultLeaf(node) {
+  return node && typeof node === 'object' && 'default' in node;
+}
+
+/* ---------- recursive walker --------------------------------------- */
+
+function applyYaml(node, headerKey, subgroupKey = null, path = []) {
+  if (node == null) return;
+
+  // default‑schema leaf
+  if (isDefaultLeaf(node)) {
+    const val = node.default;
+    const id  = path.at(-1);
+    if (val && typeof val === 'object' && 'min' in val && 'max' in val)
+      writeRange(id, val, headerKey, subgroupKey);
+    else
+      writeScalar(id, val, headerKey, subgroupKey);
+    return;
+  }
+
+  // simple range leaf
+  if (typeof node === 'object' && 'min' in node && 'max' in node) {
+    writeRange(path.at(-1), node, headerKey, subgroupKey);
+    return;
+  }
+
+  // scalar / bool
+  if (typeof node !== 'object' || Array.isArray(node)) {
+    writeScalar(path.at(-1), node, headerKey, subgroupKey);
+    return;
+  }
+
+  // branch – if this level is a sub‑group, pass its key downward
+  const nextSub = subgroupKey ?? path.at(-1);
+  for (const [k, v] of Object.entries(node)) {
+    if (['display_name','type','description','advanced'].includes(k)) continue;
+    applyYaml(v, headerKey, nextSub, [...path, k]);
+  }
+}
+
+/* ---------- file‑picker plumbing ----------------------------------- */
+
+function handleuploadDataButtonClick() {
+  window.api.send('open-file-dialog', {
+    filters: [{ name: 'YAML', extensions: ['yaml','yml'] }],
+    properties: ['openFile']
+  });
+}
+
+window.api.receive('file-dialog-selection', fp =>
+  window.api.send('file-dialog-selection', fp)
+);
+
+window.api.receive('file-content', yamlObj => {
+  if (typeof yamlObj !== 'object' || yamlObj === null) {
+    alert('Selected file is not valid YAML.');
+    return;
+  }
+
+  const title     = yamlObj.display_name || '';
+  const headerKey = TITLE_TO_HEADER[title];
+  if (!headerKey) {
+    alert(`display_name “${title}” does not match DDA/DIA/Annotation.`);
+    return;
+  }
+
+  const tree = { ...yamlObj };
+  delete tree.display_name;
+
+  applyYaml(tree, headerKey);
+
+  // refresh show/hide logic
+  handleCheckboxChange();
+});
+
+
+
+
 
 
 // File Upload Section
@@ -1259,16 +1459,16 @@ window.api.receive('directory-selected', (path) => {
 
 // Database New Name for Experiment
 function UpdateExpName() {
-  const TFnew = document.getElementById("create-new-option").checked
-  const TFsave = document.getElementById("save-params").checked
-  if (TFnew === true || TFsave === true) {
-    document.getElementById("new-db-name-container").style.display = "flex"
-    document.getElementById("selected-directory-container").style.display = "flex"
-  }
-  else {
-    document.getElementById("new-db-name-container").style.display = "none"
-    document.getElementById("selected-directory-container").style.display = "none"
-  }
+  // const TFnew = document.getElementById("create-new-option").checked
+  // const TFsave = document.getElementById("save-params").checked
+  // if (TFnew === true || TFsave === true) {
+  //   document.getElementById("new-db-name-container").style.display = "flex"
+  //   document.getElementById("selected-directory-container").style.display = "flex"
+  // }
+  // else {
+  //   document.getElementById("new-db-name-container").style.display = "none"
+  //   document.getElementById("selected-directory-container").style.display = "none"
+  // }
 }
 
 // Annotation Options for experiment
@@ -1276,14 +1476,14 @@ function UpdateAnnotateOptions() {
   const TF = checkboxes.general.annotate.checked
   console.log("TF: ", TF)
 
-  if (TF === true) {
-    document.getElementById("annotate-options").style.display = "flex"
-    document.getElementById("annotate-behavior").style.display = "flex"
-  }
-  else {
-    document.getElementById("annotate-options").style.display = "none"
-    document.getElementById("annotate-behavior").style.display = "none"
-  }
+  // if (TF === true) {
+  //   document.getElementById("annotate-options").style.display = "flex"
+  //   document.getElementById("annotate-behavior").style.display = "flex"
+  // }
+  // else {
+  //   document.getElementById("annotate-options").style.display = "none"
+  //   document.getElementById("annotate-behavior").style.display = "none"
+  // }
 }
 
 function UpdateDatabaseOptions() {
@@ -1785,8 +1985,13 @@ function calibrateDIA() {
 function UpdateCalibrateOptions() {
   const isDIA = checkboxes.general.dia.checked 
              || checkboxes.advanced.dia.checked;
+  const isAnnot = checkboxes.general.annotate.checked
+             || checkboxes.advanced.annotate.checked;
   document.getElementById("calibrate-options").style.display =
     isDIA ? "flex" : "none";
+  
+  lockCalibrate(isAnnot);
+
 }
 
 
@@ -1799,3 +2004,18 @@ window.api.receive("debug-list-paths-result", listing => {
     listing +
     "\n───────────────────────────\n";
 });
+
+
+function lockCalibrate(lock) {
+  const yes = document.getElementById('calibrate-yes');
+  const no  = document.getElementById('calibrate-no');
+
+  if (lock) {
+    yes.checked  = true;   // force YES
+    yes.disabled = true;
+    no.disabled  = true;
+  } else {
+    yes.disabled = false;
+    no.disabled  = false;
+  }
+}
