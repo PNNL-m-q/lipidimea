@@ -126,6 +126,20 @@ class _AnnotationComponent:
 
 
 @dataclass
+class _SumCompAnnotationComponent:
+    fa_cl: _IntRange
+    fa_odd_c: bool
+    mz_ppm: float
+    config: Optional[YamlFilePath] = None
+
+    def __post_init__(self):
+        if type(self.fa_cl) is dict:
+            self.fa_cl = _IntRange(**self.fa_cl)
+
+
+
+
+@dataclass
 class _CcsTrends:
     percent: float 
     config: Optional[YamlFilePath] = None
@@ -390,14 +404,14 @@ class AnnotationParams:
     """ class for organizing lipid annotation parameters """
     display_name: _Display
     ionization: Optional[str]   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
-    sum_comp: _AnnotationComponent
+    sum_comp: _SumCompAnnotationComponent
     config_file: Optional[dict]
     ccs_trends: _CcsTrends
     frag_rules: _AnnotationComponent
 
     def __post_init__(self):
         if type(self.sum_comp) is dict:
-            self.sum_comp = _AnnotationComponent(**self.sum_comp)
+            self.sum_comp = _SumCompAnnotationComponent(**self.sum_comp)
         if type(self.frag_rules) is dict:
             self.frag_rules = _AnnotationComponent(**self.frag_rules)
         if type(self.ccs_trends) is dict:

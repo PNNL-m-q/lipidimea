@@ -9,19 +9,12 @@ const { spawn } = require('child_process');
 const { PassThrough } = require('stream');
 
 
-
 // Resolve paths differently in dev vs packaged
 const LIPIDIMEA_ROOT = app.isPackaged
   ? path.join(process.resourcesPath)
   : path.resolve(__dirname, '..', '..');
 
 // Select the right embedded binary
-
-// const PYTHON_CLI = app.isPackaged
-//   ? path.join(process.resourcesPath, "lipidimea")   // <── absolute
-//   : path.join(__dirname, '..','..',"python3.12");
-  // Error Degubign...
-
 const exe = process.platform === 'win32' ? 'lipidimea.exe' : 'lipidimea';
 const PYTHON_CLI = app.isPackaged
   ? path.join(process.resourcesPath, exe)
@@ -29,7 +22,7 @@ const PYTHON_CLI = app.isPackaged
 
 function safeReaddir(dir) {
   try { return fs.readdirSync(dir).sort(); }
-  catch { return []; }               // unreadable ⇒ empty
+  catch { return []; }
 }
 
 function safeIsDir(p) {
@@ -50,7 +43,6 @@ function listDir(dir, depth, indent = "") {
 }
 
 ipcMain.on("debug-list-paths", (event, { baseDir, maxDepth = 2 }) => {
-  // default: app’s own Resources folder (safe, always readable)
   const base   = path.resolve(baseDir || process.resourcesPath);
   const parent = path.resolve(base, "..");
 
@@ -63,22 +55,8 @@ ipcMain.on("debug-list-paths", (event, { baseDir, maxDepth = 2 }) => {
   event.reply("debug-list-paths-result", txt);
 });
 
-
-
-
-
-
-
-
-// const isMac = process.platform === 'darwin';
-// const exeSuffix = isMac ? '' : '.exe';
-// const EXP_EXE  = path.join(__dirname, '..', 'dist', `experiment${exeSuffix}`);
-
-// This variable will hold the path to the sql database in Results. 
-// It is globally defined because it is called frequently.
 let dbPath = null;
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
@@ -91,41 +69,28 @@ const createWindow = () => {
     width: 1600,
     height: 1200,
     webPreferences: {
-      // nodeIntegration: false,
       contextIsolation: true,
-      // sandbox: false,
       preload: path.join(__dirname, 'preload.js'),
     },
     
   });
 
-
-  // and load the intro.html of the app.
-  // mainWindow.loadFile(path.join(__dirname, 'results/results.html'));
     mainWindow.loadFile(path.join(__dirname, 'experiment/experiment.html'));
 
-
-
-  // Open the DevTools.
-  //mainWindow.webContents.openDevTools();
-
-  // Store the current session data when switching tabs
   mainWindow.on('blur', () => {
     const currentSession = mainWindow.webContents.session;
-    currentSession.flushStorageData(); // Save the current session data
+    currentSession.flushStorageData();
   });
 
-  // Restore the session data when the tab becomes active again
+
   mainWindow.on('focus', () => {
     const currentSession = mainWindow.webContents.session;
-    currentSession.clearStorageData(); // Clear the current session data
-    currentSession.flushStorageData(); // Restore the stored session data
+    currentSession.clearStorageData();
+    currentSession.flushStorageData(); 
   });
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+
 app.on('ready', createWindow);
 
 
@@ -141,37 +106,10 @@ app.on('activate', () => {
   }
 });
 
-
-// ------------ Experiment Section ----------
-
-// Load on DOM
-// Get Defaults Data
-// ipcMain.on('getDefaults', (event) => {
-//   const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yaml');
-//   console.log('YAML Path:', defaultsPath);
-
-//   fs.readFile(defaultsPath, 'utf8', (err, data) => {
-//     if (err) {
-//       console.error('Error reading YAML file:', err);
-//       event.reply('returnDefaults', null);
-//       return;
-//     }
-
-//     try {
-//       const returnDefaults = yaml.load(data);
-//       console.log('YAML Data:', returnDefaults);
-//       event.reply('returnDefaults', returnDefaults);
-//     } catch (error) {
-//       console.error('Error parsing YAML file:', error);
-//       event.reply('returnDefaults', null);
-//     }
-//   });
-// });
-
 ipcMain.on('getDefaults', async (event) => {
   try {
 
-    // In development the lipidimea folder lives in your repo root;
+    // In development the lipidimea folder lives in the repo root;
     // when packaged it gets copied into Resources/lipidimea
     const includeDir = app.isPackaged
       ? path.join(process.resourcesPath, '_include')
@@ -210,7 +148,6 @@ ipcMain.on('getDefaults', async (event) => {
     event.reply('returnDefaults', null);
   }
 });
-
 
 
 // Trigger on "Save Params as file" Button
@@ -252,37 +189,6 @@ ipcMain.on('open-directory-dialog', (event) => {
 });
 
 
-// // pyinstaller version
-// ipcMain.on('run-python-yamlwriter', (event, options) => {
-//   const inputNumber = options.args;
-//   let savePath;
-//   if (options.location && options.name) {
-//       // If location and name are provided, construct the save path
-//       savePath = path.join(options.location, options.name + ".yaml");
-//   } else {
-//       // Otherwise, use the path directly from options
-//       savePath = options.path;
-//   }
-//   console.log('yamlwriter input values:', inputNumber);
-
-//   // Point to the standalone executable produced by PyInstaller
-//   let pythonExecutable = path.join(__dirname, '../dist', 'yamlwriter');
-
-//   const spawn = require('child_process').spawn;
-//   const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), savePath]);
-
-//   pythonProcess.stdout.on('data', (data) => {
-//     console.log(`Python script result: ${data}`);
-//     event.reply('python-result-yamlwriter', data.toString());
-//   });
-
-//   pythonProcess.stderr.on('data', (data) => {
-//     console.error(`Python Error: ${data}`);
-//   });
-// });
-
-
-
 ipcMain.on('write-yaml', (event, options) => {
   // Determine where to write
   const data    = options.args;
@@ -317,9 +223,6 @@ ipcMain.on('write-yaml', (event, options) => {
   }
 });
 
-
-
-
 // Generic function for opening dialog to select a file
 ipcMain.on('open-file-dialog', (event, options) => {
   const window = BrowserWindow.getFocusedWindow();
@@ -336,8 +239,6 @@ ipcMain.on('open-file-dialog', (event, options) => {
       console.error('Error opening file dialog:', error);
     });
 });
-
-
 
 // Function to load in yaml data
 function parseYaml(content) {
@@ -356,34 +257,8 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
   // Read the content of the selected YAML file
   const fileContent = fs.readFileSync(filePath, 'utf-8');
   const yamlData = parseYaml(fileContent);
-
   // Send the file content back to the renderer process
   event.sender.send('file-content', yamlData);
-});
-
-
-
-
-
-
-
-function lsOnce(dir) {
-  return fs.readdirSync(dir, { withFileTypes: true })
-           .map(d => (d.isDirectory() ? "📁 " : "   ") + d.name);
-}
-
-ipcMain.handle("ls-dir",      (_, dir=".") => lsOnce(dir));
-ipcMain.handle("ls-star",     (_, dir=".") =>
-  lsOnce(dir).flatMap(name => [name, ...lsOnce(path.join(dir, name.trim().slice(2))).map("  ↳ " + String)])
-);
-ipcMain.handle("ls-star-star", async (_, dir=".") => {
-  const first = await ipcMain.handle("ls-star", null, dir);
-  return first.flatMap(line => {
-    if (!line.startsWith("📁")) return [line];
-    const sub = lsOnce(path.join(dir, line.slice(2).trim()))
-                .map("    ↳ " + String);
-    return [line, ...sub];
-  });
 });
 
 
@@ -392,19 +267,11 @@ ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
     event.reply('python-result-experiment', `\n>>> ${desc}\n`);
     try {
 
-      console.log('process.resourcesPath', process.resourcesPath)
-      console.log('LIPIDIMEA_ROOT', LIPIDIMEA_ROOT)
-      console.log('PYTHON_CLI', PYTHON_CLI)
-
-
-      // ls(); 
-      // lsStarStar(process.resourcesPath);
-
       try { fs.chmodSync(PYTHON_CLI, 0o755); } catch (e) {}
       if (app.isPackaged) {
         await new Promise((resolve, reject) => {
           const child = spawn(PYTHON_CLI, cmd, {
-            cwd: LIPIDIMEA_ROOT,   // fine to leave this as Resources or anything else
+            cwd: LIPIDIMEA_ROOT,
             env: process.env
           });
 
@@ -438,9 +305,6 @@ ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
   }
   event.reply('python-result-experiment', '\nExperiment complete.\n');
 });
-
-
-
 
 // ------------ Results Section ----------
 
@@ -513,11 +377,6 @@ ipcMain.on('fetch-database-table', (event, filePath) => {
 });
 
 
-
-
-
-
-
 function fetchRawBlob(featId, rawType, callback) {
   // Open the database using the global dbPath.
   const db = new sqlite3.Database(dbPath);
@@ -566,9 +425,6 @@ ipcMain.on('fetch-raw-blob', (event, { featId, rawType }) => {
   });
 });
 
-
-
-
 // Run SQL Query to get annotation table
 ipcMain.on('fetch-annotation-table', (event, filePath) => {
   const db = new sqlite3.Database(filePath);
@@ -589,7 +445,6 @@ ipcMain.on('fetch-annotation-table', (event, filePath) => {
     });
   });
 });
-
 
 // Function to process Blobs
 function blobToFloatArray(blob) {
@@ -612,9 +467,6 @@ function unpackData(floatArray) {
 
 // Process blob data for decon xic and atd tables
 ipcMain.on('process-decon-blob-data', (event, blobs) => {
-
-
-  // This all needs to be replaced. We will need to query Raw based on something...?
   try {
 
     const xic = unpackData(blobToFloatArray(blobs.dia_xic));
@@ -696,9 +548,6 @@ ipcMain.on('process-ms1-blob-data', (event, blobs) => {
 });
 
 
-
-//  New DDA Work
-
 ipcMain.on('fetch-dda-features', (event, { diaMz, tolerance }) => {
   const tol = tolerance || 0.01;
   const db = new sqlite3.Database(dbPath);
@@ -767,11 +616,7 @@ ipcMain.on('fetch-dda-blob', (event, { featId, blobType }) => {
 });
 
 
-
-
-
-
-//  New Bidirectional plot work:
+//  Bidirectional plot
 ipcMain.on('fetch-dia-ms2', (event, dia_pre_id) => {
   const db = new sqlite3.Database(dbPath);
   const query = `
@@ -810,11 +655,7 @@ ipcMain.on('fetch-dda-ms2', (event, dda_pre_id) => {
 });
 
 
-
-
-//  New decon stufffff
-
-// ---------- New: Fetch decon fragments for a given DIA precursor ----------
+// ---------- Fetch decon fragments for a given DIA precursor ----------
 ipcMain.on('fetch-decon-fragments', (event, dia_pre_id) => {
   const db = new sqlite3.Database(dbPath);
   const query = `
@@ -833,7 +674,7 @@ ipcMain.on('fetch-decon-fragments', (event, dia_pre_id) => {
   });
 });
 
-// ---------- New: Function to fetch blob for decon fragments (feat_id_type 'dia_frag_id') ----------
+// ---------- Fetch blob for decon fragments (feat_id_type 'dia_frag_id') ----------
 function fetchRawBlobDecon(featId, rawType, callback) {
   const db = new sqlite3.Database(dbPath);
   const query = `
@@ -854,7 +695,7 @@ function fetchRawBlobDecon(featId, rawType, callback) {
   });
 }
 
-// ---------- New: IPC handler to fetch decon blob data ----------
+// ---------- IPC handler to fetch decon blob data ----------
 ipcMain.on('fetch-decon-raw-blob', (event, { featId, rawType }) => {
   fetchRawBlobDecon(featId, rawType, (error, blob) => {
     if (error) {
@@ -1011,7 +852,6 @@ ipcMain.on('delete-diaprecursor-rows', (event, rowsArray) => {
 });
 
 
-
 ipcMain.on('fetch-lipid-fragment-details', (event, lipidId) => {
   const db = new sqlite3.Database(dbPath);
   const query = `
@@ -1030,8 +870,6 @@ ipcMain.on('fetch-lipid-fragment-details', (event, lipidId) => {
   });
 });
 
-
-
 // Delete annotated feature rows (for the annotation table)
 // Expects an array of lipid IDs (from column 0 of the annotation table)
 ipcMain.on('delete-annotated-feature-rows', (event, lipidIds) => {
@@ -1042,7 +880,6 @@ ipcMain.on('delete-annotated-feature-rows', (event, lipidIds) => {
   
   // Open the database using the global dbPath.
   const db = new sqlite3.Database(dbPath);
-  // Build placeholders for the SQL IN clause.
   const placeholders = lipidIds.map(() => '?').join(',');
 
   db.serialize(() => {

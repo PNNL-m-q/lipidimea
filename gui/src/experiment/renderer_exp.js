@@ -7,8 +7,6 @@
 // - FilePaths
 // - param/input elements
 
-// Matching Parameters may exist across File Upload, General, Advanced, Experiment Tabs
-
 // Buttons for file selection
 const selectButtonDDA = document.getElementById('select-button-dda');
 const selectButtonDIA = document.getElementById('select-button-dia');
@@ -63,16 +61,6 @@ const checkboxes = {
   }
 };
 
-
-// Whenever the DIA checkbox changes, enable/disable the Calibrate button
-// [checkboxes.general.dia, checkboxes.advanced.dia].forEach(cb => {
-//   cb.addEventListener('change', () => {
-//     const diaOn = checkboxes.general.dia.checked || checkboxes.advanced.dia.checked;
-//     calibrateBtn.disabled = !diaOn;
-//   });
-// });
-
-
 // Parameters and inputs
 const parametersColumnGeneral = document.getElementById("duo-inputs-column-both-general").getElementsByTagName('p');
 const inputsColumnGeneral = document.getElementById("duo-inputs-column-both-general").getElementsByTagName('input');
@@ -82,8 +70,6 @@ const ParamEmptyGeneral = document.getElementById("param-empty-gen");
 const ParamEmptyAdvanced= document.getElementById("param-empty-adv");
 const databaseOptions = document.getElementById('db-options');
 // const saveParamsOptions = document.getElementById('save-params');
-
-
 
 //  Files Section
 const fileListDDA = document.getElementById('file-list-dda');
@@ -107,7 +93,6 @@ for (let type in checkboxes) {
       const cb = checkboxes[type][mode];
       cb.addEventListener("change", handleCheckboxChange);
       cb.addEventListener("change", UpdateFileOptions);
-      // cb.addEventListener("change", UpdateCalibrateOptions);
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -115,20 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
   UpdateCalibrateOptions();
   document.getElementById('calibrate-yes').checked = true;
 });
-
-
-// Listener for uploading params 
-// document.addEventListener('DOMContentLoaded', () => {
-//   const uploadDataButton = document.getElementById('upload-data-button-general');
-//   uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
-// });
-
-// Listener for uploading params 
-// document.addEventListener('DOMContentLoaded', () => {
-//   const uploadDataButton = document.getElementById('upload-data-button-advanced');
-//   uploadDataButton.addEventListener('click', handleuploadDataButtonClick);
-// });
-
 
 if (selectButtonDDA) {
   selectButtonDDA.addEventListener('click', () => {
@@ -142,18 +113,6 @@ if (selectButtonDIA) {
   }
 )};
   
-// if (selectButtonAnnotation) {
-//   selectButtonAnnotation.addEventListener('click', () => {
-//     fileInputAnnotation.click();
-//   }
-// )};
-
-// if (selectButtonDatabase) {
-//   selectButtonDatabase.addEventListener('click', () => {
-//     fileInputDatabase.click();
-//   }
-// )};
-
 if (selectButtonFragRulesConfig) {
   selectButtonFragRulesConfig.addEventListener('click', () => {
     fileInputFragRulesConfig.click();
@@ -209,33 +168,13 @@ if (fileInputSumCompConfig) {
   });
 }
 
-
-// if (fileInputDatabase) {
-//   fileInputDatabase.addEventListener('change', () => {
-//     handleFileSelection(fileInputDatabase, fileListDatabase, filesDatabase);
-//   });
-// }
-
-// if (fileInputAnnotation) {
-//   fileInputAnnotation.addEventListener('change', () => {
-//     handleFileSelection(fileInputAnnotation, fileListAnnotation, filesAnnotation);
-//   });
-// }
-
-
-
 const DISPLAY_TITLES = {
   dda        : "DDA data analysis",
   dia        : "DIA data analysis",
   annotation : "Lipid annotation",
 };
 
-
-
-
-
 databaseOptions.addEventListener("change", UpdateExpName);
-// saveParamsOptions.addEventListener("change", UpdateExpName);
 
 // Call the synchronizeCheckboxes function when the page is loaded
 document.addEventListener('DOMContentLoaded', synchronizeCheckboxes);
@@ -247,23 +186,17 @@ document.getElementsByClassName('tablinks')[0].click();
 
 // Function to switch between tabs
 function openTab(evt, tabName) {
-  console.log(tabName);
-
   let tabcontent, tablinks;
-
-  // Hide all tab content
   tabcontent = document.getElementsByClassName('tabcontent');
   for (let i = 0; i < tabcontent.length; i++) {
       tabcontent[i].style.display = 'none';
   }
 
-  // Remove the "active" class from all tab links
   tablinks = document.getElementsByClassName('tablinks-sel');
   for (let i = 0; i < tablinks.length; i++) {
       tablinks[i].className = 'tablinks';
   }
 
-  // Show the current tab and add an "active" class to the button that opened the tab
   document.getElementById(tabName).style.display = 'block';
   evt.currentTarget.className = 'tablinks-sel';
 }
@@ -300,137 +233,143 @@ function synchronizeCheckboxes() {
 
 // Load Default Params. Create Related Elements.
 let loadyamlonce = true;
-// window.api.receive('returnDefaults', (data) => {
-//     data = { PARAMETERS: data };
-
-//     if (loadyamlonce === true) {
-//         loadyamlonce = false;
-
-//         if (data) {
-//             const parametersBoth = { ...data.PARAMETERS.dda, ...data.PARAMETERS.dia, ...data.PARAMETERS.annotation };
-//             const mainElementTop = Object.keys(data.PARAMETERS);
-//             const sectionsTopBoth = mainElementTop.filter(display_name => display_name !== 'misc');
-
-//             const duoinputsColumnBothGeneral = document.getElementById('duo-inputs-column-both-general');
-//             const duoinputsColumnBothAdvanced = document.getElementById('duo-inputs-column-both-advanced');
-
-//             sectionsTopBoth.forEach((sectionTopBoth) => {
-
-//                 // TODO: Text formatting, some of the keys/values from the YAML are ugly
-//                 const sectionsBoth = Object.keys(data.PARAMETERS[sectionTopBoth]).filter(key => key !== "misc" && key !== "display_name");
-
-//                 createHeaderElement(data.PARAMETERS[sectionTopBoth].display_name, duoinputsColumnBothAdvanced, sectionTopBoth);
-//                 createHeaderElement(data.PARAMETERS[sectionTopBoth].display_name, duoinputsColumnBothGeneral, sectionTopBoth);
-
-//                 sectionsBoth.forEach((sectionBoth) => {
-//                     const sectionDataBoth = parametersBoth[sectionBoth];
-//                     const generalValues = Object.entries(sectionDataBoth).filter(([key, value]) => !value.advanced && key !== "display_name");
-//                     const allValues = Object.entries(sectionDataBoth).filter(([key]) => key !== "display_name");
-
-//                     if (generalValues.length > 0) {
-//                         createSubHeaderElement(sectionDataBoth.display_name, duoinputsColumnBothGeneral,sectionBoth);
-
-//                         generalValues.forEach(([key, value]) => {
-//                             createParameterElement(value.display_name, key, value.description, duoinputsColumnBothGeneral);
-//                             createInput(value.type, value.default, key, duoinputsColumnBothGeneral, duoinputsColumnBothAdvanced);
-//                         });
-//                     }
-
-//                     if (allValues.length > 0) {
-//                         createSubHeaderElement(sectionDataBoth.display_name, duoinputsColumnBothAdvanced,sectionBoth);
-
-//                         allValues.forEach(([key, value]) => {
-//                             createParameterElement(value.display_name, key, value.description, duoinputsColumnBothAdvanced);
-//                             createInput(value.type, value.default, key, duoinputsColumnBothAdvanced, duoinputsColumnBothGeneral);
-//                         });
-//                     }
-//                 });
-//             });
-//         }
-//     }
-// });
 
 window.api.receive('returnDefaults', (data) => {
-  data = { PARAMETERS: data };
-  if (!loadyamlonce) return;
+  /* ----------------- guard: run once only ------------------ */
+  if (!data || !loadyamlonce) return;
   loadyamlonce = false;
-  if (!data) return;
 
-  const defaultParams = data.PARAMETERS;
-  const sectionsTop = Object.keys(defaultParams).filter(k => k !== 'misc');
+  data = { PARAMETERS: data };                 // keep old variable name
+  const defaults = data.PARAMETERS;
+  const general  = document.getElementById('duo-inputs-column-both-general');
+  const advanced = document.getElementById('duo-inputs-column-both-advanced');
 
-  const generalContainer = document.getElementById('duo-inputs-column-both-general');
-  const advContainer     = document.getElementById('duo-inputs-column-both-advanced');
+  /* ----------------- build the UI (unchanged) -------------- */
+  Object.keys(defaults).filter(k => k !== 'misc').forEach(sectionKey => {
+    const sectionMeta = defaults[sectionKey];
 
-  sectionsTop.forEach((sectionKey) => {
-    const sectionMeta = defaultParams[sectionKey];
-    const headerText  = sectionMeta.display_name;
+    // section headers
+    createHeaderElement(sectionMeta.display_name, general,  sectionKey);
+    createHeaderElement(sectionMeta.display_name, advanced, sectionKey);
 
-    // Section headers in both tabs
-    createHeaderElement(headerText, generalContainer, sectionKey);
-    createHeaderElement(headerText, advContainer, sectionKey);
-
-    // Iterate through each subsection under this section
+    // walk subsections / parameters
     Object.keys(sectionMeta)
-      .filter(subKey => subKey !== 'display_name')
-      .forEach((subKey) => {
+      .filter(k => k !== 'display_name')
+      .forEach(subKey => {
         const node = sectionMeta[subKey];
 
-        // --- Leaf param? (has a default) ---
-        if (node && typeof node === 'object' && node.hasOwnProperty('default')) {
-          // General tab: only non-advanced
-          if (!node.advanced) {
-            createParameterElement(
-              node.display_name, subKey, node.description, generalContainer
-            );
-            createInput(node, subKey, generalContainer, advContainer);
+        if (node && typeof node === 'object' && 'default' in node) {
+          if (!node.advanced) {                       // General
+            createParameterElement(node.display_name, subKey,
+                                   node.description, general);
+            createInput(node, subKey, general, advanced);
           }
-          // Advanced tab: all parameters
-          createParameterElement(
-            node.display_name, subKey, node.description, advContainer
-          );
-          createInput(node, subKey, advContainer, generalContainer);
+          createParameterElement(node.display_name, subKey,  // Advanced
+                                 node.description, advanced);
+          createInput(node, subKey, advanced, general);
+          return;
+        }
 
-        // --- Grouped params (no direct default) ---
-        } else if (node && typeof node === 'object') {
-          // Subheaders in both tabs
-          createSubHeaderElement(
-            node.display_name, generalContainer, subKey
-          );
-          createSubHeaderElement(
-            node.display_name, advContainer, subKey
-          );
+        if (node && typeof node === 'object') {
+          createSubHeaderElement(node.display_name, general,  subKey);
+          createSubHeaderElement(node.display_name, advanced, subKey);
 
-          // Split children by advanced flag
           const entries = Object.entries(node)
-                                 .filter(([k]) => k !== 'display_name');
-          const generalEntries = entries.filter(([,meta]) => !meta.advanced);
-          const advEntries     = entries.filter(([,meta]) =>  meta.advanced);
+                                .filter(([k]) => k !== 'display_name');
 
-          // Render non-advanced in General
-          generalEntries.forEach(([paramKey, paramMeta]) => {
-            createParameterElement(
-              paramMeta.display_name, paramKey, paramMeta.description, generalContainer
-            );
-            createInput(paramMeta, paramKey, generalContainer, advContainer);
+          const genEntries = entries.filter(([,m]) => !m.advanced);
+          const advEntries = entries;                         // all
+
+          genEntries.forEach(([pKey, pMeta]) => {
+            createParameterElement(pMeta.display_name, pKey,
+                                   pMeta.description, general);
+            createInput(pMeta, pKey, general, advanced);
           });
 
-          // Render **all** in Advanced (first non-advanced, then advanced)
-          [...generalEntries, ...advEntries].forEach(([paramKey, paramMeta]) => {
-            createParameterElement(
-              paramMeta.display_name, paramKey, paramMeta.description, advContainer
-            );
-            createInput(paramMeta, paramKey, advContainer, generalContainer);
+          advEntries.forEach(([pKey, pMeta]) => {
+            createParameterElement(pMeta.display_name, pKey,
+                                   pMeta.description, advanced);
+            createInput(pMeta, pKey, advanced, general);
           });
         }
       });
   });
+
+  /* helper: bind two inputs so both stay in sync */
+  function linkInputs(a, b) {
+    if (!a || !b || a === b) return;
+    const sync = (src, dst) => () => {
+      if (src.type === 'checkbox') dst.checked = src.checked;
+      else                         dst.value   = src.value;
+    };
+    ['input', 'change'].forEach(ev => {
+      a.addEventListener(ev, sync(a, b));
+      b.addEventListener(ev, sync(b, a));
+    });
+  }
+
+
+// Link General and Advanced Parameters
+/* ------------------------------------------------------------------ */
+(function linkGeneralAndAdvanced() {
+
+  const SECTION_IDS = ['dda', 'dia', 'annotation', 'misc'];
+
+  const genCol = document.getElementById('duo-inputs-column-both-general');
+  const advCol = document.getElementById('duo-inputs-column-both-advanced');
+
+  /* ───────── helpers ────────────────────────────────────────────── */
+
+  function findSection(el) {
+    for (let cur = el.previousElementSibling; cur; cur = cur.previousElementSibling) {
+      if (cur.tagName === 'P' && SECTION_IDS.includes(cur.id)) {
+        return cur.id;
+      }
+    }
+    return null;
+  }
+
+  function findSubGroup(el) {
+    for (let cur = el.previousElementSibling; cur; cur = cur.previousElementSibling) {
+      if (cur.tagName === 'P' && cur.key === 'Ignore') return cur.id; // subgroup id
+      if (cur.tagName === 'P' && SECTION_IDS.includes(cur.id)) return null;
+    }
+    return null;
+  }
+
+  function wire(src, dest) {
+    if (!src || !dest) return;     
+
+    const copy = (from, to) => {
+      if (from.type === 'checkbox')     to.checked = from.checked;
+      else                              to.value   = from.value;
+    };
+
+    src .addEventListener('input', () => copy(src,  dest));
+    dest.addEventListener('input', () => copy(dest, src ));
+  }
+
+  function buildMap(col) {
+    const map = new Map();
+    col.querySelectorAll('input:not([type="hidden"])').forEach(inp => {
+      const key =
+        `${findSection(inp)}|${findSubGroup(inp) ?? ''}|${inp.id}`;
+      map.set(key, inp);
+    });
+    return map;
+  }
+
+  const genInputs = buildMap(genCol);
+  const advInputs = buildMap(advCol);
+
+  for (const [key, gInp] of genInputs) {
+    wire(gInp, advInputs.get(key));
+  }
+
+})();
+
+
 });
-
-
-
-
-
 
 
 // A series of functions to create the param elements
@@ -466,7 +405,7 @@ function createSubHeaderElement(textContent, parentNode, ID) {
 
 function createHiddenInput(parentNode) {
   const inputElement = document.createElement('input');
-  inputElement.type = 'hidden';  // The type is set to 'hidden' to hide the input
+  inputElement.type = 'hidden'; 
   parentNode.appendChild(inputElement);
 }
 
@@ -479,34 +418,11 @@ function createParameterElement(textContent, id, title, parentNode) {
     parentNode.appendChild(element);
 }
 
-// function createInput(type, value, id, parentNode, otherTab) {
-//     const inputElement = document.createElement('input');
-//     inputElement.type = type;
-//     inputElement.value = value;
-//     inputElement.id = id;
-//     inputElement.style.gridColumn = '2';
-//     inputElement.key = 'Ignore'; // Assign 'Ignore' to key property
-
-//     inputElement.addEventListener('change', (event) => {
-//         const updatedValue = event.target.value;
-//         const oldInputs = Array.from(otherTab.getElementsByTagName('input'));
-//         const index = oldInputs.findIndex((input) => input.id === event.target.id);
-
-//         if (index !== -1) {
-//             oldInputs[index].value = updatedValue;
-//         }
-//     });
-
-//     parentNode.appendChild(inputElement);
-// }
-
 /**
- * Creates the right kind of input(s) for a parameter, based on its metadata.
- *
- * @param {object} paramMeta  The metadata object with .type and .default
- * @param {string} id         The base id for the input element(s)
- * @param {HTMLElement} parentNode  Where to append the input(s)
- * @param {HTMLElement} otherTab    The parallel tab container to sync values
+ * @param {object} paramMeta  
+ * @param {string} id
+ * @param {HTMLElement} parentNode 
+ * @param {HTMLElement} otherTab
  */
 function createInput(paramMeta, id, parentNode, otherTab) {
   let element;
@@ -624,17 +540,7 @@ function createInput(paramMeta, id, parentNode, otherTab) {
     element.id = id;
     element.style.gridColumn = '2';
     element.key = 'Ignore';
-    // Sync across tabs
-    element.addEventListener('change', e => {
-      const mirror = otherTab.querySelector(`#${id}`);
-      if (mirror) {
-        if (paramMeta.type === 'bool') {
-          mirror.checked = e.target.checked;
-        } else {
-          mirror.value = e.target.value;
-        }
-      }
-    });
+
   } else {
     // the wrapper div gets the grid styling
     element.style.gridColumn = '2';
@@ -642,84 +548,6 @@ function createInput(paramMeta, id, parentNode, otherTab) {
 
   parentNode.appendChild(element);
 }
-
-
-
-// Write User Updated Parameter Values to file
-// function WriteToYaml(i,name,location) {
-//   const inputValues = {};
-//   const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
-//   const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
-
-//   let currentHeader = null;
-//   let currentSubheader = null;
-//   for (let i = 0; i < inputs.length; i++) {
-//     const input = inputs[i];
-//     let input2 = inputs2[i];
-
-//     // Detect if the element represents a header
-//     if (input2.id === "dda" || input2.id === "dia" || input2.id === "annotation") {
-//       currentHeader = input2.id;
-//       inputValues[currentHeader] = {};
-//       currentSubheader = null;  // Reset subheader when a new header is detected
-//       continue;
-//     }
-//     // Detect if the element represents a subheader
-//     if (input2 && input2.key === "Ignore") {
-//       currentSubheader = input2.id;
-//       inputValues[currentHeader][currentSubheader] = {};  // Initialize a sub dictionary for the subheader
-//       continue;
-//     }
-//     // If we're within a header and subheader, nest the input values accordingly
-//     if (input && input2 && input.style.display != "none") {
-//       if (currentHeader && currentSubheader) {
-//         inputValues[currentHeader][currentSubheader][input2.id] = input.value;
-//       } else if (currentHeader) {
-//         inputValues[currentHeader][input2.id] = input.value;
-//       } else {
-//         inputValues[input2.id] = input.value;
-//       }
-//     }
-//   }
-
-//   if (location === undefined || name === undefined){
-//   const options = {
-//     pythonPath: 'python3',
-//     args: inputValues,
-//   };
-//   window.api.send('request-filename-and-directory');
-
-//   window.api.receive('selected-param-save-directory', (savePath) => {
-//     const options = {
-//         pythonPath: 'python3',
-//         args: inputValues,
-//         path: savePath
-//     };
-//     window.api.send('run-python-yamlwriter', options);
-//   });
-// }
-// else {
-//   const options = {
-//     pythonPath: 'python3',
-//     args: inputValues,
-//     name: name,
-//     location: location
-// };
-//   window.api.send('run-python-yamlwriter', options);
-
-// }
-
-// }
-/**
- * Read every <p> + <input> pair in `containerId` and
- * return an object like { dda: {...}, dia: {...}, annotation: {...}, misc: {...} }
- */
-/**
- * Walk through <p id="..."> labels in the given container,
- * match them to their inputs (or paired min/max), and
- * assemble a nested { dda:{}, dia:{}, annotation:{} } object
- * with proper types.
- */
 
 
 // Works for DDA but not DIA
@@ -808,27 +636,27 @@ function WriteCategoryYaml(containerId, categoryKey, name, saveLoc) {
     section.ionization = ionPos ? "POS" : "NEG";
 
     // 2) Optional file‐inputs
-    const injectFile = (ulId, pathSetter) => {
+    const insertFile = (ulId, pathSetter) => {
       const ul = document.getElementById(ulId);
       if (!ul) return;
       const files = fileListToArray(ul);
       if (files.length) pathSetter(files[0]);
     };
 
-    // Fragmentation rules config → frag_rules.config
-    injectFile("file-list-frag-rules-config", 
+    // frag_rules.config
+    insertFile("file-list-frag-rules-config", 
       fp => section.frag_rules = { ...(section.frag_rules||{}), config: fp });
 
-    // CCS trends config → ccs_trends.config
-    injectFile("file-list-ccs-trends-config", 
+    // ccs_trends.config
+    insertFile("file-list-ccs-trends-config", 
       fp => section.ccs_trends = { ...(section.ccs_trends||{}), config: fp });
 
-    // RT range config → rt_range_config
-    injectFile("file-list-rt-range-config",
+    //rt_range_config
+    insertFile("file-list-rt-range-config",
       fp => section.rt_range_config = fp);
 
-    // Sum composition config → sum_comp.config
-    injectFile("file-list-sum-comp-config",
+    // sum_comp.config
+    insertFile("file-list-sum-comp-config",
       fp => section.sum_comp = { ...(section.sum_comp||{}), config: fp });
   }
 
@@ -846,15 +674,13 @@ function WriteCategoryYaml(containerId, categoryKey, name, saveLoc) {
 
   const yamlPayload = {
     display_name : DISPLAY_TITLES[categoryKey] ?? categoryKey,
-    ...section                     // ← the existing param object you built
+    ...section
   };
   
-  options.args = yamlPayload;      // send this instead of just `section`
+  options.args = yamlPayload;
   window.api.send("write-yaml", options);
 
-  // window.api.send("write-yaml", options);
   outputBox.innerText += `Wrote ${categoryKey.toUpperCase()} config to ${saveLoc}/${name}.yaml\n`;
-
 
 
   const paths = [];
@@ -872,16 +698,7 @@ function WriteCategoryYaml(containerId, categoryKey, name, saveLoc) {
       `Wrote ${categoryKey.toUpperCase()} config → ${saveLoc}/${name}.yaml\n`
     + (paths.length
           ? "Paths used:\n  " + paths.join("\n  ") + "\n"
-          : "(no paths found)\n");
-
-
-  window.api.send("debug-list-paths", { maxDepth: 2 });
-  // window.api.send("debug-list-paths", {
-  //   // you can change these; keep them simple JSON-serialisable
-  //   baseDir : ".",   // current working dir
-  //   maxDepth: 2      // 0 = ls ., 1 = ls ./*, 2 = ls ./*/*   (we’ll also do "..")
-  // });
-          
+          : "\n");          
 }
 
 
@@ -895,7 +712,6 @@ function WriteToYaml(containerId, name, location) {
     return;
   }
 
-  // Grab the <p> labels and <input> elements under this container
   const pEls  = Array.from(container.getElementsByTagName('p'));
   const inEls = Array.from(container.getElementsByTagName('input'));
 
@@ -908,10 +724,9 @@ function WriteToYaml(containerId, name, location) {
     const label = pEls[i];
     const inp   = inEls[i];
 
-    // Skip any of the hidden header placeholders
     if (!label.id) continue;
 
-    // Detect section headers (these were your DDA/DIA/annotation top‑level IDs)
+    // Detect section headers
     if (['dda','dia','annotation'].includes(label.id)) {
       currentHeader = label.id;
       inputValues[currentHeader] = {};
@@ -919,14 +734,12 @@ function WriteToYaml(containerId, name, location) {
       continue;
     }
 
-    // Detect sub‑section headers
     if (label.key === 'Ignore') {
       currentSubheader = label.id;
       inputValues[currentHeader][currentSubheader] = {};
       continue;
     }
 
-    // Otherwise, it’s a real parameter
     const key = label.id;
     let val;
     if (inp.type === 'checkbox') {
@@ -935,7 +748,6 @@ function WriteToYaml(containerId, name, location) {
       val = inp.value;
     }
 
-    // Nest under header/subheader
     if (currentHeader && currentSubheader) {
       inputValues[currentHeader][currentSubheader][key] = val;
     } else if (currentHeader) {
@@ -945,7 +757,6 @@ function WriteToYaml(containerId, name, location) {
     }
   }
 
-  // Now fire off the IPC to write the YAML
   const options = { pythonPath: 'python3', args: inputValues };
   if (name && location) {
     options.name     = name;
@@ -961,91 +772,6 @@ window.api.receive('file-dialog-selection', (filePath) => {
   window.api.send('file-dialog-selection', filePath);
 });
 
-// // Receive data to update parameter values 
-// window.api.receive('file-content', (fileContent) => {
-//   populateInputsFromYaml(fileContent);
-// });
-
-// window.api.receive('file-content', yamlObj => {
-//   if (!yamlObj || typeof yamlObj !== 'object') {
-//     alert('File is not valid YAML.');
-//     return;
-//   }
-
-//   const title      = yamlObj.display_name || '';
-//   const headerKey  = TITLE_TO_HEADER[title];
-//   if (!headerKey) {
-//     alert('Unrecognised section title in YAML: ' + title);
-//     return;
-//   }
-
-//   // strip the title key then apply parameters
-//   const paramTree  = { ...yamlObj };
-//   delete paramTree.display_name;
-
-//   const generalGrid  = document.getElementById('duo-inputs-column-both-general');
-//   const advancedGrid = document.getElementById('duo-inputs-column-both-advanced');
-//   applyYaml(paramTree, headerKey, [generalGrid, advancedGrid]);
-
-//   // refresh visibility because check‑boxes might have toggled
-//   handleCheckboxChange();
-// });
-
-// // Load Parameter Values from personal file.
-// function handleuploadDataButtonClick() {
-//   window.api.send('open-file-dialog', {
-//     filters: [{ name: 'YAML Files', extensions: ['yaml', 'yml'] }],
-//     properties: ['openFile'],
-//   });
-// }
-
-// // Change param values to match inputs
-// function populateInputsFromYaml(yamlData) {
-//   // Helper function to set input values based on keys in the data
-//   function setInputValues(inputElements, data) {
-//       for (let i = 0; i < inputElements.length; i++) {
-//           const inputElem = inputElements[i];
-//           const value = data[inputElem.id];
-//           if (value !== undefined) {
-//               inputElem.value = value;
-//           }
-//       }
-//   }
-
-//   // Helper function to flatten the nested structure into a single object
-//   function flattenYamlData(data) {
-//       let flatData = {};
-//       for (const [key, value] of Object.entries(data)) {
-//           if (typeof value === 'object') {
-//               flatData = {...flatData, ...flattenYamlData(value)};
-//           } else {
-//               flatData[key] = value;
-//           }
-//       }
-//       return flatData;
-//   }
-
-//   const flattenedData = flattenYamlData(yamlData);
-
-//   let inputsColumn;
-//   inputsColumn = document.getElementById('duo-inputs-column-both-advanced');
-//   setInputValues(Array.from(inputsColumn.getElementsByTagName('input')), flattenedData);
-
-//   inputsColumn = document.getElementById('duo-inputs-column-both-general');
-//   setInputValues(Array.from(inputsColumn.getElementsByTagName('input')), flattenedData);
-// }
-
-
-
-/* ------------------------------------------------------------------ */
-/*  LOAD PARAMETER FILE – scoped to its own section                   */
-/* ------------------------------------------------------------------ */
-/* ==================================================================== */
-/*  LOAD PARAMETER FILE — scope writes to the correct top‑level section */
-/* ==================================================================== */
-/* ==================================================================== */
-/*  LOAD PARAMETER FILE – header + sub‑group aware                      */
-/* ==================================================================== */
 
 const TITLE_TO_HEADER = {
   "DDA data analysis" : "dda",
@@ -1053,9 +779,6 @@ const TITLE_TO_HEADER = {
   "Lipid annotation"  : "annotation",
 };
 
-/* ---------- DOM helpers -------------------------------------------- */
-
-// returns "dda" / "dia" / "annotation" for this element
 function findSection(el) {
   let cur = el;
   while (cur) {
@@ -1067,20 +790,18 @@ function findSection(el) {
   return null;
 }
 
-// returns sub‑group id (e.g. "extract_and_fit_ms2_spectra") or null
 function findSubGroup(el) {
   let cur = el;
   while (cur) {
-    if (cur.key === 'Ignore') return cur.id;          // our sub‑headers
+    if (cur.key === 'Ignore') return cur.id;
     if (cur.tagName === 'P' &&
         ['dda','dia','annotation','misc'].includes(cur.id))
-      return null;                                    // hit section header
+      return null;
     cur = cur.previousElementSibling;
   }
   return null;
 }
 
-/* ---------- low‑level writers -------------------------------------- */
 
 function writeScalar(id, value, headerKey, subgroupKey) {
   document.querySelectorAll(`#${CSS.escape(id)}`).forEach(el => {
@@ -1106,18 +827,13 @@ function writeRange(id, obj, headerKey, subgroupKey) {
   });
 }
 
-/* ---------- schema helpers ----------------------------------------- */
-
 function isDefaultLeaf(node) {
   return node && typeof node === 'object' && 'default' in node;
 }
 
-/* ---------- recursive walker --------------------------------------- */
-
 function applyYaml(node, headerKey, subgroupKey = null, path = []) {
   if (node == null) return;
 
-  // default‑schema leaf
   if (isDefaultLeaf(node)) {
     const val = node.default;
     const id  = path.at(-1);
@@ -1128,27 +844,22 @@ function applyYaml(node, headerKey, subgroupKey = null, path = []) {
     return;
   }
 
-  // simple range leaf
   if (typeof node === 'object' && 'min' in node && 'max' in node) {
     writeRange(path.at(-1), node, headerKey, subgroupKey);
     return;
   }
 
-  // scalar / bool
   if (typeof node !== 'object' || Array.isArray(node)) {
     writeScalar(path.at(-1), node, headerKey, subgroupKey);
     return;
   }
 
-  // branch – if this level is a sub‑group, pass its key downward
   const nextSub = subgroupKey ?? path.at(-1);
   for (const [k, v] of Object.entries(node)) {
     if (['display_name','type','description','advanced'].includes(k)) continue;
     applyYaml(v, headerKey, nextSub, [...path, k]);
   }
 }
-
-/* ---------- file‑picker plumbing ----------------------------------- */
 
 function handleuploadDataButtonClick() {
   window.api.send('open-file-dialog', {
@@ -1184,10 +895,6 @@ window.api.receive('file-content', yamlObj => {
 });
 
 
-
-
-
-
 // File Upload Section
 function handleFileSelection(fileInput, fileList, filesArray) {
   const selectedFiles = Array.from(fileInput.files);
@@ -1219,13 +926,12 @@ function handleFileSelection(fileInput, fileList, filesArray) {
     fileList.appendChild(listItem);
   });
 
-  fileInput.value = null; // Reset file input
+  fileInput.value = null; 
 }
-
 
 // Function to handle checkbox change
 // Hide / Unhide appropriate sections
-// These sections have a bit of hard coding...
+// These sections have a bit of hard coding.
 function handleCheckboxChange() {
   const isDDA      = checkboxes.general.dda.checked || checkboxes.advanced.dda.checked;
   const isDIA      = checkboxes.general.dia.checked || checkboxes.advanced.dia.checked;
@@ -1243,17 +949,14 @@ function handleCheckboxChange() {
 
   // Now hide each section if its box is unchecked
   if (!isDDA) {
-    // hide from <p id="dda"> up to (but not including) <p id="dia">
     hideSection('dda', 'dia', document.getElementById('duo-inputs-column-both-general'), ParamEmptyGeneral);
     hideSection('dda', 'dia', document.getElementById('duo-inputs-column-both-advanced'), ParamEmptyAdvanced);
   }
   if (!isDIA) {
-    // hide from <p id="dia"> up to <p id="annotation">
     hideSection('dia', 'annotation', document.getElementById('duo-inputs-column-both-general'), ParamEmptyGeneral);
     hideSection('dia', 'annotation', document.getElementById('duo-inputs-column-both-advanced'), ParamEmptyAdvanced);
   }
   if (!isAnnotate) {
-    // hide from <p id="annotation"> through end
     hideSection('annotation', null, document.getElementById('duo-inputs-column-both-general'), ParamEmptyGeneral);
     hideSection('annotation', null, document.getElementById('duo-inputs-column-both-advanced'), ParamEmptyAdvanced);
   }
@@ -1389,15 +1092,6 @@ function hideAllSections(parametersColumn, inputsColumn,paramEmpty) {
 }
 
 // Update which file upload options are available depending on checkboxes
-// function UpdateFileOptions() {
-//   const ddaFileRegion = document.getElementById("dda-file-region");
-//   const diaFileRegion = document.getElementById("dia-file-region");
-//   const annFileSection = document.getElementById('annotate-file-region');
-//   ddaFileRegion.style.display = (checkboxes.general.dda.checked || checkboxes.advanced.dda.checked) ? "block" : "none";
-//   diaFileRegion.style.display = (checkboxes.general.dia.checked || checkboxes.advanced.dia.checked) ? "block" : "none";
-//   annFileSection.style.display = (checkboxes.general.annotate.checked || checkboxes.advanced.annotate.checked) ? "block" : "none";
-// }
-
 function UpdateFileOptions() {
   const isDDA      = checkboxes.general.dda.checked || checkboxes.advanced.dda.checked;
   const isDIA      = checkboxes.general.dia.checked || checkboxes.advanced.dia.checked;
@@ -1417,7 +1111,6 @@ function UpdateFileOptions() {
   // Show/hide based on DDA/DIA/Annotate
   ddaFileRegion.style.display   = isDDA      ? "block" : "none";
   diaFileRegion.style.display   = isDIA      ? "block" : "none";
-  // annFileRegion.style.display   = isAnnotate ? "block" : "none";
 
   // Only show these four when annotation is on
   fragRulesRegion.style.display = isAnnotate ? "block" : "none";
@@ -1457,33 +1150,13 @@ window.api.receive('directory-selected', (path) => {
   document.getElementById('selected-directory').value = path;
 });
 
-// Database New Name for Experiment
 function UpdateExpName() {
-  // const TFnew = document.getElementById("create-new-option").checked
-  // const TFsave = document.getElementById("save-params").checked
-  // if (TFnew === true || TFsave === true) {
-  //   document.getElementById("new-db-name-container").style.display = "flex"
-  //   document.getElementById("selected-directory-container").style.display = "flex"
-  // }
-  // else {
-  //   document.getElementById("new-db-name-container").style.display = "none"
-  //   document.getElementById("selected-directory-container").style.display = "none"
-  // }
 }
 
 // Annotation Options for experiment
 function UpdateAnnotateOptions() {
   const TF = checkboxes.general.annotate.checked
   console.log("TF: ", TF)
-
-  // if (TF === true) {
-  //   document.getElementById("annotate-options").style.display = "flex"
-  //   document.getElementById("annotate-behavior").style.display = "flex"
-  // }
-  // else {
-  //   document.getElementById("annotate-options").style.display = "none"
-  //   document.getElementById("annotate-behavior").style.display = "none"
-  // }
 }
 
 function UpdateDatabaseOptions() {
@@ -1498,24 +1171,12 @@ function UpdateDatabaseOptions() {
   }
 }
 
-
 // Receive Python Experiment Results to display
 window.api.receive('python-result-experiment', (result) => {
   console.log('Received result:', result);
   outputBox.innerText += result; // Append the result to the output box
   scrollToBottom(outputBox);
 });
-
-
-// Get List of files from Array
-// function fileListToArray(fileList) {
-//   return Array.from(fileList.getElementsByTagName('li')).map((listItem) => {
-//     const fileText = listItem.querySelector('.file-text');
-//     console.log("fileText:",fileText);
-//     // Return only the path for each file
-//     return fileText.dataset.path;
-//   });
-// }
 
 function fileListToArray(fileList) {
   if (!fileList) return [];
@@ -1527,302 +1188,6 @@ function fileListToArray(fileList) {
     .filter(path => Boolean(path));
 }
 
-// // Run Experiment in Python. Format all inputs to match experiment requirements
-// function RunExperiment() {
-//   const selectedDatabaseOption = getSelectedDatabaseOption()
-//   const selectedDatabaseName = document.getElementById("experiment-name").value
-//   const selectedSaveLocation = document.getElementById("selected-directory").value
-//   const isIonizationPositive = document.getElementById("ionization-positive").checked;
-//   const isAnnotationAppend = document.getElementById("annotation-append").checked;
-//   const filesDDA = fileListToArray(fileListDDA);
-//   const filesDIA = fileListToArray(fileListDIA);
-//   const filesDatabase = fileListToArray(fileListDatabase);
-//   const filesAnnotation = fileListToArray(fileListAnnotation);
-//   let currentHeader = null;
-//   let currentSubheader = null;
-//   const inputs = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('input');
-//   const inputs2 = document.getElementById("duo-inputs-column-both-advanced").getElementsByTagName('p');
-//   const isBehaviorDefault = document.getElementById("behavior-custom").checked;
-//   const TFsave = document.getElementById("save-params").checked
-//   const TFnew = document.getElementById("create-new-option").checked
-//   const TFoverwrite = document.getElementById("overwrite-option").checked
-//   const TFappend = document.getElementById("append-option").checked
-
-//   // Check if run options that the user selected make sense
-//   if ((TFsave === true || TFnew === true) && (selectedDatabaseName === '' || selectedSaveLocation === '')) {
-//     alert("Please enter an experiment name and save location. ");
-//     return;  // Return early to stop further execution
-//   }
-
-//   if (checkboxes.advanced.dda.checked && filesDDA.length === 0) {
-//       alert("DDA processing is selected but no DDA files are provided. ");
-//       return;
-//   }
-
-//   if (checkboxes.advanced.dia.checked && filesDIA.length === 0) {
-//       alert("DIA processing is selected but no DIA files are provided. ");
-//       return;
-//   }
-
-//   if ((TFappend || TFoverwrite) && filesDatabase.length === 0) {
-//       alert("Append/Overwrite Database option is selected but no Database files are provided. ");
-//       return;
-//   }
-
-//   if (!checkboxes.advanced.dda.checked && !checkboxes.advanced.dia.checked && !checkboxes.advanced.annotate.checked) {
-//       alert("None of the DDA processing, DIA processing, or Annotation options are selected. ");
-//       return;
-//   }
-
-
-
-//   // If save parameters is selected, save them.
-//   if (TFsave === true ) {
-//     if (selectedDatabaseName !== '' && selectedSaveLocation !== '') {
-//     WriteToYaml('duo-inputs-column-both-advanced',selectedDatabaseName, selectedSaveLocation)
-//     }
-//     else {
-//       WriteToYaml('duo-inputs-column-both-advanced')
-//     }
-//   }
-
-
-//   const parameters = {
-//       dda: {},
-//       dia: {},
-//       annotation: {},
-//       misc: {
-//         dia_store_blobs: true,
-//         do_dda_processing: false,
-//         do_dia_processing: false,
-//         do_annotation: false,
-//         overwrite_annotations: false,
-//         ionization: "POS"
-//       }
-//     };
-  
-//   const inputOutput = {
-//     dda_data_files: [],
-//     dia_data_files: [],
-//     results_db: [],
-//     lipid_class_scdb_config: []
-//   };
-
-//   const gui_params = {
-//     db_pick: selectedDatabaseOption,
-//     db_name: selectedDatabaseName,
-//     save_loc: selectedSaveLocation
-//   }
-
-//   if (checkboxes.advanced.dda.checked === true) {
-//     parameters.misc.do_dda_processing = true;
-//   }
-  
-//   if (checkboxes.advanced.dia.checked === true) {
-//     parameters.misc.do_dia_processing = true;
-//   }
-
-//   if (checkboxes.advanced.annotate.checked === true) {
-//     parameters.misc.do_annotation = true;
-//   }
-
-//   if (isAnnotationAppend === false) {
-//     parameters.misc.overwrite_annotations = true;
-//   }
-
-//   if (isIonizationPositive === false) {
-//     parameters.misc.ionization = "NEG";
-//   }
-
-//   // Add in parameter values
-//   for (let i = 0; i < inputs.length; i++) {
-//     const input = inputs[i];
-//     const input2 = inputs2[i];
-
-//     if (input2.id === "dda" || input2.id === "dia" || input2.id === "annotation") {
-//         currentHeader = input2.id;
-//         continue;
-//     }
- 
-//     if (input2.key === 'Ignore') {
-//         currentSubheader = input2.id;
-//         if (currentHeader && !parameters[currentHeader][currentSubheader]) {
-//             parameters[currentHeader][currentSubheader] = {};
-//         }
-//         continue;
-//     }
-
-//     if (input && input2 && input.style.display !== 'none') {
-//         if (currentHeader && currentSubheader) {
-//             parameters[currentHeader][currentSubheader][input2.id] = input.value;
-//         } else if (currentHeader) {
-//             parameters[currentHeader][input2.id] = input.value;
-//         } else {
-//             parameters['misc'][input2.id] = input.value;
-//         }
-//     }
-//   }
-
-//   // Update files with those selected by user
-//   inputOutput['dda_data_files'] = filesDDA;
-//   inputOutput['dia_data_files'] = filesDIA;
-//   inputOutput['results_db'] = filesDatabase[0];  // Only one file allowed
-
-//   // Annotation File is only assigned if annotation behaivor is set to custom file.
-//   if (isBehaviorDefault === true) {
-//     inputOutput['lipid_class_scdb_config'] = filesAnnotation[0]; // Only one file allowed
-//   }
-
-//   console.log(gui_params)
-//   const options = {
-//     pythonPath: 'python3',
-//     args: {
-//       input_output: inputOutput,
-//       params: parameters,
-//       options: gui_params
-//     }
-//   };
-
-//   outputBox.innerText += "Experiment Starting. Please give it one minute to begin. " + '\n';
-//   window.api.send('run-python-experiment', options);
-//   disableButton()
-// } 
-
-
-
-
-// function RunExperiment() {
-//   // 1) Gather GUI inputs
-//   const expName        = document.getElementById("experiment-name").value.trim();
-//   const saveLoc        = document.getElementById("selected-directory").value.trim();
-//   const filesDDA       = fileListToArray(fileListDDA);
-//   const filesDIA       = fileListToArray(fileListDIA);
-//   const filesDatabase  = fileListToArray(fileListDatabase);
-//   const filesAnnotation= fileListToArray(fileListAnnotation);
-//   const filesFragRules = fileListToArray(fileListFragRulesConfig);
-//   const filesCcsTrends = fileListToArray(fileListCcsTrendsConfig);
-//   const filesRtRange   = fileListToArray(fileListRtRangeConfig);
-//   const filesSumComp   = fileListToArray(fileListSumCompConfig);
-
-//   // 2) Basic validation
-//   if (!expName || !saveLoc) {
-//     alert("Please enter an experiment name and save location.");
-//     return;
-//   }
-
-//   // 3) Build absolute paths for output files
-//   const dbFile     = `${saveLoc}/${expName}.db`;
-//   const ddaConfig  = `${saveLoc}/${expName}_dda_config.yml`;
-//   const diaConfig  = `${saveLoc}/${expName}_dia_config.yml`;
-//   const annConfig  = `${saveLoc}/${expName}_ann_config.yml`;
-
-//   // 4) Define the CLI steps
-//   const steps = [
-//     { cmd: ["utility", "create_db", dbFile],                   desc: "Initializing results database" },
-//     { cmd: ["utility", "params", "--default-dda", ddaConfig],  desc: "Generating default DDA config" },
-//     // only run DDA if files were provided
-//     ...(filesDDA.length
-//       ? [{ cmd: ["dda", ddaConfig, dbFile, ...filesDDA], desc: "Running DDA processing" }]
-//       : []),
-//     { cmd: ["utility", "params", "--default-dia", diaConfig],  desc: "Generating default DIA config" },
-//     ...(filesDIA.length
-//       ? [{ cmd: ["dia", "process", diaConfig, dbFile, ...filesDIA], desc: "Running DIA processing" }]
-//       : []),
-//     { cmd: ["dia", "calibrate_ccs", dbFile, "-0.082280", "0.132301", "9"], desc: "Calibrating CCS" },
-//     { cmd: ["utility", "params", "--default-ann", annConfig],  desc: "Generating default annotation config" },
-//     { cmd: ["annotate", annConfig, dbFile],                    desc: "Running lipid annotation" }
-//   ];
-
-//   // 5) Kick off the IPC to run them
-//   outputBox.innerText += "Starting experiment…\n";
-//   window.api.send("run-lipidimea-cli-steps", { steps });
-
-//   // 6) Prevent double‐clicks
-//   disableButton();
-// }
-
-
-
-
-// async function RunExperiment() {
-//   // 1) Gather GUI inputs
-//   const expName       = document.getElementById("experiment-name").value.trim();
-//   const saveLoc       = document.getElementById("selected-directory").value.trim();
-//   const filesDDA      = fileListToArray(fileListDDA);
-//   const filesDIA      = fileListToArray(fileListDIA);
-//   const dbFile        = `${saveLoc}/${expName}.db`;
-
-//   // 2) Validation
-//   if (!expName || !saveLoc) {
-//     alert("Please enter an experiment name and save location.");
-//     return;
-//   }
-//   if (!filesDDA.length && !filesDIA.length) {
-//     alert("Please select at least one DDA or DIA file.");
-//     return;
-//   }
-
-//   // 3) First, write out YOUR DDA parameters from the GUI
-//   //    This uses your existing WriteToYaml helper:
-  
-//   if (checkboxes.advanced.dda.checked) {
-//     WriteCategoryYaml(
-//       'duo-inputs-column-both-advanced',
-//       'dda',
-//       `${expName}_dda_config`,
-//       saveLoc
-//     );
-//   }
-//   if (checkboxes.advanced.dia.checked) {
-//     WriteCategoryYaml(
-//       'duo-inputs-column-both-advanced',
-//       'dia',
-//       `${expName}_dia_config`,
-//       saveLoc
-//     );
-//   }
-//   if (checkboxes.advanced.annotate.checked) {
-//     WriteCategoryYaml(
-//       'duo-inputs-column-both-advanced',
-//       'annotation',
-//       `${expName}_ann_config`,
-//       saveLoc
-//     );
-//   }
-
-//   // Then build your CLI steps using those YML paths…
-//   const ddaConfigPath = `${saveLoc}/${expName}_dda_config.yml`;
-//   const diaConfigPath = `${saveLoc}/${expName}_dia_config.yml`;
-//   const annConfigPath = `${saveLoc}/${expName}_ann_config.yml`;
-
-//   const steps = [
-//     { cmd: ["utility", "create_db", dbFile],                   desc: "Initializing results database" },
-//     ...(checkboxes.advanced.dda.checked
-//       ? [{ cmd: ["dda", ddaConfigPath, dbFile, ...filesDDA], desc: "Running DDA processing" }]
-//       : []),
-//     ...(checkboxes.advanced.dia.checked
-//       ? [
-//           ["utility","params","--default-dia", diaConfigPath],
-//           ["dia","process", diaConfigPath, dbFile, ...filesDIA]
-//         ].map((cmd, i) => ({
-//           cmd,
-//           desc: i===0 ? "Generating default DIA config" : "Running DIA processing"
-//         }))
-//       : []),
-//     { cmd: ["dia","calibrate_ccs", dbFile, "-0.082280","0.132301","9"], desc:"Calibrating CCS" },
-//     ...(checkboxes.advanced.annotate.checked
-//       ? [
-//           { cmd: ["utility","params","--default-ann", annConfigPath], desc: "Generating default annotation config" },
-//           { cmd: ["annotate", annConfigPath, dbFile],                   desc: "Running lipid annotation" }
-//         ]
-//       : [])
-//   ];
-
-//   // send off…
-//   outputBox.innerText += "Starting experiment…\n";
-//   window.api.send("run-lipidimea-cli-steps", { steps });
-//   disableButton();
-// }
 
 async function RunExperiment() {
   // 1) Gather GUI inputs
@@ -1904,7 +1269,7 @@ async function RunExperiment() {
     steps.push({ cmd: ["annotate", annCfg, dbFile], desc: "Running Annotation" });
   }
 
-  // 5) Fire it off
+  // 5) Begin Experiment
   outputBox.innerText += "Starting experiment…\n";
   window.api.send("run-lipidimea-cli-steps", { steps });
   disableButton();
@@ -1912,36 +1277,17 @@ async function RunExperiment() {
 
 
 
-
-
-
-// This should prevent users from clicking run experiment twice in a row.
+// Prevent accidental double click of Run Experiment buttom
 function disableButton() {
   const button = document.getElementById('run-btn');
   button.disabled = true;
-  // Set a timeout for 5 seconds (5000 milliseconds) to re-enable the button
+  // Set a timeout for 5 seconds
   setTimeout(() => {
       button.disabled = false;
   }, 5000);
 }
 
 
-
-
-
-
-
-/**
- * Hide everything in `container` from the header with id=startId
- * up to (but not including) the header with id=endId.
- * If endId is null or not found, hide through the end.
- * Always hide the start header itself.
- */
-/**
- * Hide everything in `container` from the header with id=startId
- * up to (but _not_ including) the header with id=endId.
- * If endId is null or not found, hide through the end.
- */
 function hideSection(startId, endId, container, emptyNotice) {
   const children = Array.from(container.children);
   let hiding = false;
@@ -1949,22 +1295,18 @@ function hideSection(startId, endId, container, emptyNotice) {
   for (const node of children) {
     if (!hiding) {
       if (node.tagName === 'P' && node.id === startId) {
-        hiding = true;    // start hiding from here
+        hiding = true;
       } else {
-        continue;         // not yet at the start section
+        continue;
       }
     }
 
-    // Now that hiding=true, check if we've hit the next section header:
     if (endId && node.tagName === 'P' && node.id === endId) {
-      break;             // stop _before_ hiding this end header
+      break;             
     }
-
-    // Otherwise, hide this node
     node.style.display = 'none';
   }
 
-  // If everything got hidden, show the “no params” notice
   emptyNotice.style.display = 'none';
 }
 
@@ -1980,8 +1322,6 @@ function calibrateDIA() {
 }
 
 
-
-
 function UpdateCalibrateOptions() {
   const isDIA = checkboxes.general.dia.checked 
              || checkboxes.advanced.dia.checked;
@@ -1993,9 +1333,6 @@ function UpdateCalibrateOptions() {
   lockCalibrate(isAnnot);
 
 }
-
-
-
 
 
 window.api.receive("debug-list-paths-result", listing => {
@@ -2011,11 +1348,25 @@ function lockCalibrate(lock) {
   const no  = document.getElementById('calibrate-no');
 
   if (lock) {
-    yes.checked  = true;   // force YES
+    yes.checked  = true; 
     yes.disabled = true;
     no.disabled  = true;
   } else {
     yes.disabled = false;
     no.disabled  = false;
   }
+}
+
+function linkInputs(a, b) {
+  if (!a || !b || a === b) return;
+
+  const sync = (src, dst) => () => {
+    if (src.type === 'checkbox') dst.checked = src.checked;
+    else                         dst.value   = src.value;
+  };
+
+  ['input', 'change'].forEach(ev => {
+    a.addEventListener(ev, sync(a, b));
+    b.addEventListener(ev, sync(b, a));
+  });
 }

@@ -369,8 +369,8 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     )
     scdb = SumCompLipidDB()
     scdb.fill_db_from_config(sum_comp_config, 
-                             params.sum_comp.fa_c.min, 
-                             params.sum_comp.fa_c.max, 
+                             params.sum_comp.fa_cl.min, 
+                             params.sum_comp.fa_cl.max, 
                              params.sum_comp.fa_odd_c)
     # connect to  results database
     con = connect(results_db) 

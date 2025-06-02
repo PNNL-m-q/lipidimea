@@ -31,6 +31,7 @@
         "asar": false,
         "extraResource": [
           "bin/lipidimea",
+          "bin/lipidimea.exe",
           "../lipidimea/_include"
         ]
       },

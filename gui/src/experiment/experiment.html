@@ -161,8 +161,8 @@
             </div>
               <div class="centercontent">
                 <!-- General Parameter Buttons -->
-                  <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-general')">Write Parameters To File</button>
-                  <button id="upload-data-button-general">Load Parameters from File</button>
+                  <!-- <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-general')">Write Parameters To File</button> -->
+                  <!-- <button id="upload-data-button-general">Load Parameters from File</button> -->
               </div>
               <div>
                 <!-- General Parameters are defined by default file in "_include" and formatted in renderer_exp.js -->
@@ -184,8 +184,8 @@
                 </div> 
                 <div class="centercontent">
                     <!-- Advanced Parameter Buttons -->
-                    <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-advanced')">Write Parameters To File</button>
-                    <button id="upload-data-button-advanced">Load Parameters from File</button>
+                    <!-- <button class="btn" onclick="WriteToYaml('duo-inputs-column-both-advanced')">Write Parameters To File</button>
+                    <button id="upload-data-button-advanced">Load Parameters from File</button> -->
                 </div>
                 <div>
                 <!-- Advanced Parameters are defined by default file in "_include" and formatted in renderer_exp.js -->
@@ -220,16 +220,16 @@
                 <div class="section-container" id="db-options">
                     <label class="section-label">Database Options:</label>
                     <div class="radio-option">
-                        <input type="radio" id="append-option" name="db_option" value="append" checked>
-                        <label for="append-option">Append</label>
+                        <input type="radio" id="create-new-option" name="db_option" value="create_new" checked>
+                        <label for="create-new-option">Create New</label>
                     </div>
                     <div class="radio-option">
                         <input type="radio" id="overwrite-option" name="db_option" value="overwrite">
                         <label for="overwrite-option">Overwrite</label>
                     </div>
                     <div class="radio-option">
-                        <input type="radio" id="create-new-option" name="db_option" value="create_new">
-                        <label for="create-new-option">Create New</label>
+                        <input type="radio" id="append-option" name="db_option" value="append">
+                        <label for="append-option">Append</label>
                     </div>
                 </div>
 
@@ -237,16 +237,16 @@
                 <div class="section-container" id="ionization-options">
                         <label class="section-label">Ionization Options:</label>
                         <div class="radio-option">
-                            <input type="radio" id="ionization-positive" name="ionization" value="positive" checked>
-                            <label for="ionization-positive">Positive</label>
+                            <input type="radio" id="ionization-negative" name="ionization" value="negative" checked>
+                            <label for="ionization-negative">Negative</label>
                         </div>
                         <div class="radio-option">
-                            <input type="radio" id="ionization-negative" name="ionization" value="negative">
-                            <label for="ionization-negative">Negative</label>
+                            <input type="radio" id="ionization-positive" name="ionization" value="positive">
+                            <label for="ionization-positive">Positive</label>
                         </div>
                 </div>
                 <!-- Annotation Options -->
-                <div class="section-container" id="annotate-options">
+                <!-- <div class="section-container" id="annotate-options">
                         <label class="section-label">Annotation Options:</label>
                         <div class="radio-option">
                             <input type="radio" id="annotation-append" name="annotation" value="append" checked>
@@ -256,9 +256,9 @@
                             <input type="radio" id="annotation-overwrite" name="annotation" value="overwrite">
                             <label for="annotation-overwrite">Overwrite</label>
                         </div>
-                </div>
+                </div> -->
                 <!-- Annotation Behavior -->
-                <div class="section-container" id="annotate-behavior">
+                <!-- <div class="section-container" id="annotate-behavior">
                         <label class="section-label">Annotation Behavior:</label>
                         <div class="radio-option">
                             <input type="radio" id="behavior-default" name="behavior" value="default" checked>
@@ -268,7 +268,7 @@
                             <input type="radio" id="behavior-custom" name="behavior" value="custom">
                             <label for="behavior-custom">Custom File(s)</label>
                         </div>
-                </div>
+                </div> -->
 
                 <!-- Calibration Button -->
                 <div class="section-container" id="calibrate-options">
@@ -286,10 +286,10 @@
 
                 <!-- Note to self - update this button/checkbox. -->
                 <!-- Save Parameters Section -->
-                <div class="section-container">
+                <!-- <div class="section-container">
                     <label class="section-label">Save Parameters:</label>
                     <input type="checkbox" id="save-params" name="save-params" checked>
-                </div>
+                </div> -->
 
                 <!-- Experiment Details Section -->
                 <div class="section-container" id="new-db-name-container">

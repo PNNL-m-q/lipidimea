@@ -1,5 +1,4 @@
-# DIA defaults with GUI metadata
-
+# Section header for UI
 display_name: "DIA data analysis"
 
 # Chromatogram extraction and fitting

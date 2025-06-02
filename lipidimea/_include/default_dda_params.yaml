@@ -1,17 +1,17 @@
-# DDA defaults with GUI metadata
-
 # Section header for UI
 display_name: "DDA data analysis"
 
 # Precursor m/z range
-precursor_mz:
-  default:
-    min: 200.0
-    max: 1200.0
-  display_name: "Precursor m/z range"
-  type: "range"
-  description: "Minimum and maximum precursor m/z"
-  advanced: false
+precursor:
+  display_name: Precursor
+  precursor_mz:
+    default:
+      min: 200.0
+      max: 1200.0
+    display_name: "Precursor m/z range"
+    type: "range"
+    description: "Minimum and maximum precursor m/z"
+    advanced: false
 
 # Chromatogram extraction and fitting
 extract_and_fit_chroms:

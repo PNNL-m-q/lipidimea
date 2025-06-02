@@ -8,7 +8,7 @@ let mzRowMap = new Map();
 let DeconTableMzSet;
 const DeconTable_MATCH_COLOR = '#E6A7B2';
 
-// ------ Event Listeners and Receivers ----------
+// ----- Event Listeners and Receivers -----
 
 // Open Database Dialog
 function databaseDialog() {
@@ -142,8 +142,6 @@ window.api.receive('return-atd-blob-data', (data) => {
   displayATDPlot(atdPairs);
 });
 
-
-// TODO: CALL THIS SOMETHING
 document.addEventListener('DOMContentLoaded', () => {
   window.api.receive('selected-database-path', (result) => {
     filePath = result;
@@ -167,8 +165,6 @@ window.api.receive('return-xic-blob-data', (data) => {
 
 
 // ------ Helper Functions ----------
-
-
 
 // Format Decimals to 4 Places. This allows many values to be mapped across tables / plots.
 function formatDecimalValue(value) {
@@ -317,391 +313,6 @@ function processDeconRowData(row) {
 
 // ------ Table Creation Functions ----------
 
-
-// // Create Main Table
-// function showMainTable(data) {
-//   const tableContainer = document.getElementById('main-table-container');
-//   tableContainer.innerHTML = ''; 
-//   tableContainer.style.border = "1px solid black";
-//   const table = document.createElement('table');
-//   const thead = document.createElement('thead');
-//   const tbody = document.createElement('tbody');
-
-//   // Add table headers
-//   const headers = Object.keys(data[0]).filter(header => 
-//   header !== "dia_decon_frag_ids" 
-//   && header !== "dia_xic"
-//   && header !== "dia_atd"
-//   && header !== "dia_dt" 
-//   && header !== "dia_dt_pkht" 
-//   && header !== "dia_dt_fwhm" 
-//   && header !== "dia_rt_pkht"
-//   && header !== "dia_rt_fwhm"
-//   && header !== "dia_rt_psnr"
-//   && header !== "dda_rt_pkht"
-//   && header !== "dda_rt_fwhm"
-//   && header !== "dda_rt_psnr"
-//   && header !== "dda_rt"
-//   && header !== "dda_ms2_peaks"
-//   && header !== "dia_ms2_peaks"
-//   && header !== "dia_dt_fwhm" 
-//   && header !== "dia_dt_fwhm" 
-//   && header !== "dia_dt_fwhm" 
-//   && header !== "dia_dt_fwhm" 
-//   && header !== "dia_dt_fwhm" 
-//   && header !== "dia_dt_psnr"
-//   && header !== "dia_ms1");
-//   const headerRow = document.createElement('tr');
-//   headers.forEach((header) => {
-//       const th = document.createElement('th');
-//       th.textContent = header;
-//       headerRow.appendChild(th);
-//   });
-//   thead.appendChild(headerRow);
-
-//   // Add table rows
-//   data.forEach((row) => {
-//       const tableRow = document.createElement('tr');
-//       headers.forEach((header) => {
-//           const td = document.createElement('td');
-//           td.textContent = formatDecimalValue(row[header]);
-//           tableRow.appendChild(td);
-//       });
-
-//       const id = row[headers[2]]; // Assuming the DIA Feature ID column is the identifier
-
-//       // Add click event listener to each row
-//       tableRow.addEventListener('click', () => {
-//           // Remove previous selection if any
-//           const previousSelectedRow = tbody.querySelector('.selected');
-//           if (previousSelectedRow) {
-//               previousSelectedRow.classList.remove('selected');
-//           }
-
-//           // Set the current row as selected
-//           tableRow.classList.add('selected');
-
-//           selectedRowValue = {
-//             id: row['dia_pre_id']
-//               // id: id,
-//               // diaDeconFragIds: row['dia_decon_frag_ids']
-//           };
-
-//           console.log(`row['dt']: ${row['dt']}`)
-//           console.log(`row['rt']: ${row['rt']}`)
-//           const mzValueElement = document.getElementById('mz');
-//           const DIArtValueElement = document.getElementById('rt');
-//           const dtValueElement = document.getElementById('dt');
-//           const DTpkhtValueElement = document.getElementById('dt_pkht');
-//           const DTfwhmValueElement = document.getElementById('dt_fwhm');
-//           const DTpsnrValueElement = document.getElementById('dt_psnr');
-//           const DIArtPKHTValueElement = document.getElementById('rt_pkht');
-//           const DIArtFWHMValueElement = document.getElementById('rt_fwhm');
-//           const DIArtPSNRValueElement = document.getElementById('rt_psnr');
-//           const DDArtValueElement = document.getElementById('dda_rt_value');
-//           const DDArtPKHTValueElement = document.getElementById('dda_rt_pkht_value');
-//           const DDArtFWHMValueElement = document.getElementById('dda_rt_fwhm_value');
-//           const DDArtPSNRValueElement = document.getElementById('dda_rt_psnr_value');
-//           const PreDIAatdValueElement = document.getElementById('dia_atd_value');
-//           const PreDIAxicValueElement = document.getElementById('dia_xic_value');
-
-//           mzValueElement.textContent = formatDecimalValue(row['mz']);
-//           DIArtValueElement.textContent = formatDecimalValue(row['rt']);
-//           dtValueElement.textContent = formatDecimalValue(row['dt']);
-//           DTpkhtValueElement.textContent = formatDecimalValue(row['dt_pkht']);
-//           DTfwhmValueElement.textContent = formatDecimalValue(row['dt_fwhm']);
-//           DTpsnrValueElement.textContent = formatDecimalValue(row['dia_dt_psnr']);
-//           DIArtPKHTValueElement.textContent = formatDecimalValue(row['rt_pkht']);
-//           DIArtFWHMValueElement.textContent = formatDecimalValue(row['rt_fwhm']);
-//           DIArtPSNRValueElement.textContent = formatDecimalValue(row['rt_psnr']);
-//           DDArtValueElement.textContent = formatDecimalValue(row['dda_rt']);
-//           DDArtPKHTValueElement.textContent = formatDecimalValue(row['dda_rt_pkht']);
-//           DDArtFWHMValueElement.textContent = formatDecimalValue(row['dda_rt_fwhm']);
-//           DDArtPSNRValueElement.textContent = formatDecimalValue(row['dda_rt_psnr']);
-//           PreDIAatdValueElement.textContent = row['dia_xic'];
-//           PreDIAxicValueElement.textContent = row['dia_atd'];
-
-
-//           // window.diaMs2Data = row['dia_pre_id'];
-
-
-
-//           window.api.send('fetch-mapping-table', selectedRowValue);
-
-
-//           currentFeatId = selectedRowValue.id 
-          
-//           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_MS1' });
-
-//           console.log(`document.getElementById('rt').textContent is: ${document.getElementById('rt').textContent}`)
-//           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
-//           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });        
-
-
-
-//           currentFeatDiaPreID = row['dia_pre_id'];
-
-//           // Request DIA MS2 spectrum for this DIA precursor.
-//           window.api.send('fetch-dia-ms2', currentFeatDiaPreID);
-
-
-//           //  Extracted Ion Chromatogram 
-//           const currentDIA_mz = parseFloat(row['mz']);  // ensure this is the DIA mz value
-//           window.api.send('fetch-dda-features', { diaMz: currentDIA_mz, tolerance: 0.01 });
-          
-
-
-//           // Added this for decon
-//           console.log("window api send: fetch-decon-fragments")
-//           clearDeconPlots();
-//           window.api.send('fetch-decon-fragments', selectedRowValue.id);
-
-//           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
-//           window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });
-        
-//             const resultsDisplay = document.getElementById('below-table-content');
-//             resultsDisplay.style.display = 'block';
-
-//         const diaFeatureIdColumn = row['DIA Feature ID'];
-//           if (diaFeatureIdColumn !== undefined) {
-//               findInAnnTableByFeatureId(diaFeatureIdColumn);
-//           }
-        
-//       });
-
-//       // Add hover effect to each row
-//       tableRow.addEventListener('mouseover', () => {
-//           tableRow.classList.add('hover');
-//       });
-
-//       tableRow.addEventListener('mouseout', () => {
-//           tableRow.classList.remove('hover');
-//       });
-
-//       tbody.appendChild(tableRow);
-
-//   });
-
-//   table.appendChild(thead);
-//   table.appendChild(tbody);
-//   tableContainer.appendChild(table);
-// }
-
-
-
-
-
-
-
-
-
-// Global variables for main table data (for sorting/filtering) and sort state.
-// let mainTableData = [];
-// let currentSort = { column: null, order: 'asc' };
-
-// // Updated showMainTable that includes the filter panel and then renders the table.
-// function showMainTable(data) {
-//   // Store the full dataset globally.
-//   mainTableData = data;
-  
-//   const tableContainer = document.getElementById('main-table-container');
-//   tableContainer.innerHTML = ''; 
-//   tableContainer.style.border = "1px solid black";
-  
-//   // Create and insert a filter panel above the table.
-//   const filterPanel = createFilterPanel();
-//   tableContainer.appendChild(filterPanel);
-  
-//   // Render the table with the current (unfiltered) data.
-//   renderMainTable(data);
-// }
-
-// // Renders the table (with header and body) and attaches sort and row-click events.
-// function renderMainTable(data) {
-//   const tableContainer = document.getElementById('main-table-container');
-//   // Remove any existing table (but keep the filter panel).
-//   const existingTable = document.getElementById('main-table');
-//   if (existingTable) existingTable.remove();
-  
-//   const table = document.createElement('table');
-//   table.id = 'main-table';
-//   table.style.border = "1px solid black";
-//   const thead = document.createElement('thead');
-//   const tbody = document.createElement('tbody');
-  
-//   // Create table headers.
-//   // Use the same filtering as before.
-//   const headers = Object.keys(data[0]).filter(header => 
-//       header !== "dia_decon_frag_ids" &&
-//       header !== "dia_xic" &&
-//       header !== "dia_atd" &&
-//       header !== "dia_dt" &&
-//       header !== "dia_dt_pkht" &&
-//       header !== "dia_dt_fwhm" &&
-//       header !== "dia_rt_pkht" &&
-//       header !== "dia_rt_fwhm" &&
-//       header !== "dia_rt_psnr" &&
-//       header !== "dda_rt_pkht" &&
-//       header !== "dda_rt_fwhm" &&
-//       header !== "dda_rt_psnr" &&
-//       header !== "dda_rt" &&
-//       header !== "dda_ms2_peaks" &&
-//       header !== "dia_ms2_peaks" &&
-//       header !== "dia_dt_fwhm" && // repeated in original code
-//       header !== "dia_dt_psnr" &&
-//       header !== "dia_ms1"
-//   );
-  
-//   const headerRow = document.createElement('tr');
-//   headers.forEach(header => {
-//     const th = document.createElement('th');
-//     th.textContent = header;
-//     // Create a span for a sort icon.
-//     const sortIcon = document.createElement('span');
-//     sortIcon.style.marginLeft = '5px';
-//     sortIcon.textContent = '';
-//     th.appendChild(sortIcon);
-    
-//     // When header is clicked, sort the data.
-//     th.addEventListener('click', () => {
-//       if (currentSort.column === header) {
-//         currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
-//       } else {
-//         currentSort.column = header;
-//         currentSort.order = 'asc';
-//       }
-      
-//       // Sort data; note that if the cell value can be numeric, we convert it.
-//       data.sort((a, b) => {
-//         let aVal = parseFloat(a[header]) || a[header];
-//         let bVal = parseFloat(b[header]) || b[header];
-//         if (aVal < bVal) return currentSort.order === 'asc' ? -1 : 1;
-//         if (aVal > bVal) return currentSort.order === 'asc' ? 1 : -1;
-//         return 0;
-//       });
-//       sortIcon.textContent = currentSort.order === 'asc' ? '↑' : '↓';
-//       renderTableBody(data, tbody, headers);
-//     });
-    
-//     headerRow.appendChild(th);
-//   });
-//   thead.appendChild(headerRow);
-//   table.appendChild(thead);
-  
-//   // Create and append the table body.
-//   renderTableBody(data, tbody, headers);
-//   table.appendChild(tbody);
-//   tableContainer.appendChild(table);
-// }
-
-// // Renders the table body and attaches row click events.
-// function renderTableBody(data, tbody, headers) {
-//   tbody.innerHTML = '';
-//   data.forEach(row => {
-//     const tableRow = document.createElement('tr');
-//     headers.forEach(header => {
-//       const td = document.createElement('td');
-//       td.textContent = formatDecimalValue(row[header]);
-//       tableRow.appendChild(td);
-//     });
-    
-//     // Attach your original row click event.
-//     tableRow.addEventListener('click', () => {
-//       // Remove previous selection if any.
-//       const previousSelectedRow = tbody.querySelector('.selected');
-//       if (previousSelectedRow) {
-//         previousSelectedRow.classList.remove('selected');
-//       }
-//       tableRow.classList.add('selected');
-      
-//       // Update selectedRowValue.
-//       selectedRowValue = { id: row['dia_pre_id'] };
-      
-//       // Update detail UI fields.
-//       const mzValueElement = document.getElementById('mz');
-//       const DIArtValueElement = document.getElementById('rt');
-//       const dtValueElement = document.getElementById('dt');
-//       const DTpkhtValueElement = document.getElementById('dt_pkht');
-//       const DTfwhmValueElement = document.getElementById('dt_fwhm');
-//       const DTpsnrValueElement = document.getElementById('dt_psnr');
-//       const DIArtPKHTValueElement = document.getElementById('rt_pkht');
-//       const DIArtFWHMValueElement = document.getElementById('rt_fwhm');
-//       const DIArtPSNRValueElement = document.getElementById('rt_psnr');
-//       const DDArtValueElement = document.getElementById('dda_rt_value');
-//       const DDArtPKHTValueElement = document.getElementById('dda_rt_pkht_value');
-//       const DDArtFWHMValueElement = document.getElementById('dda_rt_fwhm_value');
-//       const DDArtPSNRValueElement = document.getElementById('dda_rt_psnr_value');
-//       const PreDIAatdValueElement = document.getElementById('dia_atd_value');
-//       const PreDIAxicValueElement = document.getElementById('dia_xic_value');
-      
-//       mzValueElement.textContent = formatDecimalValue(row['mz']);
-//       DIArtValueElement.textContent = formatDecimalValue(row['rt']);
-//       dtValueElement.textContent = formatDecimalValue(row['dt']);
-//       DTpkhtValueElement.textContent = formatDecimalValue(row['dt_pkht']);
-//       DTfwhmValueElement.textContent = formatDecimalValue(row['dt_fwhm']);
-//       DTpsnrValueElement.textContent = formatDecimalValue(row['dia_dt_psnr']);
-//       DIArtPKHTValueElement.textContent = formatDecimalValue(row['rt_pkht']);
-//       DIArtFWHMValueElement.textContent = formatDecimalValue(row['rt_fwhm']);
-//       DIArtPSNRValueElement.textContent = formatDecimalValue(row['rt_psnr']);
-//       DDArtValueElement.textContent = formatDecimalValue(row['dda_rt']);
-//       DDArtPKHTValueElement.textContent = formatDecimalValue(row['dda_rt_pkht']);
-//       DDArtFWHMValueElement.textContent = formatDecimalValue(row['dda_rt_fwhm']);
-//       DDArtPSNRValueElement.textContent = formatDecimalValue(row['dda_rt_psnr']);
-//       PreDIAatdValueElement.textContent = row['dia_xic'];
-//       PreDIAxicValueElement.textContent = row['dia_atd'];
-      
-//       // Call additional original functions.
-//       window.api.send('fetch-mapping-table', selectedRowValue);
-//       let currentFeatId = selectedRowValue.id;
-//       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_MS1' });
-//       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
-//       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });
-//       window.api.send('fetch-dia-ms2', currentFeatId);
-//       const currentDIA_mz = parseFloat(row['mz']);
-//       window.api.send('fetch-dda-features', { diaMz: currentDIA_mz, tolerance: 0.01 });
-      
-//       // Clear any previous decon plots, then fetch decon fragments.
-//       clearDeconPlots();
-//       window.api.send('fetch-decon-fragments', currentFeatId);
-//       // Request precursor XIC and ATD (again) in case needed for decon plotting.
-//       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
-//       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });
-      
-//       // Show the rest of the results.
-//       const resultsDisplay = document.getElementById('below-table-content');
-//       resultsDisplay.style.display = 'block';
-      
-//       // If there is a DIA Feature ID column, update annotation table selection.
-//       const diaFeatureIdColumn = row['DIA Feature ID'];
-//       if (diaFeatureIdColumn !== undefined) {
-//         findInAnnTableByFeatureId(diaFeatureIdColumn);
-//       }
-//     });
-    
-//     // Add hover effect.
-//     tableRow.addEventListener('mouseover', () => {
-//       tableRow.classList.add('hover');
-//     });
-//     tableRow.addEventListener('mouseout', () => {
-//       tableRow.classList.remove('hover');
-//     });
-    
-//     tbody.appendChild(tableRow);
-//   });
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Global variables for main table data, sorting, filtering, pagination, and deletion.
 let mainTableData = [];
 let currentSort = { column: null, order: 'asc' };
@@ -710,7 +321,7 @@ let currentPage = 1;
 // This array will hold dia_pre_id values for rows marked for deletion.
 let rowsToDelete = [];
 
-// ----------------------- SHOW MAIN TABLE -----------------------
+// Display Main Table
 function showMainTable(data) {
   // Store full dataset globally.
   mainTableData = data;
@@ -762,7 +373,7 @@ function showMainTable(data) {
   renderMainTable(data);
 }
 
-// ----------------------- RENDER MAIN TABLE -----------------------
+// Render Main Table
 function renderMainTable(data) {
   const tableContainer = document.getElementById('main-table-container');
   // Remove any existing table (but keep the filter panel).
@@ -872,8 +483,7 @@ function renderMainTable(data) {
 // Debounce wrapper for re-rendering the table body.
 const debouncedRenderBody = debounce(renderTableBody, 300);
 
-// ----------------------- RENDER TABLE BODY -----------------------
-// Uses a DocumentFragment to build rows for the current page.
+// Uses a DocumentFragment to build rows
 function renderTableBody(data, tbody, headers) {
   tbody.innerHTML = '';
   const fragment = document.createDocumentFragment();
@@ -966,8 +576,6 @@ function renderTableBody(data, tbody, headers) {
       window.api.send('fetch-mapping-table', selectedRowValue);
       let currentFeatId = selectedRowValue.id;
       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_MS1' });
-      // window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
-      // window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });
       window.api.send('fetch-dia-ms2', currentFeatId);
       const currentDIA_mz = parseFloat(row['mz']);
       window.api.send('fetch-dda-features', { diaMz: currentDIA_mz, tolerance: 0.01 });
@@ -978,7 +586,6 @@ function renderTableBody(data, tbody, headers) {
       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_XIC' });
       window.api.send('fetch-raw-blob', { featId: currentFeatId, rawType: 'DIA_PRE_ATD' });
 
-      
       if (filePath) {
         window.api.send('fetch-annotation-table', filePath);
     }
@@ -1006,7 +613,7 @@ function renderTableBody(data, tbody, headers) {
   renderPaginationControls(data);
 }
 
-// ----------------------- PAGINATION CONTROLS -----------------------
+// Pagination!
 // Renders and pins pagination controls to the bottom.
 function renderPaginationControls(data) {
   const oldPagination = document.getElementById('pagination-controls');
@@ -1058,109 +665,7 @@ function renderPaginationControls(data) {
   tableContainer.appendChild(paginationContainer);
 }
 
-// // ----------------------- FILTER PANEL -----------------------
-// // Creates a filter panel pinned to the top with no background.
-// function createFilterPanel() {
-//   const container = document.createElement('div');
-//   container.id = 'filter-panel';
-//   container.style.position = 'sticky';
-//   container.style.top = '0';
-//   container.style.padding = '2px';
-//   // Set background to a light color if desired.
-//   container.style.background = 'whitesmoke';
-//   container.style.zIndex = '1000';
-//   container.style.display = 'flex';
-//   container.style.justifyContent = 'space-between';
-//   container.style.alignItems = 'center';
-  
-//   // Left side: filter controls.
-//   const filterControls = document.createElement('div');
-//   filterControls.appendChild(document.createTextNode('Filter: '));
-  
-//   const columnSelect = document.createElement('select');
-//   if (mainTableData.length > 0) {
-//     const headers = Object.keys(mainTableData[0]).filter(header =>
-//       header !== "dia_decon_frag_ids" &&
-//       header !== "dia_xic" &&
-//       header !== "dia_atd" &&
-//       header !== "dia_dt" &&
-//       header !== "dia_dt_pkht" &&
-//       header !== "dia_dt_fwhm" &&
-//       header !== "dia_rt_pkht" &&
-//       header !== "dia_rt_fwhm" &&
-//       header !== "dia_rt_psnr" &&
-//       header !== "dda_rt_pkht" &&
-//       header !== "dda_rt_fwhm" &&
-//       header !== "dda_rt_psnr" &&
-//       header !== "dda_rt" &&
-//       header !== "dda_ms2_peaks" &&
-//       header !== "dia_ms2_peaks" &&
-//       header !== "dia_dt_pkht" &&
-//       header !== "dia_dt_psnr" &&
-//       header !== "dia_ms1"
-//     );
-//     headers.forEach(col => {
-//       const option = document.createElement('option');
-//       option.value = col;
-//       option.textContent = col;
-//       columnSelect.appendChild(option);
-//     });
-//   }
-  
-//   const minInput = document.createElement('input');
-//   minInput.type = 'number';
-//   minInput.placeholder = 'Min value';
-//   const maxInput = document.createElement('input');
-//   maxInput.type = 'number';
-//   maxInput.placeholder = 'Max value';
-  
-//   const filterButton = document.createElement('button');
-//   filterButton.textContent = 'Filter';
-//   filterButton.addEventListener('click', debounce(() => {
-//     const selectedColumn = columnSelect.value;
-//     // Default to -Infinity/Infinity if blank.
-//     const minVal = minInput.value === '' ? -Infinity : parseFloat(minInput.value);
-//     const maxVal = maxInput.value === '' ? Infinity : parseFloat(maxInput.value);
-//     const filteredData = mainTableData.filter(row => {
-//       const cellVal = parseFloat(row[selectedColumn]);
-//       return cellVal >= minVal && cellVal <= maxVal;
-//     });
-//     currentPage = 1;
-//     renderMainTable(filteredData);
-//   }, 300));
-  
-//   const resetButton = document.createElement('button');
-//   resetButton.textContent = 'Reset Filter';
-//   resetButton.addEventListener('click', () => {
-//     currentPage = 1;
-//     renderMainTable(mainTableData);
-//   });
-  
-//   filterControls.appendChild(columnSelect);
-//   filterControls.appendChild(minInput);
-//   filterControls.appendChild(maxInput);
-//   filterControls.appendChild(filterButton);
-//   filterControls.appendChild(resetButton);
-  
-//   const deleteBtn = document.createElement('button');
-//   deleteBtn.id = 'delete-rows-button';
-//   deleteBtn.textContent = 'Delete Values from SQL Database';
-//   deleteBtn.style.display = 'none';
-//   deleteBtn.style.fontSize = '0.8em';
-//   deleteBtn.addEventListener('click', () => {
-//     if (window.confirm(`Are you sure you want to delete the selected DIA Precursors from the SQL Database?\n\nThis can not be reverted.`)) {
-//       // Send IPC to main process to delete the rows.
-//       window.api.send('delete-diaprecursor-rows', rowsToDelete);
-//     }
-//   });
-  
-//   container.appendChild(filterControls);
-//   container.appendChild(deleteBtn);
-  
-//   return container;
-// }
-
-// ----------------------- FILTER PANEL -----------------------
+// FILTER Option 
 // Creates a filter panel pinned to the top with no background.
 function createFilterPanel() {
   const container = document.createElement('div');
@@ -1273,7 +778,6 @@ function createFilterPanel() {
 }
 
 
-// ----------------------- UTILITY: Debounce -----------------------
 function debounce(func, wait) {
   let timeout;
   return function(...args) {
@@ -1282,7 +786,6 @@ function debounce(func, wait) {
   };
 }
 
-// ----------------------- DELETE BUTTON VISIBILITY -----------------------
 function updateDeleteButtonVisibility() {
   const deleteBtn = document.getElementById('delete-rows-button');
   if (rowsToDelete.length > 0) {
@@ -1292,7 +795,6 @@ function updateDeleteButtonVisibility() {
   }
 }
 
-// ----------------------- CLEAR DECON PLOTS -----------------------
 function clearDeconPlots() {
   document.getElementById('decon-xic-plot').innerHTML = "";
   document.getElementById('decon-atd-plot').innerHTML = "";
@@ -1314,17 +816,6 @@ window.api.receive('delete-diaprecursor-rows-result', (result) => {
     alert("Deletion failed: " + result.error);
   }
 });
-
-
-
-
-
-
-
-
-
-
-
 
 
 // Create Deconvoluted Feature Table
@@ -1380,234 +871,6 @@ function showDeconTable(fragments) {
   }
 }
 
-// // Create Annotation Table
-// function showAnnotationTable(data) {
-//   const tableContainer = document.getElementById('annotation-table');
-//   tableContainer.innerHTML = ''; 
-
-//   if (!data || data.length === 0) {
-//       console.error("No data provided.");
-//       return;
-//   }
-
-//   // Sort data based on the 'dia_feat_id' column
-//   data.sort((a, b) => {
-//       return a['dia_feat_id'] - b['dia_feat_id'];
-//   });
-
-//   const table = document.createElement('table');
-//   const thead = document.createElement('thead');
-//   const tbody = document.createElement('tbody');
-
-//   // Create headers
-//   const headers = Object.keys(data[0]);
-//   const headerRow = document.createElement('tr');
-//   headers.forEach(header => {
-//       const th = document.createElement('th');
-//       th.textContent = header;
-//       headerRow.appendChild(th);
-//   });
-//   thead.appendChild(headerRow);
-
-//   // Create rows
-//   data.forEach(row => {
-//       const tableRow = document.createElement('tr');
-
-//       headers.forEach(header => {
-//           const td = document.createElement('td');
-//           td.textContent = row[header];
-//           tableRow.appendChild(td);
-//       });
-
-//       // Add event listener to make rows selectable
-//       tableRow.addEventListener('click', function() {
-//           // Remove selection from previously selected row
-//           const selectedRow = tableContainer.querySelector('.selected-row');
-//           if (selectedRow) {
-//               selectedRow.classList.remove('selected-row');
-//           }
-//           // Add selection to the current row
-//           tableRow.classList.add('selected-row');
-
-//           const diaFeatureIdColumn = row['dia_feat_id'];
-//           if (diaFeatureIdColumn !== undefined) {
-//               findInMainTableByFeatureId(diaFeatureIdColumn);
-//           }
-//       });
-
-//       tbody.appendChild(tableRow);
-//   });
-
-//   table.appendChild(thead);
-//   table.appendChild(tbody);
-//   tableContainer.appendChild(table);
-// }
-
-
-
-
-// function showAnnotationTable(data) {
-//   const tableContainer = document.getElementById('annotation-table');
-//   tableContainer.innerHTML = ''; 
-
-//   // If no annotation data was returned, show the message.
-//   if (!data || data.length === 0) {
-//       tableContainer.innerHTML = "<p>No Lipids found for selected DIA Precursor.</p>";
-//       return;
-//   }
-
-//   // Filter data based on the selected main table row's dia_pre_id.
-//   if (selectedRowValue && selectedRowValue.id) {
-//       data = data.filter(row => row.dia_pre_id == selectedRowValue.id);
-//   }
-
-//   // If no rows remain after filtering, show the message.
-//   if (data.length === 0) {
-//       tableContainer.innerHTML = "<p>No Lipids found for selected DIA Precursor.</p>";
-//       return;
-//   }
-
-//   // Build the table from the filtered data.
-//   const table = document.createElement('table');
-//   const thead = document.createElement('thead');
-//   const tbody = document.createElement('tbody');
-
-//   // Create headers.
-//   const headers = Object.keys(data[0]);
-//   const headerRow = document.createElement('tr');
-//   headers.forEach(header => {
-//       const th = document.createElement('th');
-//       th.textContent = header;
-//       headerRow.appendChild(th);
-//   });
-//   thead.appendChild(headerRow);
-
-//   // Create rows.
-//   data.forEach(row => {
-//       const tableRow = document.createElement('tr');
-//       headers.forEach(header => {
-//           const td = document.createElement('td');
-//           td.textContent = row[header];
-//           tableRow.appendChild(td);
-//       });
-
-
-//       // Add click event to handle selection and fetching fragment details.
-//       tableRow.addEventListener('click', () => {
-//         window.activeTableElement = document.getElementById('annotation-table');
-//           // Clear previous selection
-//           const selected = tableContainer.querySelector('.selected-row');
-//           if (selected) selected.classList.remove('selected-row');
-//           tableRow.classList.add('selected-row');
-
-//           // Extract lipid_id from the row
-//           const lipidId = tableRow.cells[0].textContent;
-//           console.log("lipidId")
-//           console.log(lipidId)
-          
-//           // Send IPC message to fetch LipidFragments details for this lipid_id
-//           window.api.send('fetch-lipid-fragment-details', lipidId);
-//       });
-//       // Optionally, add a click event to link the annotation row back to the main table.
-//       // tableRow.addEventListener('click', () => {
-//       //     const selected = tableContainer.querySelector('.selected-row');
-//       //     if (selected) selected.classList.remove('selected-row');
-//       //     tableRow.classList.add('selected-row');
-//       //     const diaFeatureIdColumn = row['dia_feat_id'];
-//       //     if (diaFeatureIdColumn !== undefined) {
-//       //         findInMainTableByFeatureId(diaFeatureIdColumn);
-//       //     }
-//       // });
-//       tbody.appendChild(tableRow);
-//   });
-
-  
-
-//   table.appendChild(thead);
-//   table.appendChild(tbody);
-//   tableContainer.appendChild(table);
-
-//   if (tbody.firstChild) {
-//     tbody.firstChild.click();
-//   }
-// }
-
-
-
-// quite good
-// function showAnnotationTable(data) {
-//   const tableContainer = document.getElementById('annotation-table');
-//   tableContainer.innerHTML = ''; 
-
-//   // If no annotation data was returned, show the message.
-//   if (!data || data.length === 0) {
-//       tableContainer.innerHTML = "<p>No Lipids found for selected DIA Precursor.</p>";
-//       return;
-//   }
-
-//   // Filter data based on the selected main table row's dia_pre_id.
-//   if (selectedRowValue && selectedRowValue.id) {
-//       data = data.filter(row => row.dia_pre_id == selectedRowValue.id);
-//   }
-
-//   if (data.length === 0) {
-//       tableContainer.innerHTML = "<p>No Lipids found for selected DIA Precursor.</p>";
-//       return;
-//   }
-
-//   // Build the table
-//   const table = document.createElement('table');
-//   const thead = document.createElement('thead');
-//   const tbody = document.createElement('tbody');
-
-//   // Create headers (using all keys from the first row)
-//   const headers = Object.keys(data[0]);
-//   const headerRow = document.createElement('tr');
-//   headers.forEach(header => {
-//       const th = document.createElement('th');
-//       th.textContent = header;
-//       headerRow.appendChild(th);
-//   });
-//   thead.appendChild(headerRow);
-//   table.appendChild(thead);
-
-//   // Create rows
-//   data.forEach((row, index) => {
-//       const tr = document.createElement('tr');
-//       headers.forEach(header => {
-//           const td = document.createElement('td');
-//           td.textContent = row[header];
-//           tr.appendChild(td);
-//       });
-//       // When a row is clicked:
-//       tr.addEventListener('click', () => {
-//          // Mark this table as active for keyboard navigation
-//          window.activeTableElement = document.getElementById('annotation-table');
-//          // Remove any previous selection in this table
-//          const prev = tableContainer.querySelector('.selected-row');
-//          if (prev) prev.classList.remove('selected-row');
-//          // Mark this row as selected
-//          tr.classList.add('selected-row');
-//          // Extract the lipid_id from the first cell (make sure this cell actually holds the lipid_id)
-//          const lipidId = tr.cells[0].textContent;
-//          console.log("Annotation table row selected. Lipid ID:", lipidId);
-//          // Send IPC to fetch lipid fragment details for this lipid_id.
-//          window.api.send('fetch-lipid-fragment-details', lipidId);
-//       });
-//       tbody.appendChild(tr);
-//   });
-
-//   table.appendChild(tbody);
-//   tableContainer.appendChild(table);
-
-//   // Set this annotation table as the active table by default.
-//   window.activeTableElement = tableContainer;
-
-//   // Optionally auto-select the first row.
-//   if (tbody.firstChild) {
-//       tbody.firstChild.click();
-//   }
-// }
 
 // Global array for annotated feature deletions
 let lipidRowsToDelete = [];
@@ -1669,8 +932,6 @@ function showAnnotationTable(data) {
   // Create table rows.
   data.forEach((row) => {
     const tr = document.createElement('tr');
-    // Assume the lipid ID is stored under the key "lipid_id" or is the first column.
-    // Here we use row.lipid_id if available; otherwise we use the first property.
     tr.dataset.lipidId = row.lipid_id || row[Object.keys(row)[0]];
 
     // Create cells for each header.
@@ -1748,10 +1009,7 @@ function showAnnotationTable(data) {
   }
 }
 
-
-
 // ------ Plot Generation Functions ----------
-
 
 
 // Decon Plot Generation (both plots generated here)
@@ -2269,12 +1527,6 @@ Highcharts.chart('ms1-plot', {
 }
 
 
-
-
-
-//  New DDA Work
-
-
 window.api.receive('dda-features-result', (data) => {
   if (data.error) {
     console.error("Error fetching DDA features:", data.error);
@@ -2328,7 +1580,7 @@ window.api.receive('dia-ms2-result', (data) => {
     return;
   }
   // Store the DIA MS2 data
-  window.diaMs2Data = data.data; // Expected: array of objects {fmz, fint}
+  window.diaMs2Data = data.data; // Expected: {fmz, fint}
   // If DDA data is already available, plot bidirectional.
   if (window.ddaMs2Data) {
     plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
@@ -2338,7 +1590,7 @@ window.api.receive('dia-ms2-result', (data) => {
 
 function showDDAFeaturesTable(features) {
   const container = document.getElementById('dda-features-table');
-  container.innerHTML = ''; // Clear previous content
+  container.innerHTML = ''; 
 
   if (!features || features.length === 0) {
     container.innerHTML = '<p>No matching DDA features found.</p>';
@@ -2367,9 +1619,8 @@ function showDDAFeaturesTable(features) {
       td.textContent = feature[header];
       row.appendChild(td);
     });
-    // When a DDA feature row is clicked:
     row.addEventListener('click', () => {
-      // Clear any previous selection.
+      // Clear any previously selected rows
       window.activeTableElement = document.getElementById('dda-features-table');
       const prev = container.querySelector('.selected');
       if (prev) prev.classList.remove('selected');
@@ -2390,7 +1641,7 @@ function showDDAFeaturesTable(features) {
 
     // Automatically select the first row:
     if (idx === 0) {
-      // Delay selection slightly to ensure the table is fully built.
+      // Delay selection slightly to ensure the table is fully built - fixes rendering compete
       setTimeout(() => { row.click(); }, 0);
     }
   });
@@ -2406,7 +1657,7 @@ window.api.receive('dda-ms2-result', (data) => {
     return;
   }
   // Store the new DDA MS2 data.
-  window.ddaMs2Data = data.data; // Expected: array of objects {fmz, fint}
+  window.ddaMs2Data = data.data; // Expected: {fmz, fint}
   // Now replot the bidirectional MS2 plot if DIA data is available.
   if (window.diaMs2Data) {
     plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
@@ -2414,294 +1665,6 @@ window.api.receive('dda-ms2-result', (data) => {
 });
 
 
-// function plotBidirectionalMS2(ddaData, diaData) {
-//   // Ensure both inputs are arrays.
-//   ddaData = Array.isArray(ddaData) ? ddaData : [];
-//   diaData = Array.isArray(diaData) ? diaData : [];
-//   console.log("plotBidirectionalMS2 called with:", ddaData, diaData);
-
-//   // Check if there is at least one data point.
-//   if (ddaData.length === 0 && diaData.length === 0) {
-//     // No data: hide the chart container and show error message.
-//     document.getElementById("bidirectional-plot").style.display = "none";
-//     document.getElementById("error-message-bidirectional-plot").style.display = "block";
-//     return; // exit early
-//   } else {
-//     // Data exists: show the chart container and hide the error message.
-//     document.getElementById("bidirectional-plot").style.display = "block";
-//     document.getElementById("error-message-bidirectional-plot").style.display = "none";
-//   }
-  
-//   // Compute combined m/z values.
-//   const combinedMzValues = Array.from(new Set([
-//     ...ddaData.map(peak => peak.fmz),
-//     ...diaData.map(peak => peak.fmz)
-//   ])).sort((a, b) => a - b);
-
-//   // Compute x-axis range with a buffer.
-//   const dataMin = Math.min(...combinedMzValues);
-//   const dataMax = Math.max(...combinedMzValues);
-//   const buffer = (dataMax - dataMin) * 0.05;
-  
-//   // Compute maximum absolute intensity for y-axis scaling.
-//   const maxDDA = ddaData.length ? Math.max(...ddaData.map(peak => Math.abs(peak.fint))) : 0;
-//   const maxDIA = diaData.length ? Math.max(...diaData.map(peak => Math.abs(peak.fint))) : 0;
-//   const maxAbs = Math.max(maxDDA, maxDIA);
-  
-//   // (Optional) Update your deconvoluted table set if needed.
-//   DeconTableMzSet = new Set(
-//     Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child'))
-//       .map(cell => parseFloat(cell.innerText).toFixed(4))
-//   );
-  
-//   Highcharts.chart('bidirectional-plot', {
-//     chart: {
-//       type: 'column',
-//       backgroundColor: null,
-//       zoomType: 'xy',
-//       panning: true,
-//       resetZoomButton: {
-//         position: { align: 'left', verticalAlign: 'top', x: 0, y: 0 }
-//       }
-//     },
-//     credits: { enabled: false },
-//     title: { text: 'DDA & DIA MS2 Peaks' },
-//     legend: {
-//       align: 'right',
-//       verticalAlign: 'top',
-//       layout: 'vertical',
-//       floating: true,
-//       x: -10,
-//       y: -10
-//     },
-//     xAxis: {
-//       type: 'linear',
-//       min: dataMin - buffer,
-//       max: dataMax + buffer,
-//       title: { text: 'm/z' },
-//       ignoreHiddenSeries: true
-//     },
-//     yAxis: [{
-//       title: { text: 'DDA Intensity' },
-//       min: -maxAbs,
-//       max: 0,
-//       labels: { formatter: function () { return Math.abs(this.value); } },
-//       top: '50%',
-//       height: '50%',
-//       offset: 0,
-//       lineWidth: 1,
-//       opposite: false
-//     }, {
-//       title: { text: 'DIA Intensity' },
-//       min: 0,
-//       max: maxAbs,
-//       labels: { formatter: function () { return this.value; } },
-//       top: '0%',
-//       height: '50%',
-//       offset: 0,
-//       lineWidth: 1,
-//       opposite: false
-//     }],
-//     plotOptions: {
-//       column: {
-//         grouping: false,
-//         pointPlacement: 'on',
-//         pointPadding: 0,
-//         borderWidth: 0,
-//         shadow: false,
-//         allowPointSelect: true,
-//         states: { select: { color: '#800080' } }
-//       },
-//       series: { cursor: 'pointer' }
-//     },
-//     series: [{
-//       name: 'DDA',
-//       yAxis: 0,
-//       data: ddaData.map(peak => ({
-//         x: peak.fmz,
-//         y: -peak.fint,
-//         color: "#7cb5ec"
-//       })),
-//       grouping: false,
-//       pointPlacement: 'on',
-//       pointWidth: 2,
-//       legendIndex: 2
-//     }, {
-//       name: 'DIA',
-//       yAxis: 1,
-//       data: diaData.map(peak => ({
-//         x: peak.fmz,
-//         y: peak.fint,
-//         color: "#BFA6BF",
-//         pointWidth: 2
-//       })),
-//       grouping: false,
-//       pointPlacement: 'on',
-//       legendIndex: 1
-//     }]
-//   });
-// }
-
-
-// Good
-// function plotBidirectionalMS2(ddaData, diaData) {
-//   // Ensure both inputs are arrays.
-//   ddaData = Array.isArray(ddaData) ? ddaData : [];
-//   diaData = Array.isArray(diaData) ? diaData : [];
-//   console.log("plotBidirectionalMS2 called with:", ddaData, diaData);
-
-//   // Check if there is at least one data point.
-//   if (ddaData.length === 0 && diaData.length === 0) {
-//     document.getElementById("bidirectional-plot").style.display = "none";
-//     document.getElementById("error-message-bidirectional-plot").style.display = "block";
-//     return; // exit early
-//   } else {
-//     document.getElementById("bidirectional-plot").style.display = "block";
-//     document.getElementById("error-message-bidirectional-plot").style.display = "none";
-//   }
-  
-//   // Compute combined m/z values.
-//   const combinedMzValues = Array.from(new Set([
-//     ...ddaData.map(peak => peak.fmz),
-//     ...diaData.map(peak => peak.fmz)
-//   ])).sort((a, b) => a - b);
-
-//   // Compute x-axis range with a buffer.
-//   const dataMin = Math.min(...combinedMzValues);
-//   const dataMax = Math.max(...combinedMzValues);
-//   const buffer = (dataMax - dataMin) * 0.05;
-  
-//   // Compute maximum absolute intensity for y-axis scaling.
-//   const maxDDA = ddaData.length ? Math.max(...ddaData.map(peak => Math.abs(peak.fint))) : 0;
-//   const maxDIA = diaData.length ? Math.max(...diaData.map(peak => Math.abs(peak.fint))) : 0;
-//   const maxAbs = Math.max(maxDDA, maxDIA);
-  
-//   // (Optional) Update your deconvoluted table set if needed.
-//   DeconTableMzSet = new Set(
-//     Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child'))
-//       .map(cell => parseFloat(cell.innerText).toFixed(4))
-//   );
-  
-//   Highcharts.chart('bidirectional-plot', {
-//     chart: {
-//       type: 'column',
-//       backgroundColor: null,
-//       zoomType: 'xy',
-//       panning: true,
-//       resetZoomButton: {
-//         position: { align: 'left', verticalAlign: 'top', x: 0, y: 0 }
-//       }
-//     },
-//     credits: { enabled: false },
-//     title: { text: 'DDA & DIA MS2 Peaks' },
-//     legend: {
-//       align: 'right',
-//       verticalAlign: 'top',
-//       layout: 'vertical',
-//       floating: true,
-//       x: -10,
-//       y: -10
-//     },
-//     tooltip: {
-//       formatter: function () {
-//         let baseText = 'm/z: ' + this.x + '<br/>Intensity: ' + Math.abs(this.y);
-//         // For DIA series, if a dia_frag_id exists and global details are available, append extra info.
-//         if (this.series.name === 'DIA' && this.point.dia_frag_id && window.lipidFragmentDetails) {
-//           const details = window.lipidFragmentDetails[this.point.dia_frag_id];
-//           if (details) {
-//             baseText += '<br/>Frag Rule: ' + details.frag_rule;
-//             baseText += '<br/>Supports FA: ' + details.supports_fa;
-//           }
-//         }
-//         return baseText;
-//       }
-//     },
-//     xAxis: {
-//       type: 'linear',
-//       min: dataMin - buffer,
-//       max: dataMax + buffer,
-//       title: { text: 'm/z' },
-//       ignoreHiddenSeries: true
-//     },
-//     yAxis: [{
-//       title: { text: 'DDA Intensity' },
-//       min: -maxAbs,
-//       max: 0,
-//       labels: { formatter: function () { return Math.abs(this.value); } },
-//       top: '50%',
-//       height: '50%',
-//       offset: 0,
-//       lineWidth: 1,
-//       opposite: false
-//     }, {
-//       title: { text: 'DIA Intensity' },
-//       min: 0,
-//       max: maxAbs,
-//       labels: { formatter: function () { return this.value; } },
-//       top: '0%',
-//       height: '50%',
-//       offset: 0,
-//       lineWidth: 1,
-//       opposite: false
-//     }],
-//     plotOptions: {
-//       column: {
-//         grouping: false,
-//         pointPlacement: 'on',
-//         pointPadding: 0,
-//         borderWidth: 0,
-//         shadow: false,
-//         allowPointSelect: true,
-//         states: { select: { color: '#800080' } }
-//       },
-//       series: { cursor: 'pointer' }
-//     },
-//     series: [{
-//       name: 'DDA',
-//       yAxis: 0,
-//       data: ddaData.map(peak => ({
-//         x: peak.fmz,
-//         y: -peak.fint,
-//         color: "#7cb5ec"
-//       })),
-//       grouping: false,
-//       pointPlacement: 'on',
-//       pointWidth: 2,
-//       legendIndex: 2
-//     }, {
-//       name: 'DIA',
-//       yAxis: 1,
-//       data: diaData.map(peak => ({
-//         x: peak.fmz,
-//         y: peak.fint,
-//         color: "#BFA6BF",
-//         pointWidth: 2,
-//         dia_frag_id: peak.dia_frag_id // include fragment id if available
-//       })),
-//       grouping: false,
-//       pointPlacement: 'on',
-//       legendIndex: 1,
-//       dataLabels: {
-//         enabled: true,
-//         formatter: function () {
-//           if (this.point.dia_frag_id && window.lipidFragmentDetails) {
-//             const key = String(this.point.dia_frag_id);
-//             const details = window.lipidFragmentDetails[key];
-//             // Uncomment the next line to debug:
-//             console.log("DataLabel lookup key:", key, "Details:", details);
-//             if (details && parseInt(details.diagnostic, 10) === 1) {
-//               return '↓';
-//             }
-//           }
-//           return '';
-//         },
-//         verticalAlign: 'top',
-//         y: -50,
-//         style: { fontSize: '12px', fontWeight: 'bold' }
-//       }
-//     }]
-//   });
-// }
 
 function plotBidirectionalMS2(ddaData, diaData) {
   // Ensure inputs are arrays.
@@ -2733,13 +1696,12 @@ function plotBidirectionalMS2(ddaData, diaData) {
   const maxDIA = diaData.length ? Math.max(...diaData.map(peak => Math.abs(peak.fint))) : 0;
   const maxAbs = Math.max(maxDDA, maxDIA);
   
-  // Optionally update your deconvoluted table set.
   window.DeconTableMzSet = new Set(
     Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child'))
       .map(cell => parseFloat(cell.innerText).toFixed(4))
   );
   
-  // Create (and save globally) the bidirectional chart.
+  // Create the bidirectional chart.
   window.bidirectionalChart = Highcharts.chart('bidirectional-plot', {
     chart: {
       type: 'column',
@@ -2848,7 +1810,7 @@ function plotBidirectionalMS2(ddaData, diaData) {
               return '';
             },
             verticalAlign: 'top',
-            y: 0, // default value; will be adjusted in load callback or updateSelectedDIAHighlight()
+            y: 0,
             style: { fontSize: '12px', fontWeight: 'bold' }
           }
         };
@@ -2874,13 +1836,7 @@ function plotBidirectionalMS2(ddaData, diaData) {
   });
 }
 
-
-
-
-
-//  Decon stuffff
-
-
+//  Decon stuff
 
 
 window.api.receive('decon-fragments-result', (data) => {
@@ -2936,20 +1892,6 @@ window.api.receive('decon-raw-blob-result', (data) => {
     displayDeconPlots(fragXICPairs, fragATDPairs, precursorXICPairs, precursorATDPairs);
   }
 });
-
-// // Listen for the reply containing lipid fragment details
-// window.api.receive('lipid-fragment-details', (data) => {
-//   if (data.error) {
-//       console.error("Error fetching lipid fragment details:", data.error);
-//       return;
-//   }
-//   // Save details in a global object (keyed by dia_frag_id)
-//   window.lipidFragmentDetails = window.lipidFragmentDetails || {};
-//   data.details.forEach(detail => {
-//       window.lipidFragmentDetails[detail.dia_frag_id] = detail;
-//   });
-//   console.log("Lipid fragment details:", window.lipidFragmentDetails);
-// });
 
 
 function updateSelectedDIAHighlight() {
@@ -3007,36 +1949,7 @@ window.api.receive('lipid-fragment-details', (data) => {
 });
 
 
-document.addEventListener('keydown', function (e) {
-  // Check if an active table is set.
-  if (!window.activeTableElement) {
-    return;
-  }
-  
-  // Find the currently selected row in that table.
-  // This example looks for a row with either class "selected" or "selected-row".
-  let selectedRow = window.activeTableElement.querySelector('.selected, .selected-row');
-  if (!selectedRow) return;
-  
-  // For arrow down: move to the next sibling row.
-  if (e.key === 'ArrowDown') {
-    let nextRow = selectedRow.nextElementSibling;
-    if (nextRow) {
-      nextRow.click();
-      nextRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      e.preventDefault();
-    }
-  }
-  // For arrow up: move to the previous sibling row.
-  else if (e.key === 'ArrowUp') {
-    let prevRow = selectedRow.previousElementSibling;
-    if (prevRow) {
-      prevRow.click();
-      prevRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      e.preventDefault();
-    }
-  }
-});
+
 
 
 window.api.receive('delete-annotated-feature-rows-result', (result) => {
