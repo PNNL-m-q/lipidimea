@@ -243,11 +243,7 @@ def _from_config(config: YamlFilePath,
             return AnnotationParams(**params)
         
 def _strip_ui_metadata(cfg: Any, *, _depth: int = 0) -> Any:
-    """
-    Recursively strip out GUI‑only keys (display_name, type, description, advanced),
-    unwrap any { default: … } wrappers, and convert any numeric strings
-    (including scientific notation) into floats.
-    """
+    """ Recursively strip out GUI‑only keys (display_name, type, description, advanced """
     if not isinstance(cfg, dict):
         if isinstance(cfg, str):
             try:
