@@ -248,7 +248,6 @@ def _strip_ui_metadata(cfg: Any, *, _depth: int = 0) -> Any:
     unwrap any { default: … } wrappers, and convert any numeric strings
     (including scientific notation) into floats.
     """
-    # 1) If it’s not a dict, try to convert strings to float
     if not isinstance(cfg, dict):
         if isinstance(cfg, str):
             try:
@@ -256,15 +255,10 @@ def _strip_ui_metadata(cfg: Any, *, _depth: int = 0) -> Any:
             except ValueError:
                 pass
         return cfg
-
-    # 2) If this dict is a metadata wrapper, unwrap it
     if 'default' in cfg:
         return _strip_ui_metadata(cfg['default'], _depth=_depth)
-
-
-    # 3) Otherwise, recurse into children, dropping GUI‑only keys
     gui_only = {'type', 'description', 'advanced'}
-    if _depth > 0:          #   <── drop `display_name` once we’re inside any section
+    if _depth > 0:
         gui_only.add('display_name')
 
     return {
@@ -272,7 +266,6 @@ def _strip_ui_metadata(cfg: Any, *, _depth: int = 0) -> Any:
         for k, v in cfg.items()
         if k not in gui_only
     }
-
 
 
 
