@@ -85,6 +85,8 @@ const filesAnnotation= [];
 const outputBox = document.getElementById('output-box');
 
 
+let experimentRunning = false;
+
 // Add Event listeners. DOM triggers immediately
 
 // Checkbox eventlisteners
@@ -1171,6 +1173,30 @@ function UpdateDatabaseOptions() {
   }
 }
 
+function cancelExperiment() {
+  if (!experimentRunning) return;
+  window.api.send('cancel-experiment');
+  document.getElementById('cancel-btn').disabled = true;
+}
+
+// Listen for main → renderer events
+window.api.receive('experiment-started', () => {
+  // (optional) you could also clear previous output, etc.
+});
+
+window.api.receive('experiment-canceled', () => {
+  experimentRunning = false;
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('cancel-btn').disabled = true;
+});
+
+window.api.receive('experiment-finished', () => {
+  experimentRunning = false;
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('cancel-btn').disabled = true;
+});
+
+
 // Receive Python Experiment Results to display
 window.api.receive('python-result-experiment', (result) => {
   console.log('Received result:', result);
@@ -1272,7 +1298,10 @@ async function RunExperiment() {
   // 5) Begin Experiment
   outputBox.innerText += "Starting experiment…\n";
   window.api.send("run-lipidimea-cli-steps", { steps });
-  disableButton();
+  experimentRunning = true;
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('cancel-btn').disabled = false;
+  outputBox.innerText += "Starting experiment…\n";
 }
 
 
@@ -1370,3 +1399,19 @@ function linkInputs(a, b) {
     b.addEventListener(ev, sync(b, a));
   });
 }
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const viewLink = document.querySelector('nav .menu-item[href="../results/results.html"]');
+  viewLink.addEventListener('click', e => {
+    if (experimentRunning) {
+      e.preventDefault();
+      if (confirm('An experiment is still running. Cancel it and navigate away?')) {
+        cancelExperiment();
+        // give it a moment to kill before navigating
+        setTimeout(() => window.location.href = viewLink.href, 200);
+      }
+    }
+  });
+});
+

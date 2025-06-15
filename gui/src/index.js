@@ -8,6 +8,8 @@ const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
 const { PassThrough } = require('stream');
 
+let cancelRequested = false;
+let currentChild = null;
 
 // Resolve paths differently in dev vs packaged
 const LIPIDIMEA_ROOT = app.isPackaged
@@ -263,47 +265,54 @@ ipcMain.on('file-dialog-selection', (event, filePath) => {
 
 
 ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
+  cancelRequested = false;
+  event.reply('experiment-started');
+  
   for (const { cmd, desc } of steps) {
+    if (cancelRequested) break;
     event.reply('python-result-experiment', `\n>>> ${desc}\n`);
-    try {
-
-      try { fs.chmodSync(PYTHON_CLI, 0o755); } catch (e) {}
-      if (app.isPackaged) {
-        await new Promise((resolve, reject) => {
-          const child = spawn(PYTHON_CLI, cmd, {
-            cwd: LIPIDIMEA_ROOT,
-            env: process.env
-          });
-
-        child.stdout.on('data', d => event.reply('python-result-experiment', d.toString()));
-        child.stderr.on('data', d => event.reply('python-result-experiment', d.toString()));
-        child.on('close', code => code === 0
-          ? resolve()
-          : reject(new Error(`${desc} failed (exit ${code})`))
-        );
-      });
-
-    } else {
-
-      await new Promise((resolve, reject) => {
-        const child = spawn(
-          'python3.12',
-          ['-m', 'lipidimea', ...cmd],
-          { cwd: LIPIDIMEA_ROOT, env: process.env }
-        );
     
-        child.stdout.on('data', d => event.reply('python-result-experiment', d.toString()));
-        child.stderr.on('data', d => event.reply('python-result-experiment', d.toString()));
-        child.on('close', code => code === 0 ? resolve()
-                                             : reject(new Error(`${desc} failed (exit ${code})`)));
+    try {
+      try { fs.chmodSync(PYTHON_CLI, 0o755); } catch (_) {}
+
+      currentChild = spawn(
+        app.isPackaged
+          ? PYTHON_CLI
+          : 'python3.12',
+        app.isPackaged
+          ? cmd
+          : ['-m', 'lipidimea', ...cmd],
+        { cwd: LIPIDIMEA_ROOT, env: process.env }
+      );
+      
+      currentChild.stdout.on('data', d => event.reply('python-result-experiment', d.toString()));
+      currentChild.stderr.on('data', d => event.reply('python-result-experiment', d.toString()));
+      
+      await new Promise((resolve, reject) => {
+        currentChild.on('close', code => {
+          currentChild = null;
+          code === 0 ? resolve() : reject(new Error(`${desc} failed (exit ${code})`));
+        });
+        currentChild.on('error', reject);
       });
-    }
     } catch (err) {
       event.reply('python-result-experiment', `\nERROR: ${err.message}\n`);
-      return;
+      break;
     }
   }
-  event.reply('python-result-experiment', '\nExperiment complete.\n');
+
+  if (cancelRequested) {
+    event.reply('python-result-experiment', '\nExperiment canceled.\n');
+    event.reply('experiment-canceled');
+  } else {
+    event.reply('python-result-experiment', '\nExperiment complete.\n');
+    event.reply('experiment-finished');
+  }
+});
+
+ipcMain.on('cancel-experiment', () => {
+  cancelRequested = true;
+  if (currentChild) currentChild.kill();
 });
 
 // ------------ Results Section ----------

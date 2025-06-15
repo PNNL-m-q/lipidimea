@@ -16,7 +16,7 @@
         <nav class="menu" style="z-index:1000;">
             <!-- <a href="../intro/intro.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">Instructions</a> -->
             <a href="#../experiment/experiment.html" class="menu-item">Process Data</a>
-            <a href="../results/results.html" class="menu-item" onclick="return confirm('Are you sure you want to leave this tab? Current data will be lost.')">View Results</a>
+            <a href="../results/results.html" class="menu-item">View Results</a>
         </nav>
     </div>
 
@@ -307,7 +307,8 @@
 
                 <!-- Run Experiment Button -->
                 <div class="section-container">
-                    <button class="btn" id ="run-btn" onclick="RunExperiment(); disableButton()">Run Experiment</button>
+                    <button class="btn" id="run-btn" onclick="RunExperiment()">Run Experiment</button>
+                    <button class="btn" id="cancel-btn" onclick="cancelExperiment()" disabled>Cancel</button>
                 </div>
 
 
