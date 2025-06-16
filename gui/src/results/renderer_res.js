@@ -1,5 +1,6 @@
-// Declare Variables
-
+// ------------------------------------------------------------------------
+// Declare All Variables
+// ------------------------------------------------------------------------
 let filePath = null;
 let selectedRowValue = null;
 let isMappingTable = false;
@@ -8,160 +9,12 @@ let mzRowMap = new Map();
 let DeconTableMzSet;
 const DeconTable_MATCH_COLOR = '#E6A7B2';
 
-// ----- Event Listeners and Receivers -----
-
-// Open Database Dialog
-function databaseDialog() {
-  window.api.send('open-database-dialog', "Sent.");
-}
-
-// Create Deconvoluted Plots when receiving this data
-window.api.receive('return-decon-blob-data', (data) => {
-  if(data.error) {
-    console.error("Error while processing blob data in main process:", data.error);
-    return;
-  }
-  const xicPairs = data.xicArray;
-  const atdPairs = data.atdArray;
-  const PreXicPairs = data.PreXicArray;
-  const PreAtdPairs = data.PreAtdArray;
-  displayDeconPlots(xicPairs, atdPairs, PreXicPairs, PreAtdPairs);
-});
-
-
-// Create Deconvoluted Table when receiving this data
-
-window.api.receive('database-table-data', (data, isMapping, error, filepath) => {
-  const tableContainer = document.getElementById('deconvoluted-frags-table');
-  const errorMessageElement = document.getElementById('error-message');
-  const plotsElement = document.getElementById('plots-container');
-  const tableMainContainer = document.getElementById('main-table-container');
-  if (error) {
-      // Hide the table in case of an error
-      tableMainContainer.style.border = "none";  
-      tableContainer.style.display = "none";
-      plotsElement.style.display = "none";
-      if (error === "No IDs provided") {
-          // Specific message for missing ID values
-          errorMessageElement.textContent = 'No deconvoluted DIA fragments found for feature.';
-      } else {
-          // General error handling
-          const errorMsg = `Error fetching data from the database: ${filepath.split("/").pop()}: ${error}`;
-          errorMessageElement.textContent = errorMsg;
-          console.error(errorMsg);
-          console.log("Calling showDeconTable.")
-          showDeconTable(data);
-      }
-      return;
-  }
-  // If no error, proceed with displaying the data
-  tableContainer.style.display = "block";
-  errorMessageElement.textContent = '';
-  plotsElement.style.display = "block";
-  
-  if (isMapping) {
-      showDeconTable(data);
-  } else {
-    // This is where the main table is initially started up.
-      showMainTable(data);  
-  }
-});
-
-
-window.api.receive('raw-blob-result', (data) => {
-  if (data.error) {
-    console.error(`Error fetching blob (${data.rawType}):`, data.error);
-    return;
-  }
-  if (!data.data) return;
-
-  // For precursor raw data, store it in global variables.
-  if (data.rawType === 'DIA_PRE_XIC') {
-    window.precursorXICData = data.data;
-  } else if (data.rawType === 'DIA_PRE_ATD') {
-    window.precursorATDData = data.data;
-  }
-
-  // Compute (x,y) pairs if available.
-  let pairs = null;
-  if (data.data.x && data.data.y) {
-    pairs = data.data.x.map((val, i) => [val, data.data.y[i]]);
-  } else if (data.rawType === 'DIA_PRE_MS1' && data.data.ms1Array) {
-    // Fallback if the raw data for MS1 is provided as ms1Array.
-    pairs = data.data.ms1Array;
-  }
-
-  // Use the rawType to call the proper display function.
-  switch (data.rawType) {
-    case 'DIA_PRE_MS1':
-      displayMS1Plot(pairs);
-      break;
-    case 'DIA_PRE_XIC':
-      displayXicPlot(pairs);
-      break;
-    case 'DIA_PRE_ATD':
-      displayATDPlot(pairs);
-      break;
-    default:
-      console.warn("Unknown rawType received:", data.rawType);
-  }
-});
-
-
-// Create Annotation Table when receiving this data
-window.api.receive('database-annotation-data', (data, isMapping, error, filepath) => {
-  const tableContainer = document.getElementById('annotation-table');
-  const errorMessageElement = document.getElementById('error-message-annotation');
-  if (error) {
-      tableContainer.style.display = "none";
-      if (error === "No IDs provided") {
-          errorMessageElement.textContent = 'failed.';
-      } else {
-          const errorMsg = `Error fetching data from the database: ${filepath.split("/").pop()}: ${error}`;
-          errorMessageElement.textContent = errorMsg;
-          console.error(errorMsg);
-      }
-      return;
-  }
-
-  showAnnotationTable(data);
-  tableContainer.style.display = "block";
-  errorMessageElement.textContent = '';
-  window.activeTableElement = document.getElementById('main-table-container');
-});
-
-
-// Create ATD plot when receiving this data
-window.api.receive('return-atd-blob-data', (data) => {
-  if(data.error) {
-    console.error("Error while processing blob data in main process:", data.error);
-    return;
-  }
-  const atdPairs = data.atdArray;
-  // Render the plots using the received data
-  displayATDPlot(atdPairs);
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  window.api.receive('selected-database-path', (result) => {
-    filePath = result;
-    window.api.send('fetch-database-table', result);
-    window.api.send('fetch-annotation-table', result);  
-  });
-});
-
-
-// Create XIC plot when receiving this data
-window.api.receive('return-xic-blob-data', (data) => {
-  if(data.error) {
-    console.error("Error while processing blob data in main process:", data.error);
-    return;
-  }
-  const xicPairs = data.xicArray;
-  // Render the plots using the received data
-  displayXicPlot(xicPairs);
-});
-
+// Global variables for main table data, sorting, filtering, pagination, and deletion.
+let mainTableData = [];
+let currentSort = { column: null, order: 'asc' };
+let rowsPerPage = 200;
+let currentPage = 1;
+let rowsToDelete = [];
 
 
 // ------ Helper Functions ----------
@@ -172,85 +25,6 @@ function formatDecimalValue(value) {
     return value.toFixed(4);
   }
   return value;
-}
-
-// Parse Peak Data
-function parsePeaks(dataString) {
-  return dataString.split(' ').map(peak => {
-    const [mz, intensity] = peak.split(':');
-    return {
-      mz: parseFloat(mz),
-      intensity: parseFloat(intensity)
-    };
-  });
-}
-
-
-// Called in Annotation Table. Select mapped rows in Main Table
-function findInMainTableByFeatureId(featureId) {
-  const mainTableContainer = document.getElementById('main-table-container');
-  const rows = mainTableContainer.querySelectorAll('tr');
-  rows.forEach(row => {
-      // Assuming the feature ID is in the third column
-      const featureIdCell = row.children[2];
-      if (featureIdCell && parseInt(featureIdCell.textContent, 10) === featureId) {
-        row.dispatchEvent(new Event('click', { 'bubbles': true }));  
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-  });
-}
-
-// Called in Main Table. Select mapped rows in Annotation Table
-function findInAnnTableByFeatureId(featureId) {
-  const AnnContainer = document.getElementById('annotation-table');
-  const rows = AnnContainer.querySelectorAll('tr');
-
-      // Deselect all previously selected rows first
-  rows.forEach(row => {
-        if (row.classList.contains('selected')) {
-            row.classList.remove('selected');
-        }
-    });
-
-  rows.forEach(row => {
-      // Assuming the feature ID is in the first column
-      const featureIdCell = row.children[1];
-      if (featureIdCell && parseInt(featureIdCell.textContent, 10) === featureId) {
-        // row.dispatchEvent(new Event('click', { 'bubbles': true }));  
-        row.classList.add('selected'); 
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-  });
-
-
-}
-
-// Called in Mapped Feature Table. Select mapped rows in Main Table
-function highlightRowInMainTable(diaFeatureId) {
-  const mainTable = document.getElementById('main-table-container');
-  const rows = mainTable.querySelectorAll('tbody tr'); 
-  rows.forEach(row => {
-      const featureIdCell = row.cells[2]; // Get the third cell 
-      if (String(featureIdCell.textContent) === String(diaFeatureId)) {
-        row.click();
-      }
-  });
-}
-
-// Function get a set of all m/z values from DeconTable
-function getDeconTableMzSet() {
-  const DeconTableMzValues = Array.from(document.querySelectorAll('#deconvoluted-frags-table tbody tr td:first-child')).map(td => parseFloat(td.innerText).toFixed(4));
-  return new Set(DeconTableMzValues);
-}
-
-// Set DIA color of columns. (Plots)
-function getDIAColor(mzValue, DeconTableMzSet) {
-  const existsInDeconTable = DeconTableMzSet.has(mzValue.toFixed(4));
-  if (existsInDeconTable) {
-      return DeconTable_MATCH_COLOR;  
-  } else {
-      return '#7cb5ec'; 
-  }
 }
 
 // Set DIA width of columns. (Plots)
@@ -265,13 +39,9 @@ function getDIAWidth(mzValue, DeconTableMzSet) {
 
 // Generate Normal Distribution Data for fitted lines in Plots
 function generateGaussianData(mean, height, width) {
-  // console.log(`Here are the 3 values. mean: ${mean}, width: ${width}, height: ${height}`)
-
   mean = parseFloat(mean);
   width = parseFloat(width); 
   height = parseFloat(height);
-
-  // Validate the conversion and input values
   if (isNaN(mean) || isNaN(width) || isNaN(height)) {
       console.error("Invalid input values");
       return [];
@@ -300,26 +70,10 @@ function selectDeconTableRow(mzValue) {
   }
 }
 
-  // When selecting a different a row in the Decon Table, update Decon Plots.
-function processDeconRowData(row) {
-    window.api.send('process-decon-blob-data', {
-      dia_xic: row['xic'],
-      dia_atd: row['atd'],
-      pre_dia_xic: row['dia_xic'],
-      pre_dia_atd: row['dia_atd']
-    });
-}
+// ------------------------------------------------------------------------
+// Table Creation Functions
+// ------------------------------------------------------------------------
 
-
-// ------ Table Creation Functions ----------
-
-// Global variables for main table data, sorting, filtering, pagination, and deletion.
-let mainTableData = [];
-let currentSort = { column: null, order: 'asc' };
-let rowsPerPage = 200;
-let currentPage = 1;
-// This array will hold dia_pre_id values for rows marked for deletion.
-let rowsToDelete = [];
 
 // Display Main Table
 function showMainTable(data) {
@@ -523,7 +277,6 @@ function renderTableBody(data, tbody, headers) {
 
 
     tableRow.appendChild(deleteCell);
-    
     // Attach the original row click event (for updating details)
     tableRow.addEventListener('click', () => {
       window.activeTableElement = document.getElementById('main-table-container');
@@ -611,6 +364,30 @@ function renderTableBody(data, tbody, headers) {
   }
   tbody.appendChild(fragment);
   renderPaginationControls(data);
+}
+
+
+// Called in Main Table. Select mapped rows in Annotation Table
+function findInAnnTableByFeatureId(featureId) {
+  const AnnContainer = document.getElementById('annotation-table');
+  const rows = AnnContainer.querySelectorAll('tr');
+
+      // Deselect all previously selected rows first
+  rows.forEach(row => {
+        if (row.classList.contains('selected')) {
+            row.classList.remove('selected');
+        }
+    });
+
+  rows.forEach(row => {
+      // Assuming the feature ID is in the first column
+      const featureIdCell = row.children[1];
+      if (featureIdCell && parseInt(featureIdCell.textContent, 10) === featureId) {
+        // row.dispatchEvent(new Event('click', { 'bubbles': true }));  
+        row.classList.add('selected'); 
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+  });
 }
 
 // Pagination!
@@ -819,7 +596,6 @@ window.api.receive('delete-diaprecursor-rows-result', (result) => {
 
 
 // Create Deconvoluted Feature Table
-
 function showDeconTable(fragments) {
   const tableContainer = document.getElementById('deconvoluted-frags-table');
   tableContainer.innerHTML = ''; // Clear previous content
@@ -870,7 +646,6 @@ function showDeconTable(fragments) {
     tbody.firstChild.click();
   }
 }
-
 
 // Global array for annotated feature deletions
 let lipidRowsToDelete = [];
@@ -1009,8 +784,9 @@ function showAnnotationTable(data) {
   }
 }
 
-// ------ Plot Generation Functions ----------
-
+// ------------------------------------------------------------------------
+// Plot Functions
+// ------------------------------------------------------------------------
 
 // Decon Plot Generation (both plots generated here)
 function displayDeconPlots(xicPairs, atdPairs, PreXicPairs, PreAtdPairs) {
@@ -1527,16 +1303,6 @@ Highcharts.chart('ms1-plot', {
 }
 
 
-window.api.receive('dda-features-result', (data) => {
-  if (data.error) {
-    console.error("Error fetching DDA features:", data.error);
-    return;
-  }
-  showDDAFeaturesTable(data.features);
-  window.activeTableElement = document.getElementById('main-table-container');
-});
-
-
 function updateDDAChromatogramPlot() {
   const dda_rt = document.getElementById('dda_rt_value').textContent;
   const dda_rt_pkht = document.getElementById('dda_rt_pkht_value').textContent;
@@ -1569,24 +1335,8 @@ function updateDDAChromatogramPlot() {
   }
 }
 
-
-
 window.diaMs2Data = null;
 window.ddaMs2Data = null;
-
-window.api.receive('dia-ms2-result', (data) => {
-  if (data.error) {
-    console.error("Error fetching DIA MS2 data:", data.error);
-    return;
-  }
-  // Store the DIA MS2 data
-  window.diaMs2Data = data.data; // Expected: {fmz, fint}
-  // If DDA data is already available, plot bidirectional.
-  if (window.ddaMs2Data) {
-    plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
-  }
-});
-
 
 function showDDAFeaturesTable(features) {
   const container = document.getElementById('dda-features-table');
@@ -1641,29 +1391,12 @@ function showDDAFeaturesTable(features) {
 
     // Automatically select the first row:
     if (idx === 0) {
-      // Delay selection slightly to ensure the table is fully built - fixes rendering compete
       setTimeout(() => { row.click(); }, 0);
     }
   });
   table.appendChild(tbody);
   container.appendChild(table);
 }
-
-
-
-window.api.receive('dda-ms2-result', (data) => {
-  if (data.error) {
-    console.error("Error fetching DDA MS2 data:", data.error);
-    return;
-  }
-  // Store the new DDA MS2 data.
-  window.ddaMs2Data = data.data; // Expected: {fmz, fint}
-  // Now replot the bidirectional MS2 plot if DIA data is available.
-  if (window.diaMs2Data) {
-    plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
-  }
-});
-
 
 
 function plotBidirectionalMS2(ddaData, diaData) {
@@ -1820,14 +1553,11 @@ function plotBidirectionalMS2(ddaData, diaData) {
       legendIndex: 1
     }]
   },
-  // Chart load callback: adjust the down arrow so it is just above each diagnostic column.
   function(chart) {
     chart.series.forEach(series => {
       if (series.name === 'DIA') {
         series.points.forEach(point => {
           if (point.dataLabel && point.textStr === '↓') {
-            // Adjust the dataLabel y so that the arrow is just above the top of the bar.
-            // point.shapeArgs.y gives the pixel coordinate for the top of the column.
             point.dataLabel.attr({ y: point.shapeArgs.y - 2 });
           }
         });
@@ -1837,8 +1567,6 @@ function plotBidirectionalMS2(ddaData, diaData) {
 }
 
 //  Decon stuff
-
-
 window.api.receive('decon-fragments-result', (data) => {
   const deconTableContainer = document.getElementById('deconvoluted-frags-table');
   const errorMessageElement = document.getElementById('error-message');
@@ -1928,6 +1656,163 @@ function updateSelectedDIAHighlight() {
 }
 
 
+// ------------------------------------------------------------------------
+// Add Event listeners.
+// ------------------------------------------------------------------------
+
+
+// Open Database Dialog
+function databaseDialog() {
+  window.api.send('open-database-dialog', "Sent.");
+}
+
+// Create Deconvoluted Plots when receiving this data
+window.api.receive('return-decon-blob-data', (data) => {
+  if(data.error) {
+    console.error("Error while processing blob data in main process:", data.error);
+    return;
+  }
+  const xicPairs = data.xicArray;
+  const atdPairs = data.atdArray;
+  const PreXicPairs = data.PreXicArray;
+  const PreAtdPairs = data.PreAtdArray;
+  displayDeconPlots(xicPairs, atdPairs, PreXicPairs, PreAtdPairs);
+});
+
+
+// Create Deconvoluted Table when receiving this data
+
+window.api.receive('database-table-data', (data, isMapping, error, filepath) => {
+  const tableContainer = document.getElementById('deconvoluted-frags-table');
+  const errorMessageElement = document.getElementById('error-message');
+  const plotsElement = document.getElementById('plots-container');
+  const tableMainContainer = document.getElementById('main-table-container');
+  if (error) {
+      // Hide the table in case of an error
+      tableMainContainer.style.border = "none";  
+      tableContainer.style.display = "none";
+      plotsElement.style.display = "none";
+      if (error === "No IDs provided") {
+          // Specific message for missing ID values
+          errorMessageElement.textContent = 'No deconvoluted DIA fragments found for feature.';
+      } else {
+          // General error handling
+          const errorMsg = `Error fetching data from the database: ${filepath.split("/").pop()}: ${error}`;
+          errorMessageElement.textContent = errorMsg;
+          console.error(errorMsg);
+          console.log("Calling showDeconTable.")
+          showDeconTable(data);
+      }
+      return;
+  }
+  // If no error, proceed with displaying the data
+  tableContainer.style.display = "block";
+  errorMessageElement.textContent = '';
+  plotsElement.style.display = "block";
+  
+  if (isMapping) {
+      showDeconTable(data);
+  } else {
+    // This is where the main table is initially started up.
+      showMainTable(data);  
+  }
+});
+
+
+window.api.receive('raw-blob-result', (data) => {
+  if (data.error) {
+    console.error(`Error fetching blob (${data.rawType}):`, data.error);
+    return;
+  }
+  if (!data.data) return;
+
+  // For precursor raw data, store it in global variables.
+  if (data.rawType === 'DIA_PRE_XIC') {
+    window.precursorXICData = data.data;
+  } else if (data.rawType === 'DIA_PRE_ATD') {
+    window.precursorATDData = data.data;
+  }
+
+  // Compute (x,y) pairs if available.
+  let pairs = null;
+  if (data.data.x && data.data.y) {
+    pairs = data.data.x.map((val, i) => [val, data.data.y[i]]);
+  } else if (data.rawType === 'DIA_PRE_MS1' && data.data.ms1Array) {
+    // Fallback if the raw data for MS1 is provided as ms1Array.
+    pairs = data.data.ms1Array;
+  }
+
+  // Use the rawType to call the proper display function.
+  switch (data.rawType) {
+    case 'DIA_PRE_MS1':
+      displayMS1Plot(pairs);
+      break;
+    case 'DIA_PRE_XIC':
+      displayXicPlot(pairs);
+      break;
+    case 'DIA_PRE_ATD':
+      displayATDPlot(pairs);
+      break;
+    default:
+      console.warn("Unknown rawType received:", data.rawType);
+  }
+});
+
+
+// Create Annotation Table when receiving this data
+window.api.receive('database-annotation-data', (data, isMapping, error, filepath) => {
+  const tableContainer = document.getElementById('annotation-table');
+  const errorMessageElement = document.getElementById('error-message-annotation');
+  if (error) {
+      tableContainer.style.display = "none";
+      if (error === "No IDs provided") {
+          errorMessageElement.textContent = 'failed.';
+      } else {
+          const errorMsg = `Error fetching data from the database: ${filepath.split("/").pop()}: ${error}`;
+          errorMessageElement.textContent = errorMsg;
+          console.error(errorMsg);
+      }
+      return;
+  }
+
+  showAnnotationTable(data);
+  tableContainer.style.display = "block";
+  errorMessageElement.textContent = '';
+  window.activeTableElement = document.getElementById('main-table-container');
+});
+
+
+// Create ATD plot when receiving this data
+window.api.receive('return-atd-blob-data', (data) => {
+  if(data.error) {
+    console.error("Error while processing blob data in main process:", data.error);
+    return;
+  }
+  const atdPairs = data.atdArray;
+  // Render the plots using the received data
+  displayATDPlot(atdPairs);
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.api.receive('selected-database-path', (result) => {
+    filePath = result;
+    window.api.send('fetch-database-table', result);
+    window.api.send('fetch-annotation-table', result);  
+  });
+});
+
+// Create XIC plot when receiving this data
+window.api.receive('return-xic-blob-data', (data) => {
+  if(data.error) {
+    console.error("Error while processing blob data in main process:", data.error);
+    return;
+  }
+  const xicPairs = data.xicArray;
+  // Render the plots using the received data
+  displayXicPlot(xicPairs);
+});
+
+
 window.api.receive('lipid-fragment-details', (data) => {
   if (data.error) {
       console.error("Error fetching lipid fragment details:", data.error);
@@ -1949,9 +1834,6 @@ window.api.receive('lipid-fragment-details', (data) => {
 });
 
 
-
-
-
 window.api.receive('delete-annotated-feature-rows-result', (result) => {
   if (result.success) {
     // Update your annotation table with the new data:
@@ -1960,4 +1842,42 @@ window.api.receive('delete-annotated-feature-rows-result', (result) => {
   } else {
     alert("Deletion failed: " + result.error);
   }
+});
+
+
+
+window.api.receive('dda-ms2-result', (data) => {
+  if (data.error) {
+    console.error("Error fetching DDA MS2 data:", data.error);
+    return;
+  }
+  // Store the new DDA MS2 data.
+  window.ddaMs2Data = data.data; // Expected: {fmz, fint}
+  // Now replot the bidirectional MS2 plot if DIA data is available.
+  if (window.diaMs2Data) {
+    plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
+  }
+});
+
+window.api.receive('dia-ms2-result', (data) => {
+  if (data.error) {
+    console.error("Error fetching DIA MS2 data:", data.error);
+    return;
+  }
+  // Store the DIA MS2 data
+  window.diaMs2Data = data.data; // Expected: {fmz, fint}
+  // If DDA data is already available, plot bidirectional.
+  if (window.ddaMs2Data) {
+    plotBidirectionalMS2(window.ddaMs2Data, window.diaMs2Data);
+  }
+});
+
+
+window.api.receive('dda-features-result', (data) => {
+  if (data.error) {
+    console.error("Error fetching DDA features:", data.error);
+    return;
+  }
+  showDDAFeaturesTable(data.features);
+  window.activeTableElement = document.getElementById('main-table-container');
 });

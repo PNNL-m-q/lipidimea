@@ -225,45 +225,6 @@ ipcMain.on('write-yaml', (event, options) => {
   }
 });
 
-// Generic function for opening dialog to select a file
-ipcMain.on('open-file-dialog', (event, options) => {
-  const window = BrowserWindow.getFocusedWindow();
-
-  dialog.showOpenDialog(window, options)
-    .then((result) => {
-      if (!result.canceled && result.filePaths.length > 0) {
-        const filePath = result.filePaths[0];
-        console.log('YML Selected Path from Index:', filePath);
-        event.reply('file-dialog-selection', filePath);
-      }
-    })
-    .catch((error) => {
-      console.error('Error opening file dialog:', error);
-    });
-});
-
-// Function to load in yaml data
-function parseYaml(content) {
-  try {
-    const data = yaml.load(content);
-    return data;
-  } catch (error) {
-    console.error('Error parsing YAML:', error);
-    return null;
-  }
-}
-
-// Read in YAML File to replace default param values.
-ipcMain.on('file-dialog-selection', (event, filePath) => {
-  
-  // Read the content of the selected YAML file
-  const fileContent = fs.readFileSync(filePath, 'utf-8');
-  const yamlData = parseYaml(fileContent);
-  // Send the file content back to the renderer process
-  event.sender.send('file-content', yamlData);
-});
-
-
 ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
   cancelRequested = false;
   event.reply('experiment-started');
