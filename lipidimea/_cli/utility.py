@@ -158,7 +158,7 @@ def _export_run(args: argparse.Namespace):
         args.RESULTS_DB, 
         args.OUT_CSV, 
         (args.mz_tol, args.rt_tol, args.at_tol), 
-        args.DFILE_ID, 
+        select_data_files=args.DFILE_ID, 
         # it's dt_height or dt_area, add the dt_ to the front
         abundance_value="dt_" + args.abundance, 
         include_unknowns=args.include_unknowns, 

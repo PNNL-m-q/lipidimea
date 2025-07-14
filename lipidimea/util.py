@@ -410,7 +410,8 @@ def _setup_alias_mapping(cur: ResultsDbCursor,
 
 def _unpack_intermediate_results(grouped: _GroupedResults,
                                  alias_mapping: Dict[int, str],
-                                 include_unknowns: bool
+                                 include_unknowns: bool,
+                                 include_dfile_ids: List[int],
                                  ) -> pl.DataFrame :
     """
     unpack all of the info from the intermediate grouped results data structure into
@@ -427,7 +428,8 @@ def _unpack_intermediate_results(grouped: _GroupedResults,
         "Lipid@Adduct": [] 
     } | {
         alias: []
-        for alias in alias_mapping.values()
+        for dfid, alias in alias_mapping.items() 
+        if dfid in include_dfile_ids
     }
     # fill the data dictionary
     for entry in grouped:
@@ -440,11 +442,13 @@ def _unpack_intermediate_results(grouped: _GroupedResults,
             data["CCS (Ang^2)"].append(entry["ccs"])
             data["Lipid@Adduct"].append("|".join(entry["annotations"]))
             for dfid, abun in entry["abundance"].items():
-                # cast abundances to ints 
-                data[alias_mapping[dfid]].append(int(abun))
+                if dfid in include_dfile_ids:
+                    # fetch abundances, cast to ints 
+                    data[alias_mapping[dfid]].append(int(abun))
             for dfid, alias in alias_mapping.items():
-                if dfid not in entry["abundance"].keys():
-                    data[alias].append(None)
+                if dfid in include_dfile_ids:
+                    if dfid not in entry["abundance"].keys():
+                        data[alias].append(None)
     return pl.DataFrame(data).sort("Lipid@Adduct", "RT (min)", "arrival time (ms)")
 
 
@@ -524,7 +528,10 @@ def export_results_table(results_db: ResultsDbPath,
     # set up the mapping between data file aliases and data file names/IDs
     alias_mapping = _setup_alias_mapping(cur, data_file_aliases)
     # upack the intermediate data structure into tabular format (as a polars dataframe)
-    df = _unpack_intermediate_results(grouped, alias_mapping, include_unknowns)  
+    df = _unpack_intermediate_results(grouped, 
+                                      alias_mapping, 
+                                      include_unknowns,
+                                      include_dfile_ids)  
     # TODO: (filter dataframe? replace NAs?)
     df.write_csv(out_csv)
     return df.shape[0]
