@@ -16,7 +16,7 @@ import numpy as np
 from mzapy.peaks import _gauss
 
 from lipidimea.msms.dia import (
-    _select_xic_peak, _lerp_together, _decon_distance, _deconvolute_ms2_peaks,
+    _select_xic_peak, _lerp_together, _decon_distance, _deconvolve_ms2_peaks,
     _add_single_target_results_to_db, _single_target_analysis,
     extract_dia_features, add_calibrated_ccs_to_dia_features
 )
@@ -178,7 +178,7 @@ class Test_DeconvoluteMs2Peaks(unittest.TestCase):
             rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
             rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
             # test the function
-            deconvoluted, raws = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
+            deconvoluted, raws = _deconvolve_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
             # should get one entry in the deconvoluted list
             self.assertEqual(len(deconvoluted), 1)
             # make sure the deconvoluted feature has the correct info
@@ -226,7 +226,7 @@ class Test_DeconvoluteMs2Peaks(unittest.TestCase):
             rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
             rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
             # test the function
-            deconvoluted, raws = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
+            deconvoluted, raws = _deconvolve_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
             # should get a result with deconvoluted flag set to False
             self.assertEqual(len(deconvoluted), 1)
             # make sure the deconvoluted feature has the correct info
@@ -275,7 +275,7 @@ class Test_DeconvoluteMs2Peaks(unittest.TestCase):
             rdr.collect_xic_arrays_by_mz.return_value = (xic_rts, xic_iis)
             rdr.collect_atd_arrays_by_rt_mz.return_value = (atd_ats, atd_iis)
             # test the function
-            deconvoluted, raws = _deconvolute_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
+            deconvoluted, raws = _deconvolve_ms2_peaks(rdr, [789.0123], pre_xic, 15.1, 0.27, pre_atd, _DIA_PARAMS)
             # should get a result with deconvoluted flag set to False
             self.assertEqual(len(deconvoluted), 1)
             # make sure the deconvoluted feature has the correct info

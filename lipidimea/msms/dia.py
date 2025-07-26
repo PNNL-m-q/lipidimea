@@ -114,7 +114,7 @@ def _decon_distance(pre_data: Union[Xic, Atd],
     return dist_funcs[dist_func](y_pre, y_frg)
 
 
-def _deconvolute_ms2_peaks(rdr: MZA, 
+def _deconvolve_ms2_peaks(rdr: MZA, 
                            sel_ms2_mzs: List[float],
                            pre_xic: Xic, 
                            pre_xic_rt: float, 
@@ -124,7 +124,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
                            ) -> Tuple[List[Tuple[bool, Optional[float], Optional[float]]],
                                       List[Tuple[Optional[Xic], Optional[Atd]]]] :
     """
-    Deconvolute MS2 peak m/zs, if the XIC and ATD are similar enough to the precursor, 
+    Deconvolve MS2 peak m/zs, if the XIC and ATD are similar enough to the precursor, 
     they are returned as deconvolved peak m/zs
     
     Parameters
@@ -152,7 +152,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
         list of optional raw array data for fragment XICs and ATDs
     """
     # unpack parameters
-    P = params.deconvolute_ms2_peaks
+    P = params.deconvolve_ms2_peaks
     deconvolved = []
     raws = []
     for ms2_mz in sel_ms2_mzs:
@@ -161,7 +161,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
         ms2_xic = None
         atd_dist = None
         ms2_atd = None
-        mz_tol = tol_from_ppm(ms2_mz, params.deconvolute_ms2_peaks.mz_ppm)
+        mz_tol = tol_from_ppm(ms2_mz, params.deconvolve_ms2_peaks.mz_ppm)
         mz_bounds = (ms2_mz - mz_tol, ms2_mz + mz_tol)
         rt_bounds = (pre_xic_rt - pre_xic_wt, pre_xic_rt + pre_xic_wt)
         # extract fragment XIC 
@@ -436,12 +436,12 @@ def _single_target_analysis(n: int,
                                         sel_ms2_mzs.append(diam)
                                         sel_ms2_ints.append(diah)
                         dtmsg += f"matched with DDA: {len(sel_ms2_mzs)}"
-                        # deconvolute peaks that were matched from DDA spectrum
+                        # deconvolve peaks that were matched from DDA spectrum
                         if len(sel_ms2_mzs) > 0:
-                            deconvolved, frag_raws = _deconvolute_ms2_peaks(rdr, 
-                                                                            sel_ms2_mzs, 
-                                                                            pre_xic, xic_rt, xic_wt, pre_atd,
-                                                                            params)
+                            deconvolved, frag_raws = _deconvolve_ms2_peaks(rdr, 
+                                                                           sel_ms2_mzs, 
+                                                                           pre_xic, xic_rt, xic_wt, pre_atd,
+                                                                           params)
                             dtmsg += f" -> deconvolved: {len([_ for _ in deconvolved if _[0]])}"
             debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
