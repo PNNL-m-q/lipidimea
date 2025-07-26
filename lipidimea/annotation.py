@@ -104,12 +104,12 @@ class SumCompLipidDB():
 
         Parameters
         ----------
-        c : ``int``
+        c
             number of carbons in chain
 
         Returns
         -------
-        u : ``int``
+        u
             max number of unsaturations in chain
         """
         if c < 16:
@@ -138,18 +138,18 @@ class SumCompLipidDB():
 
         Parameters
         ----------
-        n_chains : ``int``
+        n_chains
             number of FA chains
-        min_c, max_c : ``int``
+        min_c, max_c
             min/max number of carbons in an acyl chain
-        odd_c : ``bool``
+        odd_c
             whether to include odd # C for FAs
-        max_u : ``int``, optional
+        [max_u]
             restrict maximum number of unsaturations (in sum composition, not individual FAs)
 
         Yields
         ------
-        sum_comp : ``tuple(int, int)``
+        sum_comp
             unique sum compoisions as (# carbons, # unsaturations)
         """
         fas = []
@@ -202,11 +202,11 @@ class SumCompLipidDB():
 
         Parameters
         ----------
-        config_yml : ``str``
+        config_yml
             YAML configuration file specifying what lipids to include
-        min_c, max_c : ``int``
+        min_c, max_c
             min/max number of carbons in an acyl chain
-        odd_c : ``bool``
+        odd_c
             whether to include odd # C for FAs 
         """
         # load params from config file
@@ -240,14 +240,14 @@ class SumCompLipidDB():
 
         Parameters
         ----------
-        mz : ``float``
+        mz
             feature m/z
-        ppm : ``float``
+        ppm
             tolerance for matching m/z (in ppm)
 
         Returns
         -------
-        candidates : ``list(tuple(...))``
+        candidates
             list of lipid annotation candidates, each is a tuple consisting of 
             lmaps_id_prefix, name, adduct, and m/z
         """
@@ -273,7 +273,7 @@ def remove_lipid_annotations(results_db: ResultsDbPath
 
     Parameters
     ----------
-    results_db : ``str``
+    results_db
         path to LipidIMEA analysis results database
     """
     # ensure results database file exists
@@ -306,7 +306,7 @@ def add_lmaps_ont(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``str``
+    results_db
         path to LipidIMEA analysis results database
     """
     # connect to  results database
@@ -334,21 +334,21 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``str``
+    results_db
         path to LipidIMEA analysis results database
-    params : ``AnnotationParams``
+    params
         parameters for lipid annotation
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    n_feats_annotated : ``int``
+    n_feats_annotated
         number of features annotated
-    n_anns : ``int``
+    n_anns
         number of total annotations
     """
     # TODO: This check is used repeatedly in a few functions, move it into a helper function.
@@ -441,20 +441,20 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``ResultsDbPath``
+    results_db
         path to LipidIMEA analysis results database
-    params : ``AnnotationParams``
+    params
         parameters for lipid annotation
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    n_kept : ``int``
-    n_filt : ``int``
+    n_kept
+    n_filt
         number of annotations kept or filtered based on RT ranges
     """
     # ensure results database file exists
@@ -587,23 +587,23 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``ResultsDbPath``
+    results_db
         path to LipidIMEA analysis results database
-    params : ``AnnotationParams``
+    params
         parameters for lipid annotation
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    n_kept_lit : ``int``
-    n_filt_lit : ``int``
+    n_kept_lit
+    n_filt_lit
         numbers of features kept or filtered out based on literature CCS trends
-    n_kept_obs : ``int``
-    n_filt_obs : ``int``
+    n_kept_obs
+    n_filt_obs
         numbers of features kept or filtered out based on observed CCS trends
     """
     # ensure results database file exists
@@ -799,7 +799,7 @@ def _update_lipid_with_chain_info(results_cur: ResultsDbCursor
 
     Parameters
     ----------
-    results_cur : ``ResultsDbCursor``
+    results_cur
     """
     qry_sel = """--beginsql
         SELECT 
@@ -921,19 +921,19 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``ResultsDbPath``
+    results_db
         path to LipidIMEA analysis results database
-    params : ``AnnotationParams``
+    params
         parameters for lipid annotation
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
     
     Returns 
     -------
-    n_anns_updated : ``int``
+    n_anns_updated
         number of feature annotations updated using frag rules
     """
     # ensure results database file exists
@@ -1048,11 +1048,15 @@ def annotate_lipids(results_db: ResultsDbPath,
     
     Parameters
     ----------
-    results_db : ``ResultsDbPath``
+    results_db
         path to LipidIMEA analysis results database
-    params : ``AnnotationParams``
+    params
         parameters for lipid annotation
-    scdb_config_yml
+    [debug_flag]
+        specifies how to dispatch debugging messages, None to do nothing
+    [debug_cb]
+        callback function that takes the debugging message as an argument, can be None if
+        debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns 
     -------

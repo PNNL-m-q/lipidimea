@@ -129,26 +129,26 @@ def _deconvolute_ms2_peaks(rdr: MZA,
     
     Parameters
     ----------
-    rdr : ``mzapy.MZA``
+    rdr
         interface to raw data
-    sel_ms2_mzs : ``list(float)``
+    sel_ms2_mzs
         list of selected MS2 peak m/zs
-    pre_xic : ``numpy.ndarray(...)``
+    pre_xic
         precursor XIC
-    pre_xic_rt : ``float``
+    pre_xic_rt
         precursor XIC retention time for ATD extraction
-    pre_xic_wt : ``float``
+    pre_xic_wt
         precursor XIC peak width for ATD extraction
-    pre_atd : ``numpy.ndarray(...)``
+    pre_atd
         precursor ATD
-    params : ``DeconvoluteMS2PeaksParams``
+    params
         parameters for deconvoluting MS2 peaks
 
     Returns
     -------
-    deconvoluted : ``list(tuple(bool, float or None, float or None))``
+    deconvoluted
         deconvoluted fragment info (flag indicating if it was accepted and XIC/ATD distances)
-    raws : ``list(tuple(array or None, array or None))``
+    raws
         list of optional raw array data for fragment XICs and ATDs
     """
     # unpack parameters
@@ -311,7 +311,7 @@ def _single_target_analysis(n: int,
         precursor m/z of the DDA precursor we are currently processing
     dda_rts 
         retention time(s) of the DDA precursor we are currently processing, comma separated string
-    dda_ms2_n_peaks : ``int`` or ``None``
+    dda_ms2_n_peaks
         number of MS2 peaks in the DDA MS/MS spectrum for the precursor we are currently processing, 
         can be None in cases where there were no MS/MS scans found for the precursor
     params 
@@ -479,23 +479,23 @@ def extract_dia_features(dia_data_file: MzaFilePath,
 
     Parameters
     ----------
-    dia_data_file : ``str`` or ``int``
+    dia_data_file
         path to raw DIA data file (MZA format)
-    results_db : ``ResultsDbPath``
+    results_db
         path to DDA-DIA analysis results database
-    params : ``DiaParams``
+    params
         parameters for the various steps of DIA feature extraction
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
-    mza_io_threads : ``int``, default=4
+    [mza_io_threads]
         number of I/O threads to specify for the MZA reader object
 
     Returns
     -------
-    n_dia_features : ``int``
+    n_dia_features
         number of DIA features extracted
     """
     # ensure the results database exists
@@ -597,25 +597,25 @@ def extract_dia_features_multiproc(dia_data_files: List[MzaFilePath],
 
     Parameters
     ----------
-    dia_data_files : ``list(str)``
+    dia_data_files
         paths to raw DIA data file (MZA format)
-    results_db : ``str``
+    results_db
         path to DDA-DIA analysis results database
-    params : ``dict(...)``
+    params
         parameters for the various steps of DDA feature extraction
-    n_proc : ``int``
+    n_proc
         number of CPU threads to use (number of processes)
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
-    mza_io_threads : ``int``, default=4
+    [mza_io_threads]
         number of I/O threads to specify for the MZA reader objects
 
     Returns
     -------
-    dia_features_per_file : ``dict(str:int)``
+    dia_features_per_file
         dictionary with the number of DIA features mapped to input DIA data files
     """
     n_proc = min(n_proc, len(dia_data_files))  # no need to use more processes than the number of inputs
@@ -650,10 +650,10 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``str``
+    results_db
         path to DDA-DIA analysis results database
-    t_fix : ``float``
-    beta : ``float``
+    t_fix
+    beta
         single-field DTIMS calibration parameters
     """
     # ensure the results database exists
