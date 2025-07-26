@@ -431,7 +431,7 @@ def _single_target_analysis(n: int,
                         for ddam in dda_fmzs:
                             if ddam < dda_mz + 25:  # only consider MS2 peaks that are less than precursor + 25
                                 for diam, diah, diaw in zip(*dia_ms2_peaks):
-                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching_ppm)
+                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching.mz_ppm)
                                     if abs(diam - ddam) <= frg_tol:
                                         sel_ms2_mzs.append(diam)
                                         sel_ms2_ints.append(diah)
@@ -458,7 +458,7 @@ def _single_target_analysis(n: int,
                                              atd_dt, atd_wt, atd_ht, atd_psnr, 
                                              (ms1, pre_xic, pre_atd),
                                              sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws,
-                                             params.store_blobs)
+                                             params.store.blob)
             n_features += 1
     else:
         debug_handler(debug_flag, debug_cb, msg + 'no XIC peak found', pid)

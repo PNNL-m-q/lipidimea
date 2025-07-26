@@ -369,8 +369,8 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     )
     scdb = SumCompLipidDB()
     scdb.fill_db_from_config(sum_comp_config, 
-                             params.sum_comp.fa_c.min, 
-                             params.sum_comp.fa_c.max, 
+                             params.sum_comp.fa_cl.min, 
+                             params.sum_comp.fa_cl.max, 
                              params.sum_comp.fa_odd_c)
     # connect to  results database
     con = connect(results_db) 
@@ -466,11 +466,13 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
                   "FILTERING LIPID ANNOTATIONS BASED ON LIPID CLASS RETENTION TIME RANGES ...")
     # ann_rtr_only_keep_defined_classes
     # load the default config if no alternative was provided
+
     rt_range_config = (
-        params.rt_range_config 
-        if params.rt_range_config is not None 
+        params.config_file['rt_range_config']
+        if params.config_file['rt_range_config']
         else DEFAULT_RP_RT_RANGE_CONFIG
     )
+    print(rt_range_config)
     with open(rt_range_config, 'r') as yf:
         rt_ranges = yaml.safe_load(yf)
     con = connect(results_db) 

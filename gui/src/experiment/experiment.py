@@ -1,132 +1,141 @@
 #!/usr/bin/env python3
-
-import multiprocessing
-import sys
-import json
+import argparse
 import subprocess
+import sys
 import os
-import shutil
 
-from lipidimea.util import create_results_db, load_params
-from lipidimea.msms.dda import extract_dda_features, consolidate_dda_features
-from lipidimea.msms.dia import extract_dia_features_multiproc
-from lipidimea.lipids.annotation import annotate_lipids_sum_composition, filter_annotations_by_rt_range
-
-
-#Python Calls to lipidimea
+# Locate the bundled lipidimea CLI binary (extraResource in package.json)
+CLI = os.path.join(os.path.dirname(__file__), "..", "lipidimea")
+# Fallback to system‐installed if not found
+if not os.path.exists(CLI):
+    CLI = "lipidimea"
 
 
-
-def convert_str(s):
-    try:
-        return int(s)
-    except ValueError:
-        try:
-            return float(s)
-        except ValueError:
-            return s
-
-def convert_nest(d):
-    for k, v in d.items():
-        if isinstance(v, str):
-            d[k] = convert_str(v)
-        elif isinstance(v, dict):
-            d[k] = convert_nest(v)
-    return d
+def execute_command(cmd):
+    """Execute a command and exit on error."""
+    print("Executing:", " ".join(cmd))
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        sys.exit(result.returncode)
 
 
-def generate_new_db_name(directory, db_name):
-    base_name = db_name
-    version = 1
-    while os.path.exists(os.path.join(directory, db_name + '.db')):
-        db_name = f"{base_name}_v{version}"
-        version += 1
-    return db_name + '.db'
+def create_db(db_name):
+    execute_command([CLI, "utility", "create_db", db_name])
 
+
+def load_params(default_dda, default_dia, default_ann):
+    if default_dda:
+        execute_command([CLI, "utility", "params", "--default-dda", default_dda])
+    if default_dia:
+        execute_command([CLI, "utility", "params", "--default-dia", default_dia])
+    if default_ann:
+        execute_command([CLI, "utility", "params", "--default-ann", default_ann])
+
+
+def run_dda(config_dda, db_name, dda_files):
+    cmd = [CLI, "dda", config_dda, db_name] + dda_files
+    execute_command(cmd)
+
+
+def run_dia(config_dia, db_name, dia_files):
+    cmd = [CLI, "dia", "process", config_dia, db_name] + dia_files
+    execute_command(cmd)
+
+
+def calibrate_dia(db_name, t_fix, beta, calib_files):
+    cmd = [CLI, "dia", "calibrate_ccs", db_name, t_fix, beta] + calib_files
+    execute_command(cmd)
+
+
+def annotate(config_ann, db_name):
+    execute_command([CLI, "annotate", config_ann, db_name])
+
+
+def run_all(args):
+    print("=== Creating SQL database ===")
+    create_db(args.db_name)
+
+    print("=== Loading default parameters ===")
+    load_params(args.config_dda, args.config_dia, args.config_ann)
+
+    if args.dda_files:
+        print("=== Running DDA Experiment ===")
+        run_dda(args.config_dda, args.db_name, args.dda_files)
+
+    if args.dia_files:
+        print("=== Running DIA Experiment ===")
+        run_dia(args.config_dia, args.db_name, args.dia_files)
+
+    if args.calib_files:
+        print("=== Calibrating DIA CCS ===")
+        calibrate_dia(args.db_name, args.T_FIX_param, args.BETA_param, args.calib_files)
+
+    print("=== Annotating Lipids ===")
+    annotate(args.config_ann, args.db_name)
 
 
 def main():
-    """
-    Read in Inputs from GUI.
-    Make calls to lipidimea.
-    """
- 
-    inputs_and_params = dict(json.loads(sys.argv[1]))
-    input_output = inputs_and_params['input_output']
-    params = inputs_and_params['params']
-    options = inputs_and_params['options']
-    
-    
-    params = convert_nest(params)
-    
+    parser = argparse.ArgumentParser(
+        description="Wrapper for lipidimea CLI commands."
+    )
+    subparsers = parser.add_subparsers(dest="command", required=True)
 
-    #assign False if 'results_db' not present.
-    if input_output.get('results_db') is None:
-        input_output['results_db'] = None
-        
-        
-    #If database is present, append.
-    if options["db_pick"] == "append" and input_output['results_db']:
-        pass
-    elif options["db_pick"] == "overwrite" and input_output['results_db']:
-        create_results_db(input_output['results_db'], overwrite=True)
-    elif options["db_pick"] == "create_new" and not input_output['results_db']:
-        generate_new_db_name(options['save_loc'], options['db_name'])
-        exp_name = os.path.join(options["save_loc"], options["db_name"] + ".db")
-        create_results_db(exp_name, overwrite=True)
-        input_output['results_db'] = exp_name
-    else:
-        print("conditions incorrect. exiting")
-        sys.exit()
+    # create_db
+    p = subparsers.add_parser("create_db", help="Create SQL database")
+    p.add_argument("db_name", help="Name of the database")
+    p.set_defaults(func=lambda args: create_db(args.db_name))
 
+    # params
+    p = subparsers.add_parser("params", help="Load default parameter configs")
+    p.add_argument("--default-dda", help="Path for default DDA config", default=None)
+    p.add_argument("--default-dia", help="Path for default DIA config", default=None)
+    p.add_argument("--default-ann", help="Path for default annotation config", default=None)
+    p.set_defaults(func=lambda args: load_params(args.default_dda, args.default_dia, args.default_ann))
 
-    if input_output['lipid_class_scdb_config'] == []:
-        input_output['lipid_class_scdb_config'] = None
-        
-    if 'lipid_class_rt_ranges' not in input_output:
-        input_output['lipid_class_rt_ranges'] = None
-    
+    # dda
+    p = subparsers.add_parser("dda", help="Run DDA experiment")
+    p.add_argument("config_dda", help="DDA config file")
+    p.add_argument("db_name", help="Database file")
+    p.add_argument("dda_files", nargs="+", help="DDA data files")
+    p.set_defaults(func=lambda args: run_dda(args.config_dda, args.db_name, args.dda_files))
 
+    # dia
+    p = subparsers.add_parser("dia", help="Run DIA experiment")
+    p.add_argument("config_dia", help="DIA config file")
+    p.add_argument("db_name", help="Database file")
+    p.add_argument("dia_files", nargs="+", help="DIA data files")
+    p.set_defaults(func=lambda args: run_dia(args.config_dia, args.db_name, args.dia_files))
 
+    # calibrate
+    p = subparsers.add_parser("calibrate", help="Calibrate DIA CCS")
+    p.add_argument("db_name", help="Database file")
+    p.add_argument("T_FIX_param", help="T_FIX CCS parameter")
+    p.add_argument("BETA_param", help="BETA CCS parameter")
+    p.add_argument("calib_files", nargs="+", help="Files to calibrate")
+    p.set_defaults(func=lambda args: calibrate_dia(args.db_name, args.T_FIX_param, args.BETA_param, args.calib_files))
 
-    # DDA analysis
-    if params['misc']['do_dda_processing']:
-        for dda_data_file in input_output['dda_data_files']:
-            extract_dda_features(dda_data_file,
-                                 input_output['results_db'],
-                                 params,
-                                 debug_flag='text')
-            consolidate_dda_features(input_output['results_db'],
-                                 params,
-                                 debug_flag='text')
-        print("\n\nDDA Extraction Complete\n\n")
+    # annotate
+    p = subparsers.add_parser("annotate", help="Run lipid annotation")
+    p.add_argument("config_ann", help="Annotation config file")
+    p.add_argument("db_name", help="Database file")
+    p.set_defaults(func=lambda args: annotate(args.config_ann, args.db_name))
 
-    # DIA analysis
-    if params['misc']['do_dia_processing']:
-        extract_dia_features_multiproc(input_output['dia_data_files'],
-                                       input_output['results_db'], 
-                                       params,
-                                       4,
-                                       debug_flag='text_pid')
-        print("\n\nDIA Extraction Complete\n\n")
+    # all
+    p = subparsers.add_parser("all", help="Run all steps sequentially")
+    p.add_argument("db_name", help="Database file")
+    p.add_argument("config_dda", help="DDA config file")
+    p.add_argument("config_dia", help="DIA config file")
+    p.add_argument("config_ann", help="Annotation config file")
+    p.add_argument("--dda_files", nargs="+", required=True, help="DDA data files")
+    p.add_argument("--dia_files", nargs="+", required=True, help="DIA data files")
+    p.add_argument("--calib_files", nargs="+", help="Calibration files (optional)")
+    p.add_argument("--T_FIX_param", default="default_T_FIX", help="T_FIX param")
+    p.add_argument("--BETA_param", default="default_BETA", help="BETA param")
+    p.set_defaults(func=run_all)
+
+    args = parser.parse_args()
+    args.func(args)
 
 
-    #  Annotation
-    if params['misc']['do_annotation']:
-        annotate_lipids_sum_composition(input_output['results_db'],
-                                        input_output['lipid_class_scdb_config'],
-                                        params,
-                                        debug_flag='text')
-        #  input_output['lipid_class_rt_ranges'] doesn't exist yet.
-        filter_annotations_by_rt_range(input_output['results_db'],
-                                       input_output['lipid_class_rt_ranges'],
-                                       params,
-                                       debug_flag='text')
-        print("\n\nAnnotation Complete\n\n")
-
-
-if __name__ == '__main__':
-    print("Starting up Experiment...")
-    multiprocessing.freeze_support()
-    multiprocessing.set_start_method('spawn')
+if __name__ == "__main__":
     main()
