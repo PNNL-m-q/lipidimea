@@ -45,7 +45,6 @@ def setup_dda_subparser(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--no-consolidate",
         dest="consolidate",
-        default=True,
         action="store_false",
         help="do not consolidate DDA features after extraction"
     )

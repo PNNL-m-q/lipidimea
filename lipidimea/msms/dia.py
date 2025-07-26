@@ -125,7 +125,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
                                       List[Tuple[Optional[Xic], Optional[Atd]]]] :
     """
     Deconvolute MS2 peak m/zs, if the XIC and ATD are similar enough to the precursor, 
-    they are returned as deconvoluted peak m/zs
+    they are returned as deconvolved peak m/zs
     
     Parameters
     ----------
@@ -146,14 +146,14 @@ def _deconvolute_ms2_peaks(rdr: MZA,
 
     Returns
     -------
-    deconvoluted
-        deconvoluted fragment info (flag indicating if it was accepted and XIC/ATD distances)
+    deconvolved
+        deconvolved fragment info (flag indicating if it was accepted and XIC/ATD distances)
     raws
         list of optional raw array data for fragment XICs and ATDs
     """
     # unpack parameters
     P = params.deconvolute_ms2_peaks
-    deconvoluted = []
+    deconvolved = []
     raws = []
     for ms2_mz in sel_ms2_mzs:
         flag = False
@@ -176,9 +176,9 @@ def _deconvolute_ms2_peaks(rdr: MZA,
             if atd_dist <= P.atd_dist_threshold:
                 # accept fragment
                 flag = True
-        deconvoluted.append((flag, xic_dist, atd_dist))
+        deconvolved.append((flag, xic_dist, atd_dist))
         raws.append((ms2_xic, ms2_atd))
-    return deconvoluted, raws
+    return deconvolved, raws
     
 
 def _add_single_target_results_to_db(cur: ResultsDbCursor, 
@@ -196,7 +196,7 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
                                      pre_raws: Tuple[Ms1, Xic, Atd],
                                      sel_ms2_mzs: List[float], 
                                      sel_ms2_ints: List[float], 
-                                     deconvoluted: List[Tuple[bool, Optional[float], Optional[float]]],
+                                     deconvolved: List[Tuple[bool, Optional[float], Optional[float]]],
                                      frag_raws: List[Tuple[Optional[Xic], Optional[Atd]]],
                                      store_blobs: bool
                                      ) -> None :
@@ -225,7 +225,7 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
         INSERT INTO DIAFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
     for fmz, fint, (decon_flag, xic_dist, atd_dist), (fxic, fatd) in zip(
-        sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws
+        sel_ms2_mzs, sel_ms2_ints, deconvolved, frag_raws
     ):
         # add the fragment info
         frag_qdata = (
@@ -233,7 +233,7 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
             dia_pre_id,         # DIA precursor identifier
             fmz,                # fragment m/z
             fint,               # fragment intensity
-            int(decon_flag),    # deconvoluted flag, converted from bool to int to store in DB
+            int(decon_flag),    # deconvolved flag, converted from bool to int to store in DB
             xic_dist,           # xic distance metric (rel. to precursor), can be None
             atd_dist            # atd distance metric (rel. to precursor), can be None
         )
@@ -396,7 +396,7 @@ def _single_target_analysis(n: int,
             n_ms2_peaks = None
             sel_ms2_mzs = []
             sel_ms2_ints = []
-            deconvoluted = []
+            deconvolved = []
             frag_raws = []
             if dda_ms2_n_peaks is not None and dda_ms2_n_peaks > 0:
                 # extract MS2 spectrum (before deconvolution)
@@ -438,11 +438,11 @@ def _single_target_analysis(n: int,
                         dtmsg += f"matched with DDA: {len(sel_ms2_mzs)}"
                         # deconvolute peaks that were matched from DDA spectrum
                         if len(sel_ms2_mzs) > 0:
-                            deconvoluted, frag_raws = _deconvolute_ms2_peaks(rdr, 
+                            deconvolved, frag_raws = _deconvolute_ms2_peaks(rdr, 
                                                                             sel_ms2_mzs, 
                                                                             pre_xic, xic_rt, xic_wt, pre_atd,
                                                                             params)
-                            dtmsg += f" -> deconvoluted: {len([_ for _ in deconvoluted if _[0]])}"
+                            dtmsg += f" -> deconvolved: {len([_ for _ in deconvolved if _[0]])}"
             debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
             # NOTE: No need to store the full MS2 spectrum as a blob, as it may only be a partial spectrum anyways
@@ -457,7 +457,7 @@ def _single_target_analysis(n: int,
                                              xic_rt, xic_wt, xic_ht, xic_psnr, 
                                              atd_dt, atd_wt, atd_ht, atd_psnr, 
                                              (ms1, pre_xic, pre_atd),
-                                             sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws,
+                                             sel_ms2_mzs, sel_ms2_ints, deconvolved, frag_raws,
                                              params.store_blobs)
             n_features += 1
     else:
