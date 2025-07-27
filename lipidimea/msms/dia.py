@@ -431,7 +431,7 @@ def _single_target_analysis(n: int,
                         for ddam in dda_fmzs:
                             if ddam < dda_mz + 25:  # only consider MS2 peaks that are less than precursor + 25
                                 for diam, diah, diaw in zip(*dia_ms2_peaks):
-                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching_ppm)
+                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching.mz_ppm)
                                     if abs(diam - ddam) <= frg_tol:
                                         sel_ms2_mzs.append(diam)
                                         sel_ms2_ints.append(diah)

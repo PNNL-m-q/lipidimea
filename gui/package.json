@@ -16,7 +16,8 @@
     "rebuild-x64": "electron-rebuild -w sqlite3 --arch=x64",
     "rebuild-arm64": "electron-rebuild -w sqlite3 --arch=arm64",
     "package-x64": "electron-forge package --arch=x64 --platform=darwin",
-    "package-arm64": "electron-forge package --arch=arm64 --platform=darwin"
+    "package-arm64": "electron-forge package --arch=arm64 --platform=darwin",
+    "make-win32-x64": "electron-forge make --arch=x64 --platform=win32 --out-dir=out/make/win32-x64"
   },
   "keywords": [],
   "author": {
@@ -28,60 +29,48 @@
     "forge": {
       "packagerConfig": {
         "asar": false,
-        "platform": "darwin",
         "extraResource": [
-          "../lipidimea"
+          "bin/lipidimea",
+          "bin/lipidimea.exe",
+          "../lipidimea/_include"
         ]
       },
       "makers": [
         {
           "name": "@electron-forge/maker-dmg",
+          "config": { "outDir": "./out/make/x64" },
+          "platforms": ["darwin"],
+          "arch": "x64"
+        },
+        {
+          "name": "@electron-forge/maker-squirrel",
           "config": {
-            "outDir": "./out/make/x64"
+            "name": "dia_dda_application"
           },
           "platforms": [
-            "darwin"
-          ],
-          "arch": "x64"
+            "win32"
+          ]
         },
         {
           "name": "@electron-forge/maker-dmg",
-          "config": {
-            "outDir": "./out/make/arm64"
-          },
-          "platforms": [
-            "darwin"
-          ],
+          "config": { "outDir": "./out/make/arm64" },
+          "platforms": ["darwin"],
           "arch": "arm64"
         },
         {
           "name": "@electron-forge/maker-zip",
-          "config": {
-            "outDir": "./out/make/x64"
-          },
-          "platforms": [
-            "darwin"
-          ],
+          "config": { "outDir": "./out/make/x64" },
+          "platforms": ["darwin"],
           "arch": "x64"
         },
         {
           "name": "@electron-forge/maker-zip",
-          "config": {
-            "outDir": "./out/make/arm64"
-          },
-          "platforms": [
-            "darwin"
-          ],
+          "config": { "outDir": "./out/make/arm64" },
+          "platforms": ["darwin"],
           "arch": "arm64"
         },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
+        { "name": "@electron-forge/maker-deb", "config": {} },
+        { "name": "@electron-forge/maker-rpm", "config": {} }
       ]
     }
   },
@@ -105,6 +94,6 @@
     "@electron-forge/maker-squirrel": "^6.4.2",
     "@electron-forge/maker-zip": "^6.4.2",
     "@electron-forge/plugin-auto-unpack-natives": "^6.4.2",
-    "electron": "^24.3.1"
+    "electron": "^24.8.8"
   }
 }

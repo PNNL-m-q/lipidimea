@@ -359,7 +359,7 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
     # get the list of precursor m/zs
     pre_mzs: Set[float] = rdr.get_pre_mzs()  # type: ignore
     # limit to a specified range 
-    pre_mzs = set([_ for _ in pre_mzs if (_ >= params.precursor_mz.min and _ <= params.precursor_mz.max)])
+    pre_mzs = set([_ for _ in pre_mzs if (_ >= params.precursor.precursor_mz.min and _ <= params.precursor.precursor_mz.max)])
     debug_handler(debug_flag, debug_cb, f"# precursor m/zs: {len(pre_mzs)}")
     # extract chromatographic features
     chrom_feats: List[DdaChromFeat] = _extract_and_fit_chroms(rdr, 

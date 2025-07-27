@@ -1,17 +1,64 @@
 const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
 const path = require('path');
-const { PythonShell } = require('python-shell');
+// const { PythonShell } = require('python-shell');
 const yaml = require('js-yaml');
 const fs = require('fs');
 const sqlite3 = require('sqlite3');
 const prompt = require('electron-prompt');
 const { spawn } = require('child_process');
+const { PassThrough } = require('stream');
 
-// This variable will hold the path to the sql database in Results. 
-// It is globally defined because it is called frequently.
+let cancelRequested = false;
+let currentChild = null;
+
+// Resolve paths differently in dev vs packaged
+const LIPIDIMEA_ROOT = app.isPackaged
+  ? path.join(process.resourcesPath)
+  : path.resolve(__dirname, '..', '..');
+
+// Select the right embedded binary
+const exe = process.platform === 'win32' ? 'lipidimea.exe' : 'lipidimea';
+const PYTHON_CLI = app.isPackaged
+  ? path.join(process.resourcesPath, exe)
+  : path.join(__dirname, '..','..',"python3.12");
+
+function safeReaddir(dir) {
+  try { return fs.readdirSync(dir).sort(); }
+  catch { return []; }
+}
+
+function safeIsDir(p) {
+  try { return fs.statSync(p).isDirectory(); }
+  catch { return false; }
+}
+
+function listDir(dir, depth, indent = "") {
+  let out = [];
+  for (const name of safeReaddir(dir)) {
+    const full = path.join(dir, name);
+    out.push(indent + name);
+    if (depth > 0 && safeIsDir(full)) {
+      out = out.concat(listDir(full, depth - 1, indent + "  "));
+    }
+  }
+  return out;
+}
+
+ipcMain.on("debug-list-paths", (event, { baseDir, maxDepth = 2 }) => {
+  const base   = path.resolve(baseDir || process.resourcesPath);
+  const parent = path.resolve(base, "..");
+
+  const txt =
+      "# ls .\n"          + listDir(base,   0).join("\n") +
+    "\n\n# ls ./*\n"       + listDir(base,   1).join("\n") +
+    "\n\n# ls ./*/*\n"     + listDir(base,   2).join("\n") +
+    `\n\n# ls ..   (${parent})\n` + listDir(parent, 0).join("\n");
+
+  event.reply("debug-list-paths-result", txt);
+});
+
 let dbPath = null;
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
@@ -24,39 +71,28 @@ const createWindow = () => {
     width: 1600,
     height: 1200,
     webPreferences: {
-      // nodeIntegration: false,
       contextIsolation: true,
-      // sandbox: false,
       preload: path.join(__dirname, 'preload.js'),
     },
     
   });
 
+    mainWindow.loadFile(path.join(__dirname, 'experiment/experiment.html'));
 
-  // and load the intro.html of the app.
-  mainWindow.loadFile(path.join(__dirname, 'intro/intro.html'));
-
-
-  // Open the DevTools.
-  //mainWindow.webContents.openDevTools();
-
-  // Store the current session data when switching tabs
   mainWindow.on('blur', () => {
     const currentSession = mainWindow.webContents.session;
-    currentSession.flushStorageData(); // Save the current session data
+    currentSession.flushStorageData();
   });
 
-  // Restore the session data when the tab becomes active again
+
   mainWindow.on('focus', () => {
     const currentSession = mainWindow.webContents.session;
-    currentSession.clearStorageData(); // Clear the current session data
-    currentSession.flushStorageData(); // Restore the stored session data
+    currentSession.clearStorageData();
+    currentSession.flushStorageData(); 
   });
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+
 app.on('ready', createWindow);
 
 
@@ -72,32 +108,49 @@ app.on('activate', () => {
   }
 });
 
+ipcMain.on('getDefaults', async (event) => {
+  try {
 
-// ------------ Experiment Section ----------
+    // In development the lipidimea folder lives in the repo root;
+    // when packaged it gets copied into Resources/lipidimea
+    const includeDir = app.isPackaged
+      ? path.join(process.resourcesPath, '_include')
+      : path.join(__dirname, '..','..','lipidimea', '_include'); 
 
-// Load on DOM
-// Get Defaults Data
-ipcMain.on('getDefaults', (event) => {
-  const defaultsPath = path.join(__dirname, '../../lipidimea/_include/default_params.yaml');
-  console.log('YAML Path:', defaultsPath);
+    console.log("app.isPackaged:")
+    console.log(app.isPackaged)
 
-  fs.readFile(defaultsPath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading YAML file:', err);
-      event.reply('returnDefaults', null);
-      return;
-    }
+    const ddaPath = path.join(includeDir, 'default_dda_params.yaml');
+    const diaPath = path.join(includeDir, 'default_dia_params.yaml');
+    const annPath = path.join(includeDir, 'default_ann_params.yaml');
 
-    try {
-      const returnDefaults = yaml.load(data);
-      console.log('YAML Data:', returnDefaults);
-      event.reply('returnDefaults', returnDefaults);
-    } catch (error) {
-      console.error('Error parsing YAML file:', error);
-      event.reply('returnDefaults', null);
-    }
-  });
+    console.log('getDefaults → loading from:', ddaPath, diaPath, annPath);
+
+    // Read & parse
+    const ddaYaml = fs.readFileSync(ddaPath, 'utf8');
+    const diaYaml = fs.readFileSync(diaPath, 'utf8');
+    const annYaml = fs.readFileSync(annPath, 'utf8');
+
+    const ddaDefaults = yaml.load(ddaYaml);
+    const diaDefaults = yaml.load(diaYaml);
+    const annDefaults = yaml.load(annYaml);
+
+    console.log('getDefaults → ddaDefaults keys:', Object.keys(ddaDefaults));
+    console.log('getDefaults → diaDefaults keys:', Object.keys(diaDefaults));
+    console.log('getDefaults → annDefaults keys:', Object.keys(annDefaults));
+
+    event.reply('returnDefaults', {
+      dda: ddaDefaults,
+      dia: diaDefaults,
+      annotation: annDefaults
+    });
+
+  } catch (err) {
+    console.error('getDefaults ERROR:', err);
+    event.reply('returnDefaults', null);
+  }
 });
+
 
 // Trigger on "Save Params as file" Button
 // Open dialog to enter file name and search for save directory.
@@ -138,131 +191,90 @@ ipcMain.on('open-directory-dialog', (event) => {
 });
 
 
-// pyinstaller version
-ipcMain.on('run-python-yamlwriter', (event, options) => {
-  const inputNumber = options.args;
+ipcMain.on('write-yaml', (event, options) => {
+  // Determine where to write
+  const data    = options.args;
+  const saveDir = options.location || null;
+  const base    = options.name    || null;
+  const explicitPath = options.path || null;
+
   let savePath;
-  if (options.location && options.name) {
-      // If location and name are provided, construct the save path
-      savePath = path.join(options.location, options.name + ".yaml");
+  if (saveDir && base) {
+    savePath = path.join(saveDir, base + '.yml');
+  } else if (explicitPath) {
+    savePath = explicitPath;
   } else {
-      // Otherwise, use the path directly from options
-      savePath = options.path;
+    event.reply('python-result-yamlwriter', 'ERROR: no valid path provided to write YAML');
+    return;
   }
-  console.log('yamlwriter input values:', inputNumber);
 
-  // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, '../dist', 'yamlwriter');
-
-  const spawn = require('child_process').spawn;
-  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber), savePath]);
-
-  pythonProcess.stdout.on('data', (data) => {
-    console.log(`Python script result: ${data}`);
-    event.reply('python-result-yamlwriter', data.toString());
-  });
-
-  pythonProcess.stderr.on('data', (data) => {
-    console.error(`Python Error: ${data}`);
-  });
-});
-
-
-
-// Generic function for opening dialog to select a file
-ipcMain.on('open-file-dialog', (event, options) => {
-  const window = BrowserWindow.getFocusedWindow();
-
-  dialog.showOpenDialog(window, options)
-    .then((result) => {
-      if (!result.canceled && result.filePaths.length > 0) {
-        const filePath = result.filePaths[0];
-        console.log('YML Selected Path from Index:', filePath);
-        event.reply('file-dialog-selection', filePath);
-      }
-    })
-    .catch((error) => {
-      console.error('Error opening file dialog:', error);
-    });
-});
-
-
-// Is this still in use?
-// ipcMain.handle('read-file-content', (event, filePath) => {
-//   // Read the content of the file and return the data
-//   const fileContent = readFile(filePath);
-//   return fileContent;
-// });
-
-
-// Function to load in yaml data
-function parseYaml(content) {
   try {
-    const data = yaml.load(content);
-    return data;
-  } catch (error) {
-    console.error('Error parsing YAML:', error);
-    return null;
+    // Dump the object to YAML
+    const yamlStr = yaml.dump(data, {
+      noRefs:        true,
+      sortKeys:      false,
+      lineWidth:     120,
+      noCompatMode:  true
+    });
+    // Write it out
+    fs.writeFileSync(savePath, yamlStr, 'utf8');
+    event.reply('python-result-yamlwriter', `Wrote parameter file to ${savePath}\n`);
+  } catch (err) {
+    console.error('YAML write error:', err);
+    event.reply('python-result-yamlwriter', `ERROR writing YAML: ${err.message}\n`);
   }
-}
+});
 
-// Read in YAML File to replace default param values.
-ipcMain.on('file-dialog-selection', (event, filePath) => {
+ipcMain.on('run-lipidimea-cli-steps', async (event, { steps }) => {
+  cancelRequested = false;
+  event.reply('experiment-started');
   
-  // Read the content of the selected YAML file
-  const fileContent = fs.readFileSync(filePath, 'utf-8');
-  const yamlData = parseYaml(fileContent);
+  for (const { cmd, desc } of steps) {
+    if (cancelRequested) break;
+    event.reply('python-result-experiment', `\n>>> ${desc}\n`);
+    
+    try {
+      try { fs.chmodSync(PYTHON_CLI, 0o755); } catch (_) {}
 
-  // Send the file content back to the renderer process
-  event.sender.send('file-content', yamlData);
+      currentChild = spawn(
+        app.isPackaged
+          ? PYTHON_CLI
+          : 'python3.12',
+        app.isPackaged
+          ? cmd
+          : ['-m', 'lipidimea', ...cmd],
+        { cwd: LIPIDIMEA_ROOT, env: process.env }
+      );
+      
+      currentChild.stdout.on('data', d => event.reply('python-result-experiment', d.toString()));
+      currentChild.stderr.on('data', d => event.reply('python-result-experiment', d.toString()));
+      
+      await new Promise((resolve, reject) => {
+        currentChild.on('close', code => {
+          currentChild = null;
+          code === 0 ? resolve() : reject(new Error(`${desc} failed (exit ${code})`));
+        });
+        currentChild.on('error', reject);
+      });
+    } catch (err) {
+      event.reply('python-result-experiment', `\nERROR: ${err.message}\n`);
+      break;
+    }
+  }
+
+  if (cancelRequested) {
+    event.reply('python-result-experiment', '\nExperiment canceled.\n');
+    event.reply('experiment-canceled');
+  } else {
+    event.reply('python-result-experiment', '\nExperiment complete.\n');
+    event.reply('experiment-finished');
+  }
 });
 
-
-
-// Run python script to run the lipidimea workflow
-// ipcMain.on('run-python-experiment', (event, options) => {
-//   const inputNumber = options.args;
-//   console.log('Experiment input values:', inputNumber);
-
-//   let pythonExecutable = path.join(__dirname, 'embeddedPythonMac', 'python3.11');
-//   const pyshell = new PythonShell(path.join(__dirname, 'experiment.py'), {
-//     pythonPath: pythonExecutable,
-//     args: [JSON.stringify(inputNumber)], 
-//   });
-
-//   pyshell.on('message', (result) => {
-//     console.log('Python script result:', result);
-//     event.reply('python-result-experiment', result);
-//   });
-
-//   pyshell.end((err) => {
-//     if (err) throw err;
-//   });
-// });
-
-
-// pyinstaller version
-ipcMain.on('run-python-experiment', (event, options) => {
-  const inputNumber = options.args;
-  console.log('Experiment input values:', inputNumber);
-
-  // Point to the standalone executable produced by PyInstaller
-  let pythonExecutable = path.join(__dirname, '../dist', 'experiment');
-
-  const pythonProcess = spawn(pythonExecutable, [JSON.stringify(inputNumber)]);
-
-  pythonProcess.stdout.on('data', (data) => {
-    console.log(`Python script result: ${data}`);
-    event.reply('python-result-experiment', data.toString());
-  });
-
-  pythonProcess.stderr.on('data', (data) => {
-    console.error(`Python Error: ${data}`);
-  });
+ipcMain.on('cancel-experiment', () => {
+  cancelRequested = true;
+  if (currentChild) currentChild.kill();
 });
-
-
-
 
 // ------------ Results Section ----------
 
@@ -283,92 +295,49 @@ ipcMain.on('open-database-dialog', (event, options) => {
     });
 });
 
-// Run main SQL Query and return results.
+let mainTableCache = null;
+let currentDbPath = null;
+
 ipcMain.on('fetch-database-table', (event, filePath) => {
-  const db = new sqlite3.Database(filePath);
-  console.log("LOG: index.js: Fetch data");
-    db.all(`
-    SELECT 
-      dda_feat_id AS "DDA Feature ID", 
-      dda_f AS "DDA Data File", 
-      dia_feat_id AS "DIA Feature ID", 
-      dia_f AS "DIA Data File", 
-      mz AS "m/z", 
-      dia_rt AS RT, 
-      dt AS "Arrival Time", 
-      dia_decon_frag_ids, 
-      dia_xic, 
-      dia_atd, 
-      dt AS dia_dt, 
-      dia_dt_pkht, 
-      dia_dt_fwhm, 
-      dia_dt_psnr, 
-      dia_rt_pkht, 
-      dia_rt_fwhm, 
-      dia_rt_psnr,
-      dda_rt_pkht, 
-      dda_rt_fwhm, 
-      dda_rt_psnr, 
-      dda_rt, 
-      dda_ms2_peaks, 
-      dia_ms2_peaks, 
-      dia_ms1 
-    FROM _CombinedFeaturesForGUI
-    `, (error, data) => {
-    if (error) {
-      console.error('Error fetching data from the database:', error);
-      event.reply('database-table-data', data, false, error.message, databasePath);
-    } else {
-      event.reply('database-table-data', data, false);
-    }
-
-    db.close((closeError) => {
-      if (closeError) {
-        console.error('Error closing the database:', closeError);
-      }
-    });
-  });
-});
-
-
-// Run SQL Query to get blobs and info for decon frags
-ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
-  const db = new sqlite3.Database(dbPath); // Access the global dbPath variable here
-  console.log("LOG: index.js: Fetch mapping data");
-
-  if (!selectedRowValue.diaDeconFragIds || selectedRowValue.diaDeconFragIds.trim() === "") {
-    // Handle the case where diaDeconFragIds is empty or doesn't have a value
-    console.error('No IDs provided for fetching mapping data.');
-    event.reply('database-table-data', [], true, "No IDs provided");
+  // If the file path is different from the cached one, clear the cache.
+  if (currentDbPath !== filePath) {
+    mainTableCache = null;
+    currentDbPath = filePath;
+  }
+  
+  if (mainTableCache !== null) {
+    console.log("Returning cached mainTable data.");
+    event.reply('database-table-data', mainTableCache);
     return;
   }
-
-  const selectedIDs = selectedRowValue.diaDeconFragIds.split(' ').map(id => id.trim()).filter(Boolean);
-  const placeholders = selectedIDs.map(() => '?').join(',');
-  const combinedFeaturesQuery = `
-  SELECT 
-      c.dia_xic, 
-      c.dia_atd,
-      d.decon_frag_id, 
-      d.mz, 
-      d.xic_dist, 
-      d.atd_dist, 
-      d.xic, 
-      d.atd 
-  FROM CombinedFeatures c
-  JOIN DIADeconFragments d 
-  ON (' ' || c.dia_decon_frag_ids || ' ') LIKE ('% ' || d.decon_frag_id || ' %')
-  WHERE d.decon_frag_id IN (${placeholders})
-`;
-
-  db.all(combinedFeaturesQuery, selectedIDs, (error, data) => {
+  
+  const db = new sqlite3.Database(filePath);
+  console.log("LOG: index.js: Fetch data in 'fetch-database-table' function");
+  db.all(`
+    SELECT 
+        dia_pre_id,
+        dfile_id,
+        mz,
+        rt,
+        rt_pkht,
+        rt_psnr,
+        rt_fwhm,
+        dt,
+        ccs,
+        dt_pkht,
+        dt_pkht * dt_fwhm * 0.338831 AS peak_area,
+        dt_psnr,
+        dt_fwhm
+    FROM 
+        DIAPrecursors
+  `, (error, data) => {
     if (error) {
-      console.error('Error fetching mapping data from the database:', error);
-      event.reply('database-table-data', data, true, error.message);
+      console.error('Error fetching data from the database:', error);
+      event.reply('database-table-data', data, false, error.message, filePath);
     } else {
-      event.reply('database-table-data', data, true);
+      mainTableCache = data;
+      event.reply('database-table-data', data);
     }
-
     db.close((closeError) => {
       if (closeError) {
         console.error('Error closing the database:', closeError);
@@ -377,11 +346,59 @@ ipcMain.on('fetch-mapping-table', (event, selectedRowValue) => {
   });
 });
 
+
+function fetchRawBlob(featId, rawType, callback) {
+  // Open the database using the global dbPath.
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT raw_data 
+    FROM Raw 
+    WHERE feat_id_type = 'dia_pre_id' 
+      AND feat_id = ? 
+      AND raw_type = ?
+  `;
+  db.get(query, [featId, rawType], (error, row) => {
+    if (error) {
+      console.error(`Error fetching ${rawType} blob for feature ${featId}:`, error);
+      callback(error);
+    } else {
+      // Return the blob data (or null if not found)
+      callback(null, row ? row.raw_data : null);
+    }
+    db.close();
+  });
+}
+
+
+// IPC handler for fetching raw blob data.
+ipcMain.on('fetch-raw-blob', (event, { featId, rawType }) => {
+  fetchRawBlob(featId, rawType, (error, blob) => {
+    if (error) {
+      event.reply('raw-blob-result', { rawType, error: error.message });
+    } else {
+      if (blob) {
+        try {
+          // Convert the blob into a float array and then split it into x and y arrays.
+          const floatArray = blobToFloatArray(blob);
+          const unpackedData = unpackData(floatArray);
+          // Send the processed data (x and y arrays) back to the renderer.
+          event.reply('raw-blob-result', { rawType, data: unpackedData });
+        } catch (ex) {
+          console.error(`Error processing ${rawType} blob for feature ${featId}:`, ex);
+          event.reply('raw-blob-result', { rawType, error: ex.message });
+        }
+      } else {
+        // If no blob is found, reply with a null data field.
+        event.reply('raw-blob-result', { rawType, data: null });
+      }
+    }
+  });
+});
 
 // Run SQL Query to get annotation table
 ipcMain.on('fetch-annotation-table', (event, filePath) => {
   const db = new sqlite3.Database(filePath);
-  console.log("LOG: index.js: Fetch data");
+  console.log("LOG: index.js: Fetch data in 'fetch-annotation-table' function");
 
   db.all('SELECT * FROM Lipids', (error, data) => {
     if (error) {
@@ -398,7 +415,6 @@ ipcMain.on('fetch-annotation-table', (event, filePath) => {
     });
   });
 });
-
 
 // Function to process Blobs
 function blobToFloatArray(blob) {
@@ -499,4 +515,389 @@ ipcMain.on('process-ms1-blob-data', (event, blobs) => {
     console.error("Error processing the blob data:", err);
     event.reply('return-ms1-blob-data', { error: err.message });
   }
+});
+
+
+ipcMain.on('fetch-dda-features', (event, { diaMz, tolerance }) => {
+  const tol = tolerance || 0.01;
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT 
+      dda_pre_id,
+      mz,
+      rt AS dda_rt,
+      rt_pkht AS dda_rt_pkht,
+      rt_fwhm AS dda_rt_fwhm
+    FROM DDAPrecursors
+    WHERE mz BETWEEN ? AND ?
+  `;
+  db.all(query, [diaMz - tol, diaMz + tol], (error, rows) => {
+    if (error) {
+      console.error("Error fetching DDA features from DDAPrecursors:", error);
+      event.reply('dda-features-result', { error: error.message });
+    } else {
+      event.reply('dda-features-result', { features: rows });
+    }
+    db.close();
+  });
+});
+
+
+
+function fetchDDABlob(featId, blobType, callback) {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT raw_data
+    FROM Raw
+    WHERE feat_id_type = 'dda_pre_id'
+      AND feat_id = ?
+      AND raw_type = ?
+  `;
+  db.get(query, [featId, blobType], (error, row) => {
+    if (error) {
+      console.error(`Error fetching ${blobType} blob for DDA feature ${featId}:`, error);
+      callback(error);
+    } else {
+      callback(null, row ? row.raw_data : null);
+    }
+    db.close();
+  });
+}
+
+ipcMain.on('fetch-dda-blob', (event, { featId, blobType }) => {
+  fetchDDABlob(featId, blobType, (error, blob) => {
+    if (error) {
+      event.reply('dda-blob-result', { blobType, error: error.message });
+    } else {
+      if (blob) {
+        try {
+          const floatArray = blobToFloatArray(blob);
+          const unpackedData = unpackData(floatArray);
+          event.reply('dda-blob-result', { blobType, data: unpackedData });
+        } catch (ex) {
+          console.error(`Error processing ${blobType} blob for feature ${featId}:`, ex);
+          event.reply('dda-blob-result', { blobType, error: ex.message });
+        }
+      } else {
+        event.reply('dda-blob-result', { blobType, data: null });
+      }
+    }
+  });
+});
+
+
+//  Bidirectional plot
+ipcMain.on('fetch-dia-ms2', (event, dia_pre_id) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT dia_frag_id, fmz, fint
+    FROM DIAFragments
+    WHERE dia_pre_id = ?
+  `;
+  db.all(query, [dia_pre_id], (error, rows) => {
+    if (error) {
+      console.error("Error fetching DIA MS2 data:", error);
+      event.reply('dia-ms2-result', { error: error.message });
+    } else {
+      event.reply('dia-ms2-result', { data: rows });
+    }
+    db.close();
+  });
+});
+
+// Handler for DDA MS2 data
+ipcMain.on('fetch-dda-ms2', (event, dda_pre_id) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT fmz, fint
+    FROM DDAFragments
+    WHERE dda_pre_id = ?
+  `;
+  db.all(query, [dda_pre_id], (error, rows) => {
+    if (error) {
+      console.error("Error fetching DDA MS2 data:", error);
+      event.reply('dda-ms2-result', { error: error.message });
+    } else {
+      event.reply('dda-ms2-result', { data: rows });
+    }
+    db.close();
+  });
+});
+
+
+// ---------- Fetch decon fragments for a given DIA precursor ----------
+ipcMain.on('fetch-decon-fragments', (event, dia_pre_id) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT dia_frag_id, xic_dist, atd_dist
+    FROM DIAFragments
+    WHERE dia_pre_id = ?
+  `;
+  db.all(query, [dia_pre_id], (error, rows) => {
+    if (error) {
+      console.error("Error fetching decon fragments for dia_pre_id", dia_pre_id, error);
+      event.reply('decon-fragments-result', { error: error.message });
+    } else {
+      event.reply('decon-fragments-result', { fragments: rows });
+    }
+    db.close();
+  });
+});
+
+// ---------- Fetch blob for decon fragments (feat_id_type 'dia_frag_id') ----------
+function fetchRawBlobDecon(featId, rawType, callback) {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+    SELECT raw_data 
+    FROM Raw 
+    WHERE feat_id_type = 'dia_frag_id'
+      AND feat_id = ?
+      AND raw_type = ?
+  `;
+  db.get(query, [featId, rawType], (error, row) => {
+    if (error) {
+      console.error(`Error fetching ${rawType} blob for decon feature ${featId}:`, error);
+      callback(error);
+    } else {
+      callback(null, row ? row.raw_data : null);
+    }
+    db.close();
+  });
+}
+
+// ---------- IPC handler to fetch decon blob data ----------
+ipcMain.on('fetch-decon-raw-blob', (event, { featId, rawType }) => {
+  fetchRawBlobDecon(featId, rawType, (error, blob) => {
+    if (error) {
+      event.reply('decon-raw-blob-result', { rawType, error: error.message });
+    } else {
+      if (blob) {
+        try {
+          const floatArray = blobToFloatArray(blob);
+          const unpackedData = unpackData(floatArray);
+          event.reply('decon-raw-blob-result', { rawType, data: unpackedData });
+        } catch (ex) {
+          console.error(`Error processing ${rawType} blob for decon feature ${featId}:`, ex);
+          event.reply('decon-raw-blob-result', { rawType, error: ex.message });
+        }
+      } else {
+        event.reply('decon-raw-blob-result', { rawType, data: null });
+      }
+    }
+  });
+});
+
+
+
+ipcMain.on('delete-diaprecursor-rows', (event, rowsArray) => {
+  if (!rowsArray || !rowsArray.length) {
+    event.reply('delete-diaprecursor-rows-result', { success: false, error: 'No rows specified' });
+    return;
+  }
+
+  const db = new sqlite3.Database(dbPath);
+  const prePlaceholders = rowsArray.map(() => '?').join(',');
+
+  db.serialize(() => {
+    db.run("BEGIN TRANSACTION");
+
+    // 1. Retrieve associated fragment IDs from DIAFragments.
+    db.all(`SELECT dia_frag_id FROM DIAFragments WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, (err, fragRows) => {
+      if (err) {
+        db.run("ROLLBACK");
+        event.reply('delete-diaprecursor-rows-result', { success: false, error: err.message });
+        db.close();
+        return;
+      }
+      let fragIds = fragRows && fragRows.length > 0 ? fragRows.map(r => r.dia_frag_id) : [];
+
+      // 2. Retrieve lipid IDs from Lipids (for use in deleting from LipidSumComp).
+      db.all(`SELECT lipid_id FROM Lipids WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, (err2, lipidRows) => {
+        if (err2) {
+          db.run("ROLLBACK");
+          event.reply('delete-diaprecursor-rows-result', { success: false, error: err2.message });
+          db.close();
+          return;
+        }
+        let lipidIds = lipidRows && lipidRows.length > 0 ? lipidRows.map(r => r.lipid_id) : [];
+
+        // 3. Delete from DIAPrecursors.
+        db.run(`DELETE FROM DIAPrecursors WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, function(err3) {
+          if (err3) {
+            db.run("ROLLBACK");
+            event.reply('delete-diaprecursor-rows-result', { success: false, error: err3.message });
+            db.close();
+            return;
+          }
+          // 4. Delete from DIAFragments.
+          db.run(`DELETE FROM DIAFragments WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, function(err4) {
+            if (err4) {
+              db.run("ROLLBACK");
+              event.reply('delete-diaprecursor-rows-result', { success: false, error: err4.message });
+              db.close();
+              return;
+            }
+            // 5. Delete from Lipids.
+            db.run(`DELETE FROM Lipids WHERE dia_pre_id IN (${prePlaceholders})`, rowsArray, function(err5) {
+              if (err5) {
+                db.run("ROLLBACK");
+                event.reply('delete-diaprecursor-rows-result', { success: false, error: err5.message });
+                db.close();
+                return;
+              }
+              // 6. Delete from Raw for precursor data.
+              db.run(`DELETE FROM Raw WHERE feat_id_type = 'dia_pre_id' AND feat_id IN (${prePlaceholders})`, rowsArray, function(err6) {
+                if (err6) {
+                  db.run("ROLLBACK");
+                  event.reply('delete-diaprecursor-rows-result', { success: false, error: err6.message });
+                  db.close();
+                  return;
+                }
+                // 7. If there are fragIds, delete from LipidFragments and Raw (for fragment data).
+                const deleteFragRelated = (callback) => {
+                  if (fragIds.length > 0) {
+                    const fragPlaceholders = fragIds.map(() => '?').join(',');
+                    db.run(`DELETE FROM LipidFragments WHERE dia_frag_id IN (${fragPlaceholders})`, fragIds, function(err7) {
+                      if (err7) {
+                        callback(err7);
+                        return;
+                      }
+                      db.run(`DELETE FROM Raw WHERE feat_id_type = 'dia_frag_id' AND feat_id IN (${fragPlaceholders})`, fragIds, function(err8) {
+                        callback(err8);
+                      });
+                    });
+                  } else {
+                    callback(null);
+                  }
+                };
+
+                // 8. If there are lipidIds, delete from LipidSumComp.
+                const deleteLipidSumComp = (callback) => {
+                  if (lipidIds.length > 0) {
+                    const lipidPlaceholders = lipidIds.map(() => '?').join(',');
+                    db.run(`DELETE FROM LipidSumComp WHERE lipid_id IN (${lipidPlaceholders})`, lipidIds, function(err9) {
+                      callback(err9);
+                    });
+                  } else {
+                    callback(null);
+                  }
+                };
+
+                // Execute deletion for frag-related and lipid mapping in series.
+                deleteFragRelated((errFrag) => {
+                  if (errFrag) {
+                    db.run("ROLLBACK");
+                    event.reply('delete-diaprecursor-rows-result', { success: false, error: errFrag.message });
+                    db.close();
+                    return;
+                  }
+                  deleteLipidSumComp((errLipid) => {
+                    if (errLipid) {
+                      db.run("ROLLBACK");
+                      event.reply('delete-diaprecursor-rows-result', { success: false, error: errLipid.message });
+                      db.close();
+                      return;
+                    }
+                    // 9. Commit the transaction.
+                    db.run("COMMIT", function(errCommit) {
+                      if (errCommit) {
+                        db.run("ROLLBACK");
+                        event.reply('delete-diaprecursor-rows-result', { success: false, error: errCommit.message });
+                        db.close();
+                        return;
+                      }
+                      mainTableCache = null;
+                      event.reply('delete-diaprecursor-rows-result', { success: true });
+                      db.close();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+
+ipcMain.on('fetch-lipid-fragment-details', (event, lipidId) => {
+  const db = new sqlite3.Database(dbPath);
+  const query = `
+      SELECT frag_rule, supports_fa, diagnostic, dia_frag_id
+      FROM LipidFragments
+      WHERE lipid_id = ?
+  `;
+  db.all(query, [lipidId], (err, rows) => {
+      if (err) {
+          console.error("Error fetching lipid fragments:", err);
+          event.reply('lipid-fragment-details', { error: err.message });
+      } else {
+          event.reply('lipid-fragment-details', { lipidId, details: rows });
+      }
+      db.close();
+  });
+});
+
+// Delete annotated feature rows (for the annotation table)
+// Expects an array of lipid IDs (from column 0 of the annotation table)
+ipcMain.on('delete-annotated-feature-rows', (event, lipidIds) => {
+  if (!lipidIds || lipidIds.length === 0) {
+    event.reply('delete-annotated-feature-rows-result', { success: false, error: 'No rows specified' });
+    return;
+  }
+  
+  // Open the database using the global dbPath.
+  const db = new sqlite3.Database(dbPath);
+  const placeholders = lipidIds.map(() => '?').join(',');
+
+  db.serialize(() => {
+    db.run("BEGIN TRANSACTION");
+    // 1. Delete from LipidFragments.
+    db.run(`DELETE FROM LipidFragments WHERE lipid_id IN (${placeholders})`, lipidIds, function(err) {
+      if (err) {
+        db.run("ROLLBACK");
+        event.reply('delete-annotated-feature-rows-result', { success: false, error: err.message });
+        db.close();
+        return;
+      }
+      // 2. Delete from LipidSumComp.
+      db.run(`DELETE FROM LipidSumComp WHERE lipid_id IN (${placeholders})`, lipidIds, function(err2) {
+        if (err2) {
+          db.run("ROLLBACK");
+          event.reply('delete-annotated-feature-rows-result', { success: false, error: err2.message });
+          db.close();
+          return;
+        }
+        // 3. Delete from Lipids.
+        db.run(`DELETE FROM Lipids WHERE lipid_id IN (${placeholders})`, lipidIds, function(err3) {
+          if (err3) {
+            db.run("ROLLBACK");
+            event.reply('delete-annotated-feature-rows-result', { success: false, error: err3.message });
+            db.close();
+            return;
+          }
+          // Commit the transaction.
+          db.run("COMMIT", function(errCommit) {
+            if (errCommit) {
+              db.run("ROLLBACK");
+              event.reply('delete-annotated-feature-rows-result', { success: false, error: errCommit.message });
+              db.close();
+              return;
+            }
+            // After successful commit, re-query the Lipids table so the renderer can update its annotation table.
+            db.all('SELECT * FROM Lipids', (errFetch, rows) => {
+              if (errFetch) {
+                event.reply('delete-annotated-feature-rows-result', { success: true, error: errFetch.message });
+              } else {
+                event.reply('delete-annotated-feature-rows-result', { success: true, updatedData: rows });
+              }
+              db.close();
+            });
+          });
+        });
+      });
+    });
+  });
 });

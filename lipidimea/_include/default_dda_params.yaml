@@ -1,30 +1,179 @@
-precursor_mz: 
-  min: 200.
-  max: 1200.
+# Section header for UI
+display_name: "DDA data analysis"
+
+# Precursor m/z range
+precursor:
+  display_name: Precursor
+  precursor_mz:
+    default:
+      min: 200.0
+      max: 1200.0
+    display_name: "Precursor m/z range"
+    type: "range"
+    description: "Minimum and maximum precursor m/z"
+    advanced: false
+
+# Chromatogram extraction and fitting
 extract_and_fit_chroms:
-  min_rel_height: 0.25
-  min_abs_height: 1.e+4
-  fwhm: 
-    min: 0.05
-    max: 0.5
-  max_peaks: 3
-  min_psnr: 5.
-  mz_ppm: 40.
-  rt_tol: null
-consolidate_chrom_feats:
-  mz_ppm: 40.
-  rt_tol: 0.1
-extract_and_fit_ms2_spectra:
-  min_rel_height: 0.05
-  min_abs_height: 1.e+3
+  display_name: "Chromatogram extraction and fitting"
+  min_rel_height:
+    default: 0.25
+    display_name: "Min. relative peak height"
+    type: float
+    description: "Minimum relative peak height for chromatogram fitting"
+    advanced: false
+  min_abs_height:
+    default: 1e+4
+    display_name: "Min. absolute peak height"
+    type: float
+    description: "Minimum absolute peak height for chromatogram fitting"
+    advanced: false
   fwhm:
-    min: 0.02
-    max: 0.2
-  peak_min_dist: 0.2
-  pre_mz_ppm: 60.
-  mz_bin_min: 50.
-  mz_bin_size: 0.05
+    default:
+      min: 0.05
+      max: 0.5
+    display_name: "Chromatogram FWHM"
+    type: "range"
+    description: "Full width at half max for chromatogram peaks"
+    advanced: true
+  max_peaks:
+    default: 3
+    display_name: "Max peaks"
+    type: int
+    description: "Maximum number of chromatogram peaks to fit"
+    advanced: false
+  min_psnr:
+    default: 5.0
+    display_name: "Min. PSNR"
+    type: float
+    description: "Minimum signal-to-noise ratio for detected peaks"
+    advanced: false
+  mz_ppm:
+    default: 40.0
+    display_name: "m/z PPM tolerance"
+    type: float
+    description: "Parts-per-million tolerance for m/z alignment"
+    advanced: false
+  rt_tol:
+    default: null
+    display_name: "RT tolerance"
+    type: float
+    description: "Retention time tolerance for chromatogram fitting"
+    advanced: true
+
+# Chromatographic feature consolidation
+consolidate_chrom_feats:
+  display_name: "Chromatographic feature consolidation"
+  mz_ppm:
+    default: 40.0
+    display_name: "m/z PPM tolerance"
+    type: float
+    description: "Tolerance for consolidating chromatographic features"
+    advanced: false
+  rt_tol:
+    default: 0.1
+    display_name: "RT tolerance"
+    type: float
+    description: "Retention time tolerance for feature consolidation"
+    advanced: false
+
+# MS2 spectrum extraction and fitting
+extract_and_fit_ms2_spectra:
+  display_name: "MS2 spectrum extraction and fitting"
+  min_rel_height:
+    default: 0.05
+    display_name: "Min. relative MS2 peak height"
+    type: float
+    description: "Minimum relative height for MS2 peak fitting"
+    advanced: false
+  min_abs_height:
+    default: 1e+3
+    display_name: "Min. absolute MS2 peak height"
+    type: float
+    description: "Minimum absolute height for MS2 peak fitting"
+    advanced: false
+  fwhm:
+    default:
+      min: 0.02
+      max: 0.2
+    display_name: "MS2 peak FWHM"
+    type: "range"
+    description: "Full width at half max for MS2 peaks"
+    advanced: true
+  peak_min_dist:
+    default: 0.2
+    display_name: "Min. MS2 peak distance"
+    type: float
+    description: "Minimum distance between MS2 peaks"
+    advanced: false
+  pre_mz_ppm:
+    default: 60.0
+    display_name: "Precursor m/z PPM tolerance"
+    type: float
+    description: "Tolerance for selecting MS2 scans by precursor m/z"
+    advanced: false
+  mz_bin_min:
+    default: 50.0
+    display_name: "Min. MS2 m/z bin"
+    type: float
+    description: "Minimum m/z for MS2 binning"
+    advanced: false
+  mz_bin_size:
+    default: 0.05
+    display_name: "MS2 m/z bin size"
+    type: float
+    description: "Bin size for MS2 spectrum binning"
+    advanced: false
+
+# DDA feature consolidation
 consolidate_dda_feats:
-  mz_ppm: 100.
-  rt_tol: 0.1
-  drop_if_no_ms2: false
+  display_name: "DDA feature consolidation"
+  mz_ppm:
+    default: 100.0
+    display_name: "m/z PPM tolerance"
+    type: float
+    description: "Tolerance for consolidating DDA features"
+    advanced: false
+  rt_tol:
+    default: 0.1
+    display_name: "RT tolerance"
+    type: float
+    description: "Retention time tolerance for consolidating DDA features"
+    advanced: false
+  drop_if_no_ms2:
+    default: false
+    display_name: "Drop features without MS2"
+    type: bool
+    description: "Drop any DDA features lacking MS2 scans"
+    advanced: false
+
+# precursor_mz: 
+#   min: 200.
+#   max: 1200.
+# extract_and_fit_chroms:
+#   min_rel_height: 0.25
+#   min_abs_height: 1.e+4
+#   fwhm: 
+#     min: 0.05
+#     max: 0.5
+#   max_peaks: 3
+#   min_psnr: 5.
+#   mz_ppm: 40.
+#   rt_tol: null
+# consolidate_chrom_feats:
+#   mz_ppm: 40.
+#   rt_tol: 0.1
+# extract_and_fit_ms2_spectra:
+#   min_rel_height: 0.05
+#   min_abs_height: 1.e+3
+#   fwhm:
+#     min: 0.02
+#     max: 0.2
+#   peak_min_dist: 0.2
+#   pre_mz_ppm: 60.
+#   mz_bin_min: 50.
+#   mz_bin_size: 0.05
+# consolidate_dda_feats:
+#   mz_ppm: 100.
+#   rt_tol: 0.1
+#   drop_if_no_ms2: false

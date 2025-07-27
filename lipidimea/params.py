@@ -28,6 +28,7 @@ _DEFAULT_ANN_CONFIG = os.path.join(INCLUDE_DIR, "default_ann_params.yaml")
 # and AnnotationParams dataclasses. 
 
 
+
 @dataclass
 class _Range:
     min: float
@@ -38,7 +39,19 @@ class _Range:
 class _IntRange:
     min: int
     max: int
+    
+@dataclass
+class _Display:
+    display_name: str
 
+
+@dataclass
+class _Precursor:
+    precursor_mz: _Range
+
+    def __post_init__(self):
+        if type(self.precursor_mz) is dict:
+            self.precursor_mz = _Range(**self.precursor_mz)
 
 @dataclass
 class _ExtractAndFitChroms:
@@ -75,6 +88,14 @@ class _ExtractAndFitMs2Spectra:
         if type(self.fwhm) is dict:
             self.fwhm = _Range(**self.fwhm)
 
+@dataclass
+class _MS2PeakMatching:
+    mz_ppm: float
+
+@dataclass
+class _StoreData:
+    blob: bool
+
 
 @dataclass
 class _ConsolidateDdaFeats:
@@ -105,6 +126,20 @@ class _AnnotationComponent:
 
 
 @dataclass
+class _SumCompAnnotationComponent:
+    fa_cl: _IntRange
+    fa_odd_c: bool
+    mz_ppm: float
+    config: Optional[YamlFilePath] = None
+
+    def __post_init__(self):
+        if type(self.fa_cl) is dict:
+            self.fa_cl = _IntRange(**self.fa_cl)
+
+
+
+
+@dataclass
 class _CcsTrends:
     percent: float 
     config: Optional[YamlFilePath] = None
@@ -131,16 +166,28 @@ def _load_yaml(config: YamlFilePath
     return cfg
 
 
-def _load_default(param_type: _ParamType
-                  ) -> Dict[str, Any] : 
-    """ Load the default parameters from built-in configuration files as nested dict """
-    match param_type:
-        case _ParamType.DDA: 
-            return _load_yaml(_DEFAULT_DDA_CONFIG)
-        case _ParamType.DIA: 
-            return  _load_yaml(_DEFAULT_DIA_CONFIG)
-        case _ParamType.ANN:
-            return _load_yaml(_DEFAULT_ANN_CONFIG)
+# def _load_default(param_type: _ParamType
+#                   ) -> Dict[str, Any] : 
+#     """ Load the default parameters from built-in configuration files as nested dict """
+#     match param_type:
+#         case _ParamType.DDA: 
+#             return _load_yaml(_DEFAULT_DDA_CONFIG)
+#         case _ParamType.DIA: 
+#             return  _load_yaml(_DEFAULT_DIA_CONFIG)
+#         case _ParamType.ANN:
+#             return _load_yaml(_DEFAULT_ANN_CONFIG)
+
+def _load_default(param_type: _ParamType) -> Dict[str, Any]:
+    # Load the raw YAML (with UI metadata)
+    raw = {
+        _ParamType.DDA:  _DEFAULT_DDA_CONFIG,
+        _ParamType.DIA:  _DEFAULT_DIA_CONFIG,
+        _ParamType.ANN:  _DEFAULT_ANN_CONFIG
+    }[param_type]
+    cfg = _load_yaml(raw)
+    # Strip out all UI‐only fields, leaving just the pure values
+    clean_cfg = _strip_ui_metadata(cfg)
+    return clean_cfg
 
 
 def _from_config(config: YamlFilePath,
@@ -192,7 +239,30 @@ def _from_config(config: YamlFilePath,
         case _ParamType.DIA: 
             return DiaParams(**params)
         case _ParamType.ANN:
+            print(params)
             return AnnotationParams(**params)
+        
+def _strip_ui_metadata(cfg: Any, *, _depth: int = 0) -> Any:
+    """ Recursively strip out GUI‑only keys (display_name, type, description, advanced """
+    if not isinstance(cfg, dict):
+        if isinstance(cfg, str):
+            try:
+                return float(cfg)
+            except ValueError:
+                pass
+        return cfg
+    if 'default' in cfg:
+        return _strip_ui_metadata(cfg['default'], _depth=_depth)
+    gui_only = {'type', 'description', 'advanced'}
+    if _depth > 0:
+        gui_only.add('display_name')
+
+    return {
+        k: _strip_ui_metadata(v, _depth=_depth + 1)
+        for k, v in cfg.items()
+        if k not in gui_only
+    }
+
 
 
 def _write_config(current_dc: Params,
@@ -237,15 +307,16 @@ def _write_config(current_dc: Params,
 @dataclass
 class DdaParams:
     """ class for organizing DDA data processing parameters """
-    precursor_mz: _Range
+    display_name: _Display
+    precursor: _Precursor
     extract_and_fit_chroms: _ExtractAndFitChroms
     consolidate_chrom_feats: _ConsolidateChromFeats
     extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
     consolidate_dda_feats: _ConsolidateDdaFeats
 
     def __post_init__(self):
-        if type(self.precursor_mz) is dict:
-            self.precursor_mz = _Range(**self.precursor_mz)
+        if type(self.precursor) is dict:
+            self.precursor = _Precursor(**self.precursor)
         if type(self.extract_and_fit_chroms) is dict:
             self.extract_and_fit_chroms = _ExtractAndFitChroms(**self.extract_and_fit_chroms)
         if type(self.consolidate_chrom_feats) is dict:
@@ -276,6 +347,7 @@ class DdaParams:
 @dataclass
 class DiaParams:
     """ class for organizing DIA data processing parameters """
+    display_name: _Display
     extract_and_fit_chroms: _ExtractAndFitChroms
     extract_and_fit_atds: _ExtractAndFitChroms
     extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
@@ -314,15 +386,16 @@ class DiaParams:
 @dataclass
 class AnnotationParams:
     """ class for organizing lipid annotation parameters """
+    display_name: _Display
     ionization: Optional[str]   # TODO: Some mechanism to restrict this to only "POS" or "NEG" as valid values?
-    sum_comp: _AnnotationComponent
-    rt_range_config: Optional[YamlFilePath]
+    sum_comp: _SumCompAnnotationComponent
+    config_file: Optional[dict]
     ccs_trends: _CcsTrends
     frag_rules: _AnnotationComponent
 
     def __post_init__(self):
         if type(self.sum_comp) is dict:
-            self.sum_comp = _AnnotationComponent(**self.sum_comp)
+            self.sum_comp = _SumCompAnnotationComponent(**self.sum_comp)
         if type(self.frag_rules) is dict:
             self.frag_rules = _AnnotationComponent(**self.frag_rules)
         if type(self.ccs_trends) is dict:
