@@ -45,21 +45,21 @@ def _extract_and_fit_chroms(rdr: DdaReader,
 
     Parameters
     ----------
-    rdr : ``_MSMSReaderDDA``
+    rdr
         object for accessing DDA MSMS data from MZA
-    pre_mzs : ``set(float)``
+    pre_mzs
         sorted unique precursor m/zs
-    params : ``ExtractAndFitChromsParams``
+    params
         parameters for data extraction and fitting
-    debug_flag : ``str``
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    chrom_feats : ``list(tuple(...))``
+    chrom_feats
         list of chromatographic features (pre_mz, peak RT, peak height, peak FWHM, pSNR)
     """
     # unpack params
@@ -110,19 +110,19 @@ def _consolidate_chrom_feats(chrom_feats: List[DdaChromFeat],
 
     Parameters
     ----------
-    chrom_feats : ``list(tuple(...))``
+    chrom_feats
         list of chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
-    params : ``ConsolidateChromFeatsParams``
+    params
         parameters for consolidating chromatographic features
-    debug_flag : ``str``
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    chrom_feats_consolidated : ``list(tuple(...))``
+    chrom_feats_consolidated
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
     """
     # unpack params
@@ -161,26 +161,26 @@ def _extract_and_fit_ms2_spectra(rdr: DdaReader,
 
     Parameters
     ----------
-    rdr : ``_MSMSReaderDDA``
+    rdr
         object for accessing DDA MSMS data from MZA
-    dda_file_id : ``int``
+    dda_file_id
         file ID for DDA data file
-    chrom_feats_consolidated : ``list(tuple(...))``
+    chrom_feats_consolidated
         list of consolidated chromatographic features (pre_mz, peak RT, peak FWHM, peak height, pSNR)
-    params : ``ExtractAndFitMS2SpectraParams``
+    params
         parameters for mass spectum extraction and fitting
-    debug_flag : ``str``
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    precursors : ``list(tuple(...))``
+    precursors
         list of precursor info (as tuple) for each precursor
             [None, int, float, float, float, float, float, int, Optional[int]]
-    spectra : ``list(numpy.ndarray(float) or None)``
+    spectra
         list of tandem mass spectra (centroided, as 2D arrays) or None if no MS2 peaks were found
     """
     # unpack params
@@ -252,15 +252,15 @@ def _add_precursors_and_fragments_to_db(cur: ResultsDbCursor,
 
     Parameters
     ----------
-    cur : ``sqlite3.Cursor``
+    cur
         cursor for making queries into the lipid ids database
-    precursors : ``list(tuple(...))``
+    precursors
         list of query data for all of the precursors
-    spectra : ``list(numpy.ndarray(float) or None)``
+    spectra
         list of MS/MS spectra (if found) for each precursor
-    debug_flag : ``str``
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
     """
@@ -292,14 +292,14 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
 
     Parameters
     ----------
-    dda_data_file : ``str`` or ``int``
+    dda_data_file
         path to raw DDA data file (MZA format) OR a file ID from the results database if analyzing 
         a file that has already been added into the database
-    results_db : ``str``
+    results_db
         path to DDA-DIA analysis results database
-    params : ``DdaParams``
+    params
         DDA data analysis parameters dict
-    cache_ms1 : ``bool``, default=True
+    [cache_ms1]
         Cache MS1 scan data to reduce disk access. This significantly speeds up extracting the 
         precursor chromatograms, but comes at the cost of very high memory usage. Should work 
         fine with a single process on most machines with 16 GB RAM (in testing the memory 
@@ -307,15 +307,15 @@ def extract_dda_features(dda_data_file: Union[MzaFilePath, MzaFileId],
         up all of the RAM and start swapping which completely negates the performance gains from 
         caching. Machines with more RAM can support more processes doing this caching at the same
         time, and rule of thumb would be 1 process per 16 GB RAM. 
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    n_dda_features : ``int``
+    n_dda_features
         number of DDA features extracted
     """
     # ensure the results database exists
@@ -415,27 +415,27 @@ def extract_dda_features_multiproc(dda_data_files: List[MzaFilePath],
 
     Parameters
     ----------
-    dda_data_files : ``list(str)``
+    dda_data_files
         paths to raw DDA data file (MZA format)
-    results_db : ``str``
+    results_db
         path to DDA-DIA analysis results database
-    params : ``dict(...)``
+    params
         parameters for the various steps of DDA feature extraction
-    n_proc : ``int``
+    n_proc
         number of CPU threads to use (number of processes)
-    cache_ms1 : ``bool``, default=False
+    [cache_ms1]
         Cache MS1 scan data to reduce disk access. This should be turned off when using 
         multiprocessing on most machines. See entry in ``extract_dda_features`` 
         docstring for a more detailed explanation.
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
 
     Returns
     -------
-    dda_features_per_file : ``dict(str:int)``
+    dda_features_per_file
         dictionary with the number of DDA features mapped to input DDA data files
     """
     n_proc = min(n_proc, len(dda_data_files))  # no need to use more processes than the number of inputs
@@ -464,20 +464,20 @@ def consolidate_dda_features(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``str``
+    results_db
         path to DDA-DIA analysis results database
-    params : ``DdaConsolidateChromFeatsParams``
+    params
         DDA data analysis parameters 
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
     
     Returns
     -------
-    n_features_pre : ``int``
-    n_features_post : ``int``
+    n_features_pre
+    n_features_post
         return the number of features before and after consolidating
     """
     # unpack parameters

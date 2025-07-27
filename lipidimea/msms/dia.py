@@ -114,7 +114,7 @@ def _decon_distance(pre_data: Union[Xic, Atd],
     return dist_funcs[dist_func](y_pre, y_frg)
 
 
-def _deconvolute_ms2_peaks(rdr: MZA, 
+def _deconvolve_ms2_peaks(rdr: MZA, 
                            sel_ms2_mzs: List[float],
                            pre_xic: Xic, 
                            pre_xic_rt: float, 
@@ -124,36 +124,36 @@ def _deconvolute_ms2_peaks(rdr: MZA,
                            ) -> Tuple[List[Tuple[bool, Optional[float], Optional[float]]],
                                       List[Tuple[Optional[Xic], Optional[Atd]]]] :
     """
-    Deconvolute MS2 peak m/zs, if the XIC and ATD are similar enough to the precursor, 
-    they are returned as deconvoluted peak m/zs
+    Deconvolve MS2 peak m/zs, if the XIC and ATD are similar enough to the precursor, 
+    they are returned as deconvolved peak m/zs
     
     Parameters
     ----------
-    rdr : ``mzapy.MZA``
+    rdr
         interface to raw data
-    sel_ms2_mzs : ``list(float)``
+    sel_ms2_mzs
         list of selected MS2 peak m/zs
-    pre_xic : ``numpy.ndarray(...)``
+    pre_xic
         precursor XIC
-    pre_xic_rt : ``float``
+    pre_xic_rt
         precursor XIC retention time for ATD extraction
-    pre_xic_wt : ``float``
+    pre_xic_wt
         precursor XIC peak width for ATD extraction
-    pre_atd : ``numpy.ndarray(...)``
+    pre_atd
         precursor ATD
-    params : ``DeconvoluteMS2PeaksParams``
+    params
         parameters for deconvoluting MS2 peaks
 
     Returns
     -------
-    deconvoluted : ``list(tuple(bool, float or None, float or None))``
-        deconvoluted fragment info (flag indicating if it was accepted and XIC/ATD distances)
-    raws : ``list(tuple(array or None, array or None))``
+    deconvolved
+        deconvolved fragment info (flag indicating if it was accepted and XIC/ATD distances)
+    raws
         list of optional raw array data for fragment XICs and ATDs
     """
     # unpack parameters
-    P = params.deconvolute_ms2_peaks
-    deconvoluted = []
+    P = params.deconvolve_ms2_peaks
+    deconvolved = []
     raws = []
     for ms2_mz in sel_ms2_mzs:
         flag = False
@@ -161,7 +161,7 @@ def _deconvolute_ms2_peaks(rdr: MZA,
         ms2_xic = None
         atd_dist = None
         ms2_atd = None
-        mz_tol = tol_from_ppm(ms2_mz, params.deconvolute_ms2_peaks.mz_ppm)
+        mz_tol = tol_from_ppm(ms2_mz, params.deconvolve_ms2_peaks.mz_ppm)
         mz_bounds = (ms2_mz - mz_tol, ms2_mz + mz_tol)
         rt_bounds = (pre_xic_rt - pre_xic_wt, pre_xic_rt + pre_xic_wt)
         # extract fragment XIC 
@@ -176,9 +176,9 @@ def _deconvolute_ms2_peaks(rdr: MZA,
             if atd_dist <= P.atd_dist_threshold:
                 # accept fragment
                 flag = True
-        deconvoluted.append((flag, xic_dist, atd_dist))
+        deconvolved.append((flag, xic_dist, atd_dist))
         raws.append((ms2_xic, ms2_atd))
-    return deconvoluted, raws
+    return deconvolved, raws
     
 
 def _add_single_target_results_to_db(cur: ResultsDbCursor, 
@@ -196,7 +196,7 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
                                      pre_raws: Tuple[Ms1, Xic, Atd],
                                      sel_ms2_mzs: List[float], 
                                      sel_ms2_ints: List[float], 
-                                     deconvoluted: List[Tuple[bool, Optional[float], Optional[float]]],
+                                     deconvolved: List[Tuple[bool, Optional[float], Optional[float]]],
                                      frag_raws: List[Tuple[Optional[Xic], Optional[Atd]]],
                                      store_blobs: bool
                                      ) -> None :
@@ -225,7 +225,7 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
         INSERT INTO DIAFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
     for fmz, fint, (decon_flag, xic_dist, atd_dist), (fxic, fatd) in zip(
-        sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws
+        sel_ms2_mzs, sel_ms2_ints, deconvolved, frag_raws
     ):
         # add the fragment info
         frag_qdata = (
@@ -233,7 +233,7 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
             dia_pre_id,         # DIA precursor identifier
             fmz,                # fragment m/z
             fint,               # fragment intensity
-            int(decon_flag),    # deconvoluted flag, converted from bool to int to store in DB
+            int(decon_flag),    # deconvolved flag, converted from bool to int to store in DB
             xic_dist,           # xic distance metric (rel. to precursor), can be None
             atd_dist            # atd distance metric (rel. to precursor), can be None
         )
@@ -311,7 +311,7 @@ def _single_target_analysis(n: int,
         precursor m/z of the DDA precursor we are currently processing
     dda_rts 
         retention time(s) of the DDA precursor we are currently processing, comma separated string
-    dda_ms2_n_peaks : ``int`` or ``None``
+    dda_ms2_n_peaks
         number of MS2 peaks in the DDA MS/MS spectrum for the precursor we are currently processing, 
         can be None in cases where there were no MS/MS scans found for the precursor
     params 
@@ -396,7 +396,7 @@ def _single_target_analysis(n: int,
             n_ms2_peaks = None
             sel_ms2_mzs = []
             sel_ms2_ints = []
-            deconvoluted = []
+            deconvolved = []
             frag_raws = []
             if dda_ms2_n_peaks is not None and dda_ms2_n_peaks > 0:
                 # extract MS2 spectrum (before deconvolution)
@@ -436,13 +436,13 @@ def _single_target_analysis(n: int,
                                         sel_ms2_mzs.append(diam)
                                         sel_ms2_ints.append(diah)
                         dtmsg += f"matched with DDA: {len(sel_ms2_mzs)}"
-                        # deconvolute peaks that were matched from DDA spectrum
+                        # deconvolve peaks that were matched from DDA spectrum
                         if len(sel_ms2_mzs) > 0:
-                            deconvoluted, frag_raws = _deconvolute_ms2_peaks(rdr, 
-                                                                            sel_ms2_mzs, 
-                                                                            pre_xic, xic_rt, xic_wt, pre_atd,
-                                                                            params)
-                            dtmsg += f" -> deconvoluted: {len([_ for _ in deconvoluted if _[0]])}"
+                            deconvolved, frag_raws = _deconvolve_ms2_peaks(rdr, 
+                                                                           sel_ms2_mzs, 
+                                                                           pre_xic, xic_rt, xic_wt, pre_atd,
+                                                                           params)
+                            dtmsg += f" -> deconvolved: {len([_ for _ in deconvolved if _[0]])}"
             debug_handler(debug_flag, debug_cb, dtmsg, pid)
             # add the results for this target to the database
             # NOTE: No need to store the full MS2 spectrum as a blob, as it may only be a partial spectrum anyways
@@ -457,8 +457,8 @@ def _single_target_analysis(n: int,
                                              xic_rt, xic_wt, xic_ht, xic_psnr, 
                                              atd_dt, atd_wt, atd_ht, atd_psnr, 
                                              (ms1, pre_xic, pre_atd),
-                                             sel_ms2_mzs, sel_ms2_ints, deconvoluted, frag_raws,
-                                             params.store.blob)
+                                             sel_ms2_mzs, sel_ms2_ints, deconvolved, frag_raws,
+                                             params.store_blobs)
             n_features += 1
     else:
         debug_handler(debug_flag, debug_cb, msg + 'no XIC peak found', pid)
@@ -479,23 +479,23 @@ def extract_dia_features(dia_data_file: MzaFilePath,
 
     Parameters
     ----------
-    dia_data_file : ``str`` or ``int``
+    dia_data_file
         path to raw DIA data file (MZA format)
-    results_db : ``ResultsDbPath``
+    results_db
         path to DDA-DIA analysis results database
-    params : ``DiaParams``
+    params
         parameters for the various steps of DIA feature extraction
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
-    mza_io_threads : ``int``, default=4
+    [mza_io_threads]
         number of I/O threads to specify for the MZA reader object
 
     Returns
     -------
-    n_dia_features : ``int``
+    n_dia_features
         number of DIA features extracted
     """
     # ensure the results database exists
@@ -597,25 +597,25 @@ def extract_dia_features_multiproc(dia_data_files: List[MzaFilePath],
 
     Parameters
     ----------
-    dia_data_files : ``list(str)``
+    dia_data_files
         paths to raw DIA data file (MZA format)
-    results_db : ``str``
+    results_db
         path to DDA-DIA analysis results database
-    params : ``dict(...)``
+    params
         parameters for the various steps of DDA feature extraction
-    n_proc : ``int``
+    n_proc
         number of CPU threads to use (number of processes)
-    debug_flag : ``str``, optional
+    [debug_flag]
         specifies how to dispatch debugging messages, None to do nothing
-    debug_cb : ``func``, optional
+    [debug_cb]
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
-    mza_io_threads : ``int``, default=4
+    [mza_io_threads]
         number of I/O threads to specify for the MZA reader objects
 
     Returns
     -------
-    dia_features_per_file : ``dict(str:int)``
+    dia_features_per_file
         dictionary with the number of DIA features mapped to input DIA data files
     """
     n_proc = min(n_proc, len(dia_data_files))  # no need to use more processes than the number of inputs
@@ -650,10 +650,10 @@ def add_calibrated_ccs_to_dia_features(results_db: ResultsDbPath,
 
     Parameters
     ----------
-    results_db : ``str``
+    results_db
         path to DDA-DIA analysis results database
-    t_fix : ``float``
-    beta : ``float``
+    t_fix
+    beta
         single-field DTIMS calibration parameters
     """
     # ensure the results database exists

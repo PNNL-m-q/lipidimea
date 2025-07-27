@@ -25,13 +25,12 @@ def ms2_to_str(mzs: npt.NDArray[np.float64], iis: npt.NDArray[np.float64]
     
     Parameters
     ----------
-    mzs : ``numpy.ndarray(float)``
-    iis : ``numpy.ndarray(float)``
+    mzs, iis
         m/z and intensity components of mass spectrum as arrays
 
     Returns
     -------
-    spec_string : ``SpecStr``
+    spec_string
         string representation of spectrum
     """
     lm, li = len(mzs), len(iis)
@@ -55,12 +54,12 @@ def str_to_ms2(s: SpecStr
 
     Parameters
     ----------
-    s : ``SpecStr``
+    s
         string form of spectrum
 
     Returns
     -------
-    spectrum : ``Spec``
+    spectrum
         spectrum as 2D array with m/z and intensity components
     """
     # check the format of the spectrum string
@@ -89,33 +88,11 @@ def apply_args_and_kwargs(fn: Callable, args: List[Any], kwargs: Dict[Any, Any]
 
 def ppm_from_delta_mz(delta_mz: float, mz: float
                       ) -> float:
-    """
-    compute ppm from delta mz and mz
-
-    Parameters
-    ----------
-    delta_mz : ``float``
-    mz : ``float``
-
-    Returns
-    -------
-    ppm : ``float``
-    """
+    """ compute ppm from delta mz and mz """
     return 1e6 * delta_mz / mz
 
 
 def tol_from_ppm(mz: float, ppm: float
                  ) -> float :
-    """ 
-    convert ppm to a tolerance for a specified m/z
-    
-    Parameters
-    ----------
-    mz : ``float``
-    ppm : ``float``
-
-    Returns
-    -------
-    mz_tolerance : ``float``
-    """
+    """ convert ppm to a tolerance for a specified m/z """
     return mz * ppm / 1e6

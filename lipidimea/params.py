@@ -105,7 +105,7 @@ class _ConsolidateDdaFeats:
 
 
 @dataclass
-class _DeconvoluteMs2Peaks:
+class _DeconvolveMs2Peaks:
     mz_ppm: float
     xic_dist_threshold: float
     atd_dist_threshold: float 
@@ -351,9 +351,9 @@ class DiaParams:
     extract_and_fit_chroms: _ExtractAndFitChroms
     extract_and_fit_atds: _ExtractAndFitChroms
     extract_and_fit_ms2_spectra: _ExtractAndFitMs2Spectra
-    ms2_peak_matching: _MS2PeakMatching
-    deconvolute_ms2_peaks: _DeconvoluteMs2Peaks
-    store: _StoreData
+    ms2_peak_matching_ppm: float
+    deconvolve_ms2_peaks: _DeconvolveMs2Peaks
+    store_blobs: bool
 
     def __post_init__(self):
         if type(self.extract_and_fit_chroms) is dict:
@@ -362,13 +362,8 @@ class DiaParams:
             self.extract_and_fit_atds = _ExtractAndFitChroms(**self.extract_and_fit_atds)
         if type(self.extract_and_fit_ms2_spectra) is dict:
             self.extract_and_fit_ms2_spectra = _ExtractAndFitMs2Spectra(**self.extract_and_fit_ms2_spectra)
-        if type(self.ms2_peak_matching) is dict:
-            self.ms2_peak_matching = _MS2PeakMatching(**self.ms2_peak_matching)
-        if type(self.deconvolute_ms2_peaks) is dict:
-            self.deconvolute_ms2_peaks = _DeconvoluteMs2Peaks(**self.deconvolute_ms2_peaks)
-        if type(self.store) is dict:
-            self.store = _StoreData(**self.store)
-
+        if type(self.deconvolve_ms2_peaks) is dict:
+            self.deconvolve_ms2_peaks = _DeconvolveMs2Peaks(**self.deconvolve_ms2_peaks)
 
     # --- static methods ---
 

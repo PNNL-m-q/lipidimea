@@ -44,12 +44,12 @@ def create_results_db(results_file: ResultsDbPath,
 
     Parameters
     ----------
-    results_file : ``ResultsDbPath``
+    results_file
         filename/path of the database
-    overwrite : ``bool``, default=False
+    [overwrite]
         if the database file already exists and this flag is True, then overwrite existing database
         and do not raise the RuntimeError
-    strict : ``bool``, default=True
+    [strict]
         use STRICT constraint on all data tables in results database, set this to False to exclude
         this constraint and enable backward compatibility with older versions of Python/sqlite3
         since 3.12 is the first Python version to support the STRICT mode
@@ -159,14 +159,14 @@ def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: 
 
     Parameters
     ----------
-    debug_flag : ``str``
+    debug_flag
         specifies how to dispatch the message, `None` to do nothing
-    debug_cb : ``func``
+    debug_cb
         callback function that takes the debugging message as an argument, can be None if
         debug_flag is not set to 'textcb' or 'textcb_pid'
-    msg : ``str``
+    msg
         debugging message (automatically prepended with "DEBUG: ")
-    pid : ``int``, optional
+    [pid]
         PID for individual process, may be omitted if debug flag does not have "_pid" in it
     """
     if debug_flag is not None:
@@ -410,7 +410,8 @@ def _setup_alias_mapping(cur: ResultsDbCursor,
 
 def _unpack_intermediate_results(grouped: _GroupedResults,
                                  alias_mapping: Dict[int, str],
-                                 include_unknowns: bool
+                                 include_unknowns: bool,
+                                 include_dfile_ids: List[int],
                                  ) -> pl.DataFrame :
     """
     unpack all of the info from the intermediate grouped results data structure into
@@ -427,7 +428,8 @@ def _unpack_intermediate_results(grouped: _GroupedResults,
         "Lipid@Adduct": [] 
     } | {
         alias: []
-        for alias in alias_mapping.values()
+        for dfid, alias in alias_mapping.items() 
+        if dfid in include_dfile_ids
     }
     # fill the data dictionary
     for entry in grouped:
@@ -440,11 +442,13 @@ def _unpack_intermediate_results(grouped: _GroupedResults,
             data["CCS (Ang^2)"].append(entry["ccs"])
             data["Lipid@Adduct"].append("|".join(entry["annotations"]))
             for dfid, abun in entry["abundance"].items():
-                # cast abundances to ints 
-                data[alias_mapping[dfid]].append(int(abun))
+                if dfid in include_dfile_ids:
+                    # fetch abundances, cast to ints 
+                    data[alias_mapping[dfid]].append(int(abun))
             for dfid, alias in alias_mapping.items():
-                if dfid not in entry["abundance"].keys():
-                    data[alias].append(None)
+                if dfid in include_dfile_ids:
+                    if dfid not in entry["abundance"].keys():
+                        data[alias].append(None)
     return pl.DataFrame(data).sort("Lipid@Adduct", "RT (min)", "arrival time (ms)")
 
 
@@ -478,20 +482,20 @@ def export_results_table(results_db: ResultsDbPath,
         output results file (.csv)
     tolerances
         tuple of tolerances (m/z, RT, arrival time) for combining DIA precursors
-    select_data_files : optional
+    [select_data_files]
         If provided, restrict the results to only include the specified list of data files, by data 
         file name if list of str or by data file ID if list of int
-    abundance_value : default="dt_area"
+    [abundance_value]
         "dt_area" = use arrival time peak area for abundance values (default) or "dt_height" = use 
         arrival time peak heights instead
-    include_unknowns : default=False
+    [include_unknowns]
         flag indicating whether to include DIA features that do not have any associated annotations
-    limit_precursor_mz_ppm : default=40.
+    [limit_precursor_mz_ppm]
         limit the absolute m/z ppm error when selecting lipid annotations 
-    data_file_aliases : optional
+    [data_file_aliases]
         If provided, map data file ids or names to specified aliases. The mapping may be defined as data
         file name (str) to alias (str) or data file ID (int) to alias (str). 
-    annotation_combine_strategy : default="union"
+    [annotation_combine_strategy]
         for cases where there are multiple potential annotations within a group of features, determines 
         the strategy for what annotations to keep. "union" to keep all possible annotations and
         "intersection" to only keep annotations that are common among all features that get combined into
@@ -524,7 +528,10 @@ def export_results_table(results_db: ResultsDbPath,
     # set up the mapping between data file aliases and data file names/IDs
     alias_mapping = _setup_alias_mapping(cur, data_file_aliases)
     # upack the intermediate data structure into tabular format (as a polars dataframe)
-    df = _unpack_intermediate_results(grouped, alias_mapping, include_unknowns)  
+    df = _unpack_intermediate_results(grouped, 
+                                      alias_mapping, 
+                                      include_unknowns,
+                                      include_dfile_ids)  
     # TODO: (filter dataframe? replace NAs?)
     df.write_csv(out_csv)
     return df.shape[0]
