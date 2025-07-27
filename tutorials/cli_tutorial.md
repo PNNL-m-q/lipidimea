@@ -30,7 +30,7 @@ This tutorial uses Python 3.12 and the `lipidimea` python package to perform ana
 ## Raw Data
 
 - The tutorial expects raw data files (in MZA format) in the `mza/` directory
-- Raw data files used in this tutorial can be downloaded from: [URL]()
+- Raw data files used in this tutorial can be downloaded from: [here](https://zenodo.org/records/16498074)
 
 ### DDA
 
