@@ -5,5 +5,5 @@ numpy
 scipy
 matplotlib
 pyyaml
-mzapy>=1.8.0
+mzapy
 polars
