@@ -239,11 +239,10 @@ def _from_config(config: YamlFilePath,
         case _ParamType.DIA: 
             return DiaParams(**params)
         case _ParamType.ANN:
-            print(params)
             return AnnotationParams(**params)
         
 def _strip_ui_metadata(cfg: Any, *, _depth: int = 0) -> Any:
-    """ Recursively strip out GUI‑only keys (display_name, type, description, advanced """
+    """ Recursively strip out GUI-only keys (display_name, type, description, advanced """
     if not isinstance(cfg, dict):
         if isinstance(cfg, str):
             try:
