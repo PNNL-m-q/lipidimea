@@ -74,6 +74,11 @@ LMGL0301:
         - Triradylglycerols [GL03]
         - Triacylglycerols [GL0301]
     class_abbrev: TG
+    oxy_suffix:
+        - ""
+        - O
+        - O2
+        - O3
     formula:
         C: c + 3
         H: 2 * (c + 1 - u)
@@ -698,7 +703,9 @@ LMSP0201:
         - Ceramides [SP02]
         - N-acylsphingosines (ceramides) [SP0201]
     class_abbrev: Cer
-    oxy_suffix: O2
+    oxy_suffix: 
+        - O2
+        - O3
     formula:
         C: c
         H: 2 * c + 1 - 2 * u
@@ -711,7 +718,9 @@ LMSP0301:
         - PhosphoSphingolipids [SP03]
         - Ceramide phosphocholines (sphingomyelins) [SP0301]
     class_abbrev: SM
-    oxy_suffix: O2
+    oxy_suffix:
+        - O2
+        - O3
     formula:
         C: c + 5
         H: 2 * c + 13 - 2 * u
