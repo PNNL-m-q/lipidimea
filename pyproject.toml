@@ -26,7 +26,8 @@ dependencies = [
     "matplotlib",
     "mzapy",
     "pyyaml",
-    "polars"
+    "polars",
+    "pyinstaller>=6.21.0",
 ]
 
 [project.urls]

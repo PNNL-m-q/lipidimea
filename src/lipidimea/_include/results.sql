@@ -262,3 +262,31 @@ INSERT INTO _TableDescriptions VALUES
     ('LipidFragments', 'diagnostic', 'indicates if the fragment is diagnostic for this class (treat as boolean)'),
     ('LipidFragments', 'supports_fa', 'if the fragment annotation supports presence of a particular FA, include it as C:U');
 
+
+----------- DIA feature groups
+
+-- table with DIA feature groups (same feature observed across different data files)
+CREATE TABLE DIAFeatureGroups (
+    dia_fgroup_id INTEGER PRIMARY KEY,
+    mz REAL NOT NULL,
+    rt REAL NOT NULL,
+    dt REAL NOT NULL,
+    ccs REAL,
+    n INT NOT NULL
+) STRICT;
+INSERT INTO _TableDescriptions VALUES 
+    ('DIAFeatureGroups', 'dia_fgroup_id', 'DIA feature group identifier'),
+    ('DIAFeatureGroups', 'mz', 'average m/z for group'),
+    ('DIAFeatureGroups', 'rt', 'average RT for group'),
+    ('DIAFeatureGroups', 'dt', 'average DT for group'),
+    ('DIAFeatureGroups', 'ccs', 'average CCS for the group (if CCS available from DIA features)'),
+    ('DIAFeatureGroups', 'n', 'number of features in the group');
+
+-- table mapping individual DIA features to DIA feature groups
+CREATE TABLE DIAPrecursorToGroup (
+    dia_fgroup_id INTEGER NOT NULL,
+    dia_pre_id INTEGER NOT NULL
+) STRICT;
+INSERT INTO _TableDescriptions VALUES 
+    ('DIAPrecursorToGroup', 'dia_fgroup_id', 'DIA feature group identifier'),
+    ('DIAPrecursorToGroup', 'dia_pre_id', 'DIA precursor ID');
