@@ -39,3 +39,6 @@ where = ["src"]
 
 [tool.setuptools.dynamic]
 version = { attr = "lipidimea.__version__" }
+
+[project.scripts]
+lipidimea-review = "lipidimea.review.__main__:main"
