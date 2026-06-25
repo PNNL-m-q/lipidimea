@@ -251,7 +251,9 @@ def _get_lmid_prefix(lipid_class_abbrev: str, fa_mod: str, n_unsat: int, oxy_suf
         fa_mod_ = data.get("fa_mod", "")
         n_chains_ = data["n_chains"]
         oxy_suffix_ = data.get("oxy_suffix", "")
-        if (lipid_class_abbrev == lipid_class_abbrev_ and fa_mod == fa_mod_ and oxy_suffix == oxy_suffix_):
+        # enable multiple valid oxy suffices
+        oxy_flag = oxy_suffix in oxy_suffix_ if type(oxy_suffix_) is list else oxy_suffix == oxy_suffix_
+        if (lipid_class_abbrev == lipid_class_abbrev_ and fa_mod == fa_mod_ and oxy_flag):
             # handle the special case of determining unsaturated vs. saturated FAs
             if lmid_prefix == "LMFA0101" and n_unsat > 0:
                 return "LMFA0103"

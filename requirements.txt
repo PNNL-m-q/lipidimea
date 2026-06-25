@@ -1,9 +1,0 @@
-h5py
-hdf5plugin
-pandas
-numpy
-scipy
-matplotlib
-pyyaml
-mzapy>=1.8.0
-polars
