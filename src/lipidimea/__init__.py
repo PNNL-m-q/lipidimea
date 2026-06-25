@@ -7,7 +7,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 
 
 # release.major_version.minor_version
-__version__ = '0.13.3'
+__version__ = '1.0.0'
 
 
 # TODO (Dylan Ross): When migrating to GitHub, convert TODOs across the package into issues.
