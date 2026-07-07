@@ -124,7 +124,8 @@ class SumCompLipidDB():
                              min_c: int, 
                              max_c: int, 
                              odd_c: bool, 
-                             max_u: Optional[int] = None
+                             min_u: int,
+                             max_u: Optional[int]
                              ) -> Generator[Tuple[int, int], None, None] :
         """ 
         yields all unique sum compositions from combinations of fatty acids that are iterated over
@@ -144,8 +145,9 @@ class SumCompLipidDB():
             min/max number of carbons in an acyl chain
         odd_c
             whether to include odd # C for FAs
-        [max_u]
-            restrict maximum number of unsaturations (in sum composition, not individual FAs)
+        min_u, max_u
+            restrict minimum/maximum number of unsaturations (in sum composition, not individual FAs)
+            if max_u is None, then uses a heuristic (self.max_u) to determine max unsaturation level
 
         Yields
         ------
@@ -156,7 +158,7 @@ class SumCompLipidDB():
         for n_c in range(min_c, max_c + 1):
             if odd_c or n_c % 2 == 0:
                 max_u = self.max_u(n_c) if max_u is None else min(max_u, self.max_u(n_c))
-                for n_u in range(0, self.max_u(n_c) + 1):
+                for n_u in range(min_u, max_u + 1):
                     fas.append((n_c, n_u))
         # permute over acyl chains
         sum_comp = set()
@@ -219,10 +221,20 @@ class SumCompLipidDB():
             INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?)
         --endsql"""
         for lmaps_prefix, adducts in cnf.items():
-            # adjust min unsaturation level for sphingolipids
-            max_u = 2 if lmaps_prefix[:4] == 'LMSP' else None
+            min_u = 0
+            max_u = None
+            # adjust min/max unsaturation level for sphingolipids
+            if lmaps_prefix[:4] == "LMSP":
+                min_u = 1
+                max_u = 3
+            # limit unsaturation level for saturated FAs
+            if lmaps_prefix == "LMFA0101":
+                max_u = 0
+            # require unsaturations for unsaturated FAs
+            if lmaps_prefix == "LMFA0103":
+                min_u = 1 
             n_chains = LMAPS[lmaps_prefix]['n_chains']
-            for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, max_u=max_u):
+            for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, min_u, max_u):
                 lpd = Lipid(lmaps_prefix, sumc, sumu)
                 for adduct in adducts:
                     mz = ms_adduct_mz(lpd.formula, adduct)
