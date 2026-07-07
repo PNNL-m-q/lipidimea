@@ -81,9 +81,16 @@ def _blob_to_2xN(blob: bytes, n: int) -> np.ndarray:
 _QUERIES: dict[str, str] = {
     # All feature groups, for the group panel.
     "all_feature_groups": """
-        SELECT dia_fgroup_id, mz, rt, dt, ccs
-        FROM DIAFeatureGroups
-        ORDER BY dia_fgroup_id
+        SELECT
+            g.dia_fgroup_id, g.mz, g.rt, g.dt, g.ccs,
+            COUNT(DISTINCT L.lipid_id) AS n_ann
+        FROM DIAFeatureGroups AS g
+        LEFT JOIN DIAPrecursorToGroup AS g2p
+            ON g2p.dia_fgroup_id = g.dia_fgroup_id
+        LEFT JOIN Lipids AS L
+            ON L.dia_pre_id = g2p.dia_pre_id
+        GROUP BY g.dia_fgroup_id
+        ORDER BY g.dia_fgroup_id
     """,
     # One feature group's scalar info.
     "feature_group_info": """
@@ -156,12 +163,17 @@ _QUERIES: dict[str, str] = {
 
 
 def load_all_feature_groups(conn: sqlite3.Connection) -> dict[int, FeatureGroup]:
-    """Load every feature group in the DB as shallow rows. Cheap; called once
-    at app startup (and after committing deletions)."""
+    """Load every feature group in the DB as shallow rows, including a
+    count of attached lipid annotations. Cheap; called once at app
+    startup (and after committing deletions)."""
     cur = conn.cursor()
     out: dict[int, FeatureGroup] = {}
-    for gid, mz, rt, dt, ccs in cur.execute(_QUERIES["all_feature_groups"]):
-        out[gid] = FeatureGroup(id=gid, mz=mz, rt=rt, dt=dt, ccs=ccs)
+    for gid, mz, rt, dt, ccs, n_ann in cur.execute(
+        _QUERIES["all_feature_groups"]
+    ):
+        out[gid] = FeatureGroup(
+            id=gid, mz=mz, rt=rt, dt=dt, ccs=ccs, n_annotations=n_ann
+        )
     return out
 
 

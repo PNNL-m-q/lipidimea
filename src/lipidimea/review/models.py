@@ -34,6 +34,7 @@ class FeatureGroup:
     rt: float
     dt: float
     ccs: float | None
+    n_annotations: int = 0
     deleted: bool = False
 
 

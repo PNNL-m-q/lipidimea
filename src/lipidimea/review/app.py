@@ -64,6 +64,7 @@ class ReviewApp(tk.Tk):
         super().__init__()
         self.title(_APP_TITLE)
         self.geometry("1600x1000")
+        self.minsize(1600, 1000)
 
         # -- state ------------------------------------------------------
         self.session: Session | None = None
@@ -72,8 +73,8 @@ class ReviewApp(tk.Tk):
 
         # -- build ------------------------------------------------------
         self._build_toolbar()
-        self._build_main()
         self._build_statusbar()
+        self._build_main()
 
         # -- wire -------------------------------------------------------
         self._wire_panel_callbacks()
@@ -112,7 +113,6 @@ class ReviewApp(tk.Tk):
         self._btn_export.pack(side="left", padx=2)
 
     def _build_main(self) -> None:
-        # Outer horizontal paned window: group | (plots | right-stack)
         outer = ttk.PanedWindow(self, orient="horizontal")
         outer.pack(side="top", fill="both", expand=True, padx=4, pady=4)
 
@@ -122,7 +122,6 @@ class ReviewApp(tk.Tk):
         self.plot_panel = PlotStackPanel(outer)
         outer.add(self.plot_panel, weight=3)
 
-        # Right side: vertical paned window with features / annotations.
         right = ttk.PanedWindow(outer, orient="vertical")
         outer.add(right, weight=3)
 
@@ -131,6 +130,22 @@ class ReviewApp(tk.Tk):
 
         self.annotation_panel = AnnotationPanel(right)
         right.add(self.annotation_panel, weight=1)
+
+        # Set initial sash positions once widgets are realized.
+        self._outer_paned = outer
+        self._right_paned = right
+        self.after(0, self._apply_initial_sash_positions)
+
+    def _apply_initial_sash_positions(self) -> None:
+        # Horizontal: group | plots | right-stack
+        # Fractions of total width.
+        w = self._outer_paned.winfo_width()
+        self._outer_paned.sashpos(0, int(w * 0.20))   # end of group panel
+        self._outer_paned.sashpos(1, int(w * 0.70))   # end of plot panel
+
+        # Vertical: features | annotations
+        h = self._right_paned.winfo_height()
+        self._right_paned.sashpos(0, int(h * 0.50))   # split between them
 
     def _build_statusbar(self) -> None:
         self._status_var = tk.StringVar(value="no database loaded")

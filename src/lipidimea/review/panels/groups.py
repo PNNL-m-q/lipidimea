@@ -83,6 +83,14 @@ _COLUMNS: list[Column] = [
         # Sort None to the end regardless of direction.
         sort_key=lambda g: (g.ccs is None, g.ccs if g.ccs is not None else 0.0),
     ),
+    Column(
+        key="n_ann",
+        heading="# Ann.",
+        width=50,
+        anchor="e",
+        stretch=False,
+        sort_key=lambda g: g.n_annotations,
+    ),
 ]
 
 
@@ -93,6 +101,7 @@ def _values(g: FeatureGroup) -> tuple[str, ...]:
         _fmt_rt(g.rt),
         _fmt_dt(g.dt),
         _fmt_ccs(g.ccs),
+        str(g.n_annotations)
     )
 
 

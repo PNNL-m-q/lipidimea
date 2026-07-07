@@ -172,8 +172,8 @@ class PlotStackPanel(ttk.Frame):
         """Add a small title to each axis so empty plots are still
         identifiable. Titles are cheap and survive `ax.clear()` only if
         re-applied, so we call this after every clear/redraw."""
-        self._ms1.ax.set_title("MS1", fontsize=9, loc="left")
-        self._xic.ax.set_title("XIC", fontsize=9, loc="left")
-        self._atd.ax.set_title("ATD", fontsize=9, loc="left")
-        self._ms2.ax.set_title("MS2", fontsize=9, loc="left")
+        self._ms1.ax.set_title("MS1", loc="right")
+        self._xic.ax.set_title("XIC", loc="right")
+        self._atd.ax.set_title("ATD", loc="right")
+        self._ms2.ax.set_title("MS2", loc="right")
         

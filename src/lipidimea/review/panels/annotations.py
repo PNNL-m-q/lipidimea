@@ -51,9 +51,9 @@ _COLUMNS: list[Column] = [
     Column(
         key="lipid",
         heading="lipid",
-        width=160,
+        width=240,
         anchor="w",
-        stretch=True,
+        stretch=False,
         sort_key=lambda a: a.lipid,
     ),
     Column(
@@ -124,7 +124,7 @@ class AnnotationPanel(SortableTable[LipidAnnotation]):
             get_values=_values,
             title="lipid annotations",
             show_id_filter=True,
-            horizontal_scroll=False,
+            horizontal_scroll=True,
             height=8,
         )
         self.tree.tag_configure(

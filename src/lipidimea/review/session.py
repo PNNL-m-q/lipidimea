@@ -282,8 +282,7 @@ class Session:
         )
 
         # Reconcile in-memory state with the now-modified DB.
-        for gid in self._deleted_groups:
-            self.groups.pop(gid, None)
+        self.groups = db.load_all_feature_groups(self.conn)
         self._view_cache.clear()
         self._deleted_groups.clear()
         self._deleted_features.clear()

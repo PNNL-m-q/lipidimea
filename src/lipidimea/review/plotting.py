@@ -17,6 +17,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 import numpy as np
+from matplotlib import rcParams
 from matplotlib.axes import Axes
 
 from .models import (
@@ -47,6 +48,11 @@ _DDA_COLOR = "#666666"
 _GROUP_COLOR = "#333333"
 _FRAG_DIAGNOSTIC_COLOR = "tab:red"
 _FRAG_NONDIAGNOSTIC_COLOR = "tab:orange"
+
+#: Base font size for axis labels and tick labels in all plot panels.
+PLOT_FONT_SIZE: int = 7
+# set it globally for all plot text
+rcParams["font.size"] = PLOT_FONT_SIZE
 
 
 # ---------------------------------------------------------------------------
@@ -160,6 +166,10 @@ def plot_ms1(
 
     ax.set_xlabel("m/z")
     ax.set_ylabel("intensity")
+
+    # scientific notation for y axis scale
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+
     return drawn
 
 
@@ -195,6 +205,9 @@ def plot_xic(
     ax.set_xlabel("retention time")
     ax.set_ylabel("intensity")
 
+    # scientific notation for y axis scale
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
+
 
 def plot_atd(
     ax: Axes,
@@ -221,6 +234,9 @@ def plot_atd(
     )
     ax.set_xlabel("drift time")
     ax.set_ylabel("intensity")
+
+    # scientific notation for y axis scale
+    ax.ticklabel_format(axis="y", style="sci", scilimits=(0, 0))
 
 
 def plot_ms2(
@@ -259,37 +275,48 @@ def plot_ms2(
         mz_span = 1.0  # fallback; nothing to draw anyway
     bar_width = MS2_BAR_WIDTH_FRAC * max(mz_span, 1.0)
 
-    # ----- DIA precursor spectra (positive y) -----
+    # ----- DIA precursor spectra (positive y), normalized to max=1 -----
+    # Compute normalization across all displayed DIA spectra combined.
+    dia_max = 0.0
+    for feat in feats:
+        if feat.ms2 is not None and feat.ms2.shape[1] > 0:
+            dia_max = max(dia_max, float(feat.ms2[1].max()))
+    dia_scale = 1.0 / dia_max if dia_max > 0 else 1.0
+
     for feat in feats:
         if feat.ms2 is None or feat.ms2.shape[1] == 0:
             continue
         ms2_mz, ms2_i, ms2_dc = feat.ms2
+        ms2_i_norm = ms2_i * dia_scale
         ax.bar(
-            ms2_mz, ms2_i,
+            ms2_mz, ms2_i_norm,
             width=bar_width,
             color=_DIA_COLOR,
             alpha=_DIA_ALPHA,
         )
         # Mark deconvoluted peaks.
-        for x, y, dc in zip(ms2_mz, ms2_i, ms2_dc):
+        for x, y, dc in zip(ms2_mz, ms2_i_norm, ms2_dc):
             if dc > 0:
                 ax.text(
                     x, y, "*",
                     ha="center", va="bottom",
                     color=_DIA_COLOR, alpha=_DIA_ALPHA,
                 )
-        # Record (mz, intensity) for hover lookup.
-        drawn.dia_peaks[feat.id] = np.vstack([ms2_mz, ms2_i])
+        # Record (mz, normalized intensity) for hover lookup.
+        drawn.dia_peaks[feat.id] = np.vstack([ms2_mz, ms2_i_norm])
 
-    # ----- DDA mirror spectrum (negative y) -----
+    # ----- DDA mirror spectrum (negative y), normalized to max=1 -----
     if dda is not None and dda.ms2.shape[1] > 0:
         dms2_mz, dms2_i = dda.ms2
+        dda_max = float(dms2_i.max()) if dms2_i.size else 0.0
+        dda_scale = 1.0 / dda_max if dda_max > 0 else 1.0
+        dms2_i_norm = dms2_i * dda_scale
         ax.bar(
-            dms2_mz, -dms2_i,
+            dms2_mz, -dms2_i_norm,
             width=bar_width,
             color=_DDA_COLOR,
         )
-        drawn.dda_peaks = np.vstack([dms2_mz, dms2_i])
+        drawn.dda_peaks = np.vstack([dms2_mz, dms2_i_norm])
 
     # ----- Annotated-fragment guide lines (if any) -----
     if active_annotation is not None and active_annotation.fragments:
@@ -307,7 +334,8 @@ def plot_ms2(
         ax.set_ylim(1.1 * ylim[0], 1.1 * ylim[1])
 
     ax.set_xlabel("m/z")
-    ax.set_ylabel("intensity  (DIA ↑ / DDA ↓)")
+    ax.set_ylabel("normalized intensity  (DIA ↑ / DDA ↓)")
+
     return drawn
 
 
