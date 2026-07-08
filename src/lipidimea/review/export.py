@@ -38,8 +38,8 @@ CSV_COLUMNS: tuple[str, ...] = (
     "lipid",
     "adduct",
     "mz_ppm_err",
-    "ccs_pct_err",
-    "acyl_chains",
+    "ccs_rel_err",
+    "chains",
 )
 
 
@@ -55,17 +55,17 @@ _ANN_QUERY = """
     SELECT
         g.dia_fgroup_id,
         L.lipid_id,
-        L.dia_pre_id,
+        L.dia_fgroup_id,
         L.lipid,
         L.adduct,
         L.mz_ppm_err,
-        L.ccs_pct_err,
-        L.acyl_chains
+        L.ccs_rel_err,
+        L.chains
     FROM DIAFeatureGroups AS g
     JOIN DIAPrecursorToGroup AS g2p
         ON g2p.dia_fgroup_id = g.dia_fgroup_id
     JOIN Lipids AS L
-        ON L.dia_pre_id = g2p.dia_pre_id
+        ON L.dia_fgroup_id = g.dia_fgroup_id
     ORDER BY g.dia_fgroup_id, L.lipid_id
 """
 

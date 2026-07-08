@@ -88,7 +88,7 @@ _QUERIES: dict[str, str] = {
         LEFT JOIN DIAPrecursorToGroup AS g2p
             ON g2p.dia_fgroup_id = g.dia_fgroup_id
         LEFT JOIN Lipids AS L
-            ON L.dia_pre_id = g2p.dia_pre_id
+            ON L.dia_fgroup_id = g.dia_fgroup_id
         GROUP BY g.dia_fgroup_id
         ORDER BY g.dia_fgroup_id
     """,
@@ -144,14 +144,14 @@ _QUERIES: dict[str, str] = {
         WHERE dia_pre_id=?
         ORDER BY fmz
     """,
-    # Lipid annotations attached to any of a list of DIA precursors. The
+    # Lipid annotations attached to any of a list of DIA feature groups. The
     # `IN (...)` placeholder is filled in dynamically in the loader since
     # sqlite3 doesn't bind list parameters.
-    "lipids_for_precursors_TEMPLATE": """
-        SELECT lipid_id, dia_pre_id, lipid, adduct, mz_ppm_err,
+    "lipids_for_fgroups_TEMPLATE": """
+        SELECT lipid_id, dia_fgroup_id, lipid, adduct, mz_ppm_err,
                ccs_rel_err, chains
         FROM Lipids
-        WHERE dia_pre_id IN ({placeholders})
+        WHERE dia_fgroup_id IN ({placeholders})
         ORDER BY lipid_id
     """,
     # Annotated fragments for a set of lipid annotations. Uses the same
@@ -314,19 +314,19 @@ def _load_annotations_for_features(
 
     cur = conn.cursor()
     placeholders = ",".join("?" * len(feature_ids))
-    query = _QUERIES["lipids_for_precursors_TEMPLATE"].format(
+    query = _QUERIES["lipids_for_fgroups_TEMPLATE"].format(
         placeholders=placeholders
     )
 
     out: dict[int, LipidAnnotation] = {}
     for row in cur.execute(query, feature_ids):
         (
-            lipid_id, dia_pre_id, lipid, adduct,
+            lipid_id, dia_fgroup_id, lipid, adduct,
             mz_ppm_err, ccs_pct_err, acyl_chains,
         ) = row
         out[lipid_id] = LipidAnnotation(
             id=lipid_id,
-            feature_id=dia_pre_id,
+            feature_id=dia_fgroup_id,
             lipid=lipid,
             adduct=adduct,
             mz_ppm_err=mz_ppm_err,
@@ -368,7 +368,7 @@ def load_group_view(
         group = FeatureGroup(id=gid, mz=mz, rt=rt, dt=dt, ccs=ccs)
 
     features = _load_features_for_group(conn, group_id)
-    annotations = _load_annotations_for_features(conn, features.keys())
+    annotations = _load_annotations_for_features(conn, [group.id])
     dda = load_dda_match(conn, group.mz, group.rt)
 
     return GroupView(
@@ -383,7 +383,7 @@ def load_group_view(
 # Deletion
 # ---------------------------------------------------------------------------
 
-# TODO(schema): if FK constraints with ON DELETE CASCADE are added to the
+# TODO (schema): if FK constraints with ON DELETE CASCADE are added to the
 # schema (DIAPrecursorToGroup.dia_fgroup_id -> DIAFeatureGroups.dia_fgroup_id,
 # Raw.feat_id -> DIAPrecursors.dia_pre_id, DIAFragments.dia_pre_id ->
 # DIAPrecursors.dia_pre_id, Lipids.dia_pre_id -> DIAPrecursors.dia_pre_id),

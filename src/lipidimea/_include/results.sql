@@ -166,7 +166,7 @@ INSERT INTO _TableDescriptions VALUES
 -- table with Lipid annotations
 CREATE TABLE Lipids (
     lipid_id INTEGER PRIMARY KEY,
-    dia_pre_id INT NOT NULL,
+    dia_fgroup_id INT NOT NULL,
     lmid_prefix TEXT NOT NULL,
     lipid TEXT NOT NULL,
     adduct TEXT NOT NULL,
@@ -177,7 +177,7 @@ CREATE TABLE Lipids (
 ) STRICT;
 INSERT INTO _TableDescriptions VALUES 
     ('Lipids', 'lipid_id', 'lipid annotation identifier'),
-    ('Lipids', 'dia_pre_id', 'reference to precursor identifier from DIAPrecursors table'),
+    ('Lipids', 'dia_fgroup_id', 'reference to precursor identifier from DIAFeatureGroups table'),
     ('Lipids', 'lipid', 'lipid annotation, made at the level of sum composition or higher if supporting fragment(s) found in MS2 spectrum'),
     ('Lipids', 'lmaps_id_prefix', 'LipidMAPS ID prefix (reflects lipid category, class, and sub-class)'),
     ('Lipids', 'adduct', 'MS adduct/ionization state'),

@@ -389,9 +389,9 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     cur = con.cursor()
     # check that DIA feature extraction has been completed first
     check_analysis_log(cur, AnalysisStep.DIA_EXT)
-    # iterate through DIA features and get putative annotations
+    # iterate through DIA feature groups and get putative annotations
     qry_sel = """--beginsql
-        SELECT dia_pre_id, mz FROM DIAPrecursors
+        SELECT dia_fgroup_id, mz FROM DIAFeatureGroups
     --endsql"""
     qry_ins = """--beginsql
         INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?,?)
@@ -400,7 +400,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
         INSERT INTO LipidSumComp VALUES (?,?,?,?)
     --endsql"""
     n_feats, n_feats_annotated, n_anns = 0, 0, 0
-    for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
+    for dia_fg_id, mz, in cur.execute(qry_sel).fetchall():
         n_feats += 1
         annotated = False
         # TODO: this ugly
@@ -411,7 +411,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
             # composition instead of unknown
             chains_flag = "inferred" if cchains == 1 else None
             qdata = (
-                None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), 
+                None, dia_fg_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), 
                 # ccs_rel_err, ccs_lit_trend, chains 
                 None, None, chains_flag
             )
@@ -424,7 +424,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
             n_feats_annotated += 1
     # report how many features were annotated
     debug_handler(debug_flag, debug_cb, 
-                  f"ANNOTATED: {n_feats_annotated} / {n_feats} DIA features ({n_anns} annotations total)")
+                  f"ANNOTATED: {n_feats_annotated} / {n_feats} DIA feature groups ({n_anns} annotations total)")
     # update analysis log
     update_analysis_log(
         cur, 
@@ -500,7 +500,7 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
             rt 
         FROM 
             Lipids 
-            JOIN DIAPrecursors USING(dia_pre_id)
+            JOIN DIAFeatureGroups USING(dia_fgroup_id)
     --endsql"""
     # track annotations kept and filtered
     n_kept, n_filt = 0, 0
@@ -640,7 +640,7 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
         FROM 
             LipidMapsShort 
             JOIN Lipids USING(lipid_id) 
-            JOIN DIAPrecursors USING(dia_pre_id)
+            JOIN DIAFeatureGroups USING(dia_fgroup_id)
         WHERE 
             ccs IS NOT NULL
     --endsql"""
@@ -650,7 +650,7 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
         FROM 
             Lipids 
             JOIN LipidMapsShort USING(lipid_id) 
-            JOIN DIAPrecursors USING(dia_pre_id)
+            JOIN DIAFeatureGroups USING(dia_fgroup_id)
         WHERE 
             lm_sub=?
             AND adduct=?
@@ -975,10 +975,11 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             GROUP_CONCAT(dia_frag_id) AS frag_ids,
             GROUP_CONCAT(fmz)
         FROM 
-            Lipids 
+            Lipids AS L
             JOIN LipidSumComp USING(lipid_id)
-            JOIN DIAPrecursors USING(dia_pre_id) 
-            LEFT JOIN DIAFragments USING(dia_pre_id)
+            JOIN DIAFeatureGroups AS DFG ON L.dia_fgroup_id=DFG.dia_fgroup_id
+            JOIN DIAPrecursorToGroup AS DPG ON DFG.dia_fgroup_id=DPG.dia_fgroup_id
+            LEFT JOIN DIAFragments AS DF ON DF.dia_pre_id=DPG.dia_pre_id
         GROUP BY 
             lipid_id
         HAVING
@@ -991,7 +992,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
         INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
     assert params.ionization is not None, "ionization must be set (POS or NEG)"
-    for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
+    for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fgids, fmzs in cur.execute(qry_sel1).fetchall():
         update = False
         if fmzs is not None:
             # load fragmentation rules
@@ -1003,7 +1004,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                                              params.frag_rules.fa_odd_c,
                                              max_u=SumCompLipidDB.max_u))
             ffmzs = list(map(float, fmzs.split(",")))
-            ifids = list(map(int, fids.split(",")))
+            ifgids = list(map(int, fgids.split(",")))
             _, rules = load_rules(lmid_prefix, params.ionization)
             diag_flag = 0
             # go through each rule and see if it matches any fragments
@@ -1011,14 +1012,14 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                 diag_flag = int(rule.diagnostic)
                 if rule.static:
                     rmz = rule.mz(pmz)  # type: ignore
-                    for ffmz, ifid in zip(ffmzs, ifids):
+                    for ffmz, ifid in zip(ffmzs, ifgids):
                         ppm = _ppm_error(rmz, ffmz)
                         if abs(ppm) <= params.frag_rules.mz_ppm:
                             cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, diag_flag, None))  # type: ignore
                 else:
                     for c, u in sorted(c_u_combos):
                         rmz = rule.mz(pmz, c, u) # type: ignore
-                        for ffmz, ifid in zip(ffmzs, ifids):
+                        for ffmz, ifid in zip(ffmzs, ifgids):
                             ppm = _ppm_error(rmz, ffmz)
                             if abs(ppm) <= params.frag_rules.mz_ppm:
                                 cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, diag_flag, f"{c}:{u}"))  # type: ignore
