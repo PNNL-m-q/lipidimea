@@ -31,7 +31,7 @@ from .models import (
 # ---------------------------------------------------------------------------
 
 #: ppm tolerance for matching an observed MS2 peak to an annotated fragment.
-FRAGMENT_MATCH_PPM: float = 20.0
+FRAGMENT_MATCH_PPM: float = 100.0
 
 #: Half-window (in DT units) around the group DT for the ATD plot.
 ATD_HALF_WINDOW: float = 5.0

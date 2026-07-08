@@ -80,18 +80,20 @@ class HoverTooltip:
         self._annot = ax.annotate(
             "",
             xy=(0, 0),
-            xytext=(10, 10),
+            xytext=(0, 0),
             textcoords="offset points",
             bbox={
-                "boxstyle": "round,pad=0.3",
+                "boxstyle": "round,pad=0.1",
                 "fc": "#ffffe0",
                 "ec": "#888888",
                 "lw": 0.5,
                 "alpha": 0.9,
             },
-            fontsize=8,
+            c="r",
+            fontsize=7,
             zorder=10,
         )
+        self._annot.set_clip_on(False)
         self._annot.set_visible(False)
 
         self._cid_motion = self.canvas.mpl_connect(
@@ -114,6 +116,15 @@ class HoverTooltip:
         """Unhook from canvas events. Called on app teardown."""
         self.canvas.mpl_disconnect(self._cid_motion)
         self.canvas.mpl_disconnect(self._cid_leave)
+
+    def reattach(self) -> None:
+        """Re-add the tooltip annotation to its axes. Must be called
+        after anything that clears the axes (e.g. `ax.clear()` inside
+        the plot functions), otherwise the annotation gets removed and
+        tooltip updates become invisible."""
+        if self._annot not in self.ax.get_children():
+            self.ax.add_artist(self._annot)
+            self._annot.set_visible(False)
 
     # ------------------------------------------------------------------ #
 
@@ -195,7 +206,7 @@ def make_ms1_locator(
         local_ints = ints[lo:hi]
         idx = lo + int(np.argmax(local_ints))
         x, y = float(mzs[idx]), float(ints[idx])
-        return x, y, f"m/z {x:.4f}"
+        return x, y, f"{x:.4f}"
 
     return locate
 
@@ -250,13 +261,12 @@ def make_ms2_locator(
         idx = lo + int(np.argmin(np.abs(local_mz - x)))
         return float(mzs[idx]), float(ints[idx])
 
-    def _format(mz: float, *, mirrored: bool) -> str:
-        text = f"m/z {mz:.4f}"
-        if active_annotation is not None and not mirrored:
-            # Fragment annotations apply only to DIA peaks.
+    def _format(mz: float) -> str:
+        text = f"{mz:.4f}"
+        if active_annotation is not None:
             frag = match_fragment(mz, active_annotation)
             if frag is not None:
-                tag = " [diagnostic]" if frag.diagnostic else ""
+                tag = " *" if frag.diagnostic else ""
                 text += f"\n{frag.label}{tag}"
         return text
 
@@ -271,15 +281,14 @@ def make_ms2_locator(
             if hit is None:
                 return None
             mz, intensity = hit
-            return mz, intensity, _format(mz, mirrored=False)
+            return mz, intensity, _format(mz)
 
         if event.ydata < 0 and dda_combined is not None:
             hit = _nearest(*dda_combined, event.xdata, radius)
             if hit is None:
                 return None
             mz, intensity = hit
-            # DDA bars are drawn at -intensity; anchor tooltip there.
-            return mz, -intensity, _format(mz, mirrored=True)
+            return mz, -intensity, _format(mz)
 
         return None
 

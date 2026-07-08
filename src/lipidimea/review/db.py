@@ -154,6 +154,18 @@ _QUERIES: dict[str, str] = {
         WHERE dia_pre_id IN ({placeholders})
         ORDER BY lipid_id
     """,
+    # Annotated fragments for a set of lipid annotations. Uses the same
+    # dynamic-IN-clause trick as the annotations query.
+    "fragments_for_lipids_TEMPLATE": """
+        SELECT
+            lipid_id,
+            frag_rule,
+            rule_mz,
+            diagnostic
+        FROM LipidFragments
+        WHERE lipid_id IN ({placeholders})
+        ORDER BY lipid_id, rule_mz
+    """,
 }
 
 
@@ -257,19 +269,45 @@ def _load_features_for_group(
     return features
 
 
+def _load_fragments_for_annotations(
+    conn: sqlite3.Connection, lipid_ids: Iterable[int]
+) -> dict[int, list["FragmentAnnotation"]]:
+    """Load annotated fragments for the given lipid annotation ids,
+    returning a dict keyed by lipid_id.
+
+    Label is composed as `frag_rule` with `supports_fa` appended in
+    parentheses when non-null.
+    """
+    from .models import FragmentAnnotation  # local import: avoid cycles
+
+    lipid_ids = list(lipid_ids)
+    if not lipid_ids:
+        return {}
+
+    cur = conn.cursor()
+    placeholders = ",".join("?" * len(lipid_ids))
+    query = _QUERIES["fragments_for_lipids_TEMPLATE"].format(
+        placeholders=placeholders
+    )
+
+    out: dict[int, list[FragmentAnnotation]] = {}
+    for lipid_id, frag_rule, rule_mz, diagnostic in cur.execute(
+        query, lipid_ids
+    ):
+        out.setdefault(lipid_id, []).append(
+            FragmentAnnotation(
+                mz=rule_mz,
+                label=frag_rule,
+                diagnostic=bool(diagnostic),
+            )
+        )
+
+    return out
+
+
 def _load_annotations_for_features(
     conn: sqlite3.Connection, feature_ids: Iterable[int]
 ) -> dict[int, LipidAnnotation]:
-    """Load all lipid annotations attached to any of the given DIA precursors.
-
-    Returns dict keyed by annotation id. Empty dict if no feature_ids or no
-    annotations found.
-
-    NOTE: `fragments` is left empty here; populating it requires an additional
-    join (against a fragment-annotation table not yet wired up). The
-    LipidAnnotation dataclass shape is stable, so adding that data later is
-    a localized change.
-    """
     feature_ids = list(feature_ids)
     if not feature_ids:
         return {}
@@ -283,13 +321,8 @@ def _load_annotations_for_features(
     out: dict[int, LipidAnnotation] = {}
     for row in cur.execute(query, feature_ids):
         (
-            lipid_id,
-            dia_pre_id,
-            lipid,
-            adduct,
-            mz_ppm_err,
-            ccs_pct_err,
-            acyl_chains,
+            lipid_id, dia_pre_id, lipid, adduct,
+            mz_ppm_err, ccs_pct_err, acyl_chains,
         ) = row
         out[lipid_id] = LipidAnnotation(
             id=lipid_id,
@@ -299,8 +332,14 @@ def _load_annotations_for_features(
             mz_ppm_err=mz_ppm_err,
             ccs_pct_err=ccs_pct_err,
             acyl_chains=acyl_chains,
-            fragments=[],  # TODO: populate via join to fragment-annotation table
+            fragments=[],  # filled in below
         )
+
+    # Second pass: populate fragments.
+    frags_by_lipid = _load_fragments_for_annotations(conn, out.keys())
+    for lipid_id, frags in frags_by_lipid.items():
+        out[lipid_id].fragments = frags
+
     return out
 
 

@@ -172,6 +172,10 @@ class PlotStackPanel(ttk.Frame):
             active_annotation=active_annotation,
         )
 
+        # Redraw wiped the axes; put the hover annotations back.
+        self._hover_ms1.reattach()
+        self._hover_ms2.reattach()
+
         # Rebuild hover locators against the freshly drawn data.
         self._hover_ms1.set_locator(
             make_ms1_locator(drawn.ms1, self._ms1.ax)
@@ -191,6 +195,8 @@ class PlotStackPanel(ttk.Frame):
         """Blank all four plots and disable hover."""
         for cell in (self._ms1, self._xic, self._atd, self._ms2):
             cell.ax.clear()
+        self._hover_ms1.reattach()
+        self._hover_ms2.reattach()
         self._hover_ms1.set_locator(None)
         self._hover_ms2.set_locator(None)
         self._apply_static_titles()
