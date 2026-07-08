@@ -17,7 +17,6 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 import numpy as np
-from matplotlib import rcParams
 from matplotlib.axes import Axes
 
 from .models import (
@@ -48,11 +47,6 @@ _DDA_COLOR = "#666666"
 _GROUP_COLOR = "#333333"
 _FRAG_DIAGNOSTIC_COLOR = "tab:red"
 _FRAG_NONDIAGNOSTIC_COLOR = "tab:orange"
-
-#: Base font size for axis labels and tick labels in all plot panels.
-PLOT_FONT_SIZE: int = 7
-# set it globally for all plot text
-rcParams["font.size"] = PLOT_FONT_SIZE
 
 
 # ---------------------------------------------------------------------------
@@ -334,7 +328,7 @@ def plot_ms2(
         ax.set_ylim(1.1 * ylim[0], 1.1 * ylim[1])
 
     ax.set_xlabel("m/z")
-    ax.set_ylabel("normalized intensity  (DIA ↑ / DDA ↓)")
+    ax.set_ylabel("normalized intensity\n(DIA ↑ / DDA ↓)")
 
     return drawn
 

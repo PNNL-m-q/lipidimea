@@ -22,10 +22,50 @@ from matplotlib.backends.backend_tkagg import (
     NavigationToolbar2Tk,
 )
 from matplotlib.figure import Figure
+from matplotlib import rcParams
 
 from .. import plotting
 from ..hover import HoverTooltip, make_ms1_locator, make_ms2_locator
 from ..models import GroupView, LipidAnnotation
+
+
+# ---------------------------------------------------------------------------
+# constants
+# --------------------------------------------------------------------------- 
+
+#: Matplotlib's baseline DPI. All our font/line sizes were tuned at this
+#: value.
+_BASE_DPI: int = 100
+
+#: Render DPI for on-screen figures. Higher = crisper on HiDPI displays.
+#: Font and line sizes are automatically rescaled to preserve visual
+#: layout (see _apply_hidpi_scaling).
+PLOT_DPI: int = 100
+
+rcParams["font.size"] = 7
+
+
+# ---------------------------------------------------------------------------
+# Helper: a mini toolbar, the default matplotlib one is not so pleasing
+# --------------------------------------------------------------------------- 
+
+class _MiniToolbar(ttk.Frame):
+    """Compact replacement for NavigationToolbar2Tk with just the
+    essential actions."""
+
+    def __init__(self, master: tk.Widget, canvas: FigureCanvasTkAgg) -> None:
+        super().__init__(master)
+        # Build a hidden real toolbar to delegate to.
+        self._real = NavigationToolbar2Tk(canvas, master, pack_toolbar=False)
+        self._real.pack_forget()
+
+        style = {"width": 3, "padding": 0}
+        ttk.Button(self, text="⌂", command=self._real.home, **style).pack(side="left")
+        ttk.Button(self, text="←", command=self._real.back, **style).pack(side="left")
+        ttk.Button(self, text="→", command=self._real.forward, **style).pack(side="left")
+        ttk.Button(self, text="✥", command=self._real.pan, **style).pack(side="left")
+        ttk.Button(self, text="⊕", command=self._real.zoom, **style).pack(side="left")
+        ttk.Button(self, text="💾", command=self._real.save_figure, **style).pack(side="left")
 
 
 # ---------------------------------------------------------------------------
@@ -41,23 +81,20 @@ class _PlotCell(ttk.Frame):
     dedicated sub-frame.
     """
 
-    def __init__(self, master: tk.Widget, *, figsize: tuple[float, float]) -> None:
+    def __init__(self, master: tk.Widget) -> None:
         super().__init__(master)
 
-        self.figure = Figure(figsize=figsize, dpi=100, layout="constrained")
+        self.figure = Figure(figsize=(4, 2), dpi=PLOT_DPI, layout="constrained")
         self.ax = self.figure.add_subplot(111)
-
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self)
-        canvas_widget = self.canvas.get_tk_widget()
-        canvas_widget.pack(side="top", fill="both", expand=True)
 
         toolbar_frame = ttk.Frame(self)
         toolbar_frame.pack(side="bottom", fill="x")
-        self.toolbar = NavigationToolbar2Tk(
-            self.canvas, toolbar_frame, pack_toolbar=False
-        )
-        self.toolbar.update()
-        self.toolbar.pack(side="left", fill="x")
+
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self)
+        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+
+        self.toolbar = _MiniToolbar(toolbar_frame, self.canvas)
+        self.toolbar.pack(side="left")
 
     def draw(self) -> None:
         self.canvas.draw_idle()
@@ -82,13 +119,22 @@ class PlotStackPanel(ttk.Frame):
         super().__init__(master)
 
         # Each plot gets a roughly equal vertical share.
-        self._ms1 = _PlotCell(self, figsize=(4.0, 2.0))
-        self._xic = _PlotCell(self, figsize=(4.0, 2.0))
-        self._atd = _PlotCell(self, figsize=(4.0, 2.0))
-        self._ms2 = _PlotCell(self, figsize=(4.0, 2.0))
+        self._ms1 = _PlotCell(self)
+        self._xic = _PlotCell(self)
+        self._atd = _PlotCell(self)
+        self._ms2 = _PlotCell(self)
 
-        for cell in (self._ms1, self._xic, self._atd, self._ms2):
-            cell.pack(side="top", fill="both", expand=True, padx=2, pady=2)
+        # Grid layout with uniform row weights: all four plots always
+        # get equal vertical share, even when the window is too short
+        # to satisfy their natural size requests. (pack + expand=True
+        # respects natural size first and starves the last widget.)
+        cells = (self._ms1, self._xic, self._atd, self._ms2)
+        for row, cell in enumerate(cells):
+            cell.grid(
+                row=row, column=0, sticky="nsew", padx=2, pady=2
+            )
+            self.rowconfigure(row, weight=1, uniform="plots")
+        self.columnconfigure(0, weight=1)
 
         # Hover tooltips on MS1 and MS2 only.
         self._hover_ms1 = HoverTooltip(self._ms1.ax)

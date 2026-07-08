@@ -64,7 +64,7 @@ class ReviewApp(tk.Tk):
         super().__init__()
         self.title(_APP_TITLE)
         self.geometry("1600x1000")
-        self.minsize(1600, 1000)
+        self.minsize(1280, 800)
 
         # -- state ------------------------------------------------------
         self.session: Session | None = None
