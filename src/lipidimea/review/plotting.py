@@ -262,12 +262,15 @@ def plot_ms2(
     if dda is not None and dda.ms2.shape[1] > 0:
         all_mz.append(dda.ms2[0])
 
+    mz_min = 0.
+    mz_max = 100.
     if all_mz:
         all_concat = np.concatenate(all_mz)
-        mz_span = float(all_concat.max() - all_concat.min())
-    else:
-        mz_span = 1.0  # fallback; nothing to draw anyway
-    bar_width = MS2_BAR_WIDTH_FRAC * max(mz_span, 1.0)
+        mz_min = float(all_concat.min()) - 10.
+        mz_max = float(all_concat.max()) + 10.
+    mz_span = mz_max - mz_min
+        
+    bar_width = min(MS2_BAR_WIDTH_FRAC * mz_span, 1.)
 
     # ----- DIA precursor spectra (positive y), normalized to max=1 -----
     # Compute normalization across all displayed DIA spectra combined.
@@ -292,7 +295,7 @@ def plot_ms2(
         for x, y, dc in zip(ms2_mz, ms2_i_norm, ms2_dc):
             if dc > 0:
                 ax.text(
-                    x, y, "*",
+                    x, y, "d",
                     ha="center", va="bottom",
                     color=_DIA_COLOR, alpha=_DIA_ALPHA,
                 )
@@ -326,6 +329,8 @@ def plot_ms2(
     ylim = ax.get_ylim()
     if ylim != (0.0, 1.0):  # i.e. something was actually drawn
         ax.set_ylim(1.1 * ylim[0], 1.1 * ylim[1])
+
+    ax.set_xlim((mz_min, mz_max))
 
     ax.set_xlabel("m/z")
     ax.set_ylabel("normalized intensity\n(DIA ↑ / DDA ↓)")
