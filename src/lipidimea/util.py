@@ -16,6 +16,10 @@ import enum
 import json
 
 import polars as pl
+from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.spatial.distance import pdist
+import numpy as np
+from numpy import typing as npt
 
 from lipidimea.typing import (
     ResultsDbPath, ResultsDbCursor, MzaFilePath, MzaFileId
@@ -30,7 +34,7 @@ INCLUDE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_include
 
 
 # define path to results DB schema file
-_RESULTS_DB_SCHEMA = os.path.join(INCLUDE_DIR, 'results.sql3')
+_RESULTS_DB_SCHEMA = os.path.join(INCLUDE_DIR, 'results.sql')
 
 
 def create_results_db(results_file: ResultsDbPath,
@@ -100,6 +104,7 @@ class AnalysisStep(enum.Enum):
     DDA_EXT = "DDA feature extraction"
     DDA_CONS = "DDA feature consolidation"
     DIA_EXT = "DIA feature extraction"
+    DIA_FEAT_GRP = "DIA feature grouping"
     CCS_CAL = "CCS calibration"
     LIPID_ANN = "lipid annotation"
 
@@ -184,7 +189,164 @@ def debug_handler(debug_flag: Optional[str], debug_cb: Optional[Callable], msg: 
 
 
 #------------------------------------------------------------------------------
+# group DIA precursors
+
+
+def _clear_existing_feature_groups(
+        cur: ResultsDbCursor
+):
+    """
+    remove all entries from DIAFeatureGroups and DIAPrecursorToGroup tables
+    """
+    cur.execute("DELETE FROM DIAFeatureGroups;")
+    cur.execute("DELETE FROM DIAPrecursorToGroup;")
+
+
+def _fetch_dia_precursor_arrays(
+        cur: ResultsDbCursor
+) -> Tuple[npt.NDArray[np.intp], npt.NDArray[np.floating]] :
+    """
+    fetch DIA precursor IDs, m/z, rt, dt and convert to numpy arrays
+    """
+    qry = """--beginsql
+        SELECT
+            dia_pre_id,
+            mz, 
+            rt,
+            dt
+        FROM
+            DIAPrecursors
+    --endsql"""
+    # query and unpack results into arrays, one per column
+    pre_ids, mzs, rts, dts = np.array(cur.execute(qry).fetchall()).T
+    # precursor IDs should be ints
+    pre_ids = pre_ids.astype(int)
+    # combine the m/zs rts and dts into one array with shape: (n_features, 3)
+    mz_rt_dt = np.array([mzs, rts, dts]).T
+    # return the formatted array data
+    return pre_ids, mz_rt_dt
+    
+
+def _precursor_group_average_properties(
+        cur: ResultsDbCursor,
+        pre_ids: List[int]
+) -> Tuple[int, float, float, float, Optional[float]] : 
+    """
+    fetch the count of unique data file IDs in the group as well as
+    mz, rt, dt, and ccs data for grouped features 
+    """
+    qry = """--beginsql
+        SELECT 
+            dfile_id,
+            mz, 
+            rt, 
+            dt, 
+            ccs
+        FROM
+            DIAPrecursors
+        WHERE 
+            dia_pre_id IN ({})
+    --endsql""".format(",".join(map(str, pre_ids)))
+    # fetch and unpack the properties
+    dfids, mzs, rts, dts, ccss = (
+        pl.read_database(qry, cur)
+        .to_numpy()
+        .T
+    )
+    return (
+        len(set(dfids)),
+        mzs.mean(),
+        rts.mean(),
+        dts.mean(),
+        ccs if not np.isnan(ccs := ccss.mean()) else None
+    )
+
+
+def group_dia_precursors(
+        results_db: ResultsDbPath,
+        mz_tol: float,
+        rt_tol: float,
+        dt_tol: float,
+):
+    """
+    Group DIA precursors into features across all samples (file IDs) based on 
+    similar m/z, RT, and DT. Stored grouped feature info in the results database
+    in the DIAFeatureGroups and DIAPrecursorToGroup tables.
+
+    Parameters
+    ----------
+    results_db
+        results database with annotated DIA features
+    mz_tol, rt_tol, dt_tol
+        tolerances (m/z, RT, arrival time) for combining DIA precursors
+    """
+    # ensure results database file exists
+    if not os.path.isfile(results_db):
+        raise FileNotFoundError(errno.ENOENT,
+                                os.strerror(errno.ENOENT),
+                                results_db)
+    # connect to results database
+    con = sqlite3.connect(results_db)
+    cur = con.cursor()
+    # clear out any existing groupings
+    _clear_existing_feature_groups(cur)
+    # extract the DIA precursor IDs, m/z, rt, dts and convert to numpy arrays
+    all_pre_ids, mz_rt_dt = _fetch_dia_precursor_arrays(cur)
+    # scale m/z, rt, and dt using tolerances to make the multidimensional linkage work
+    mz_rt_dt /= np.array([mz_tol, rt_tol, dt_tol])
+    # compute linkage
+    Z = linkage(pdist(mz_rt_dt, metric="chebyshev"), method="complete")
+    # create the clusters
+    labels = fcluster(Z, t=1.0, criterion="distance")
+    # iterate through labels, fetch all group members, compute average m/z 
+    # rt, dt values, create the grouped feauture (ID is cluster ID), add the mapping
+    # for all of the individual features to the newly created grouped feauture.
+    for label, pre_ids in (
+        pl.DataFrame({"label": labels, "pre_ids": all_pre_ids})
+        .group_by("label")
+        .agg("pre_ids")
+        .iter_rows()
+    ):
+        # fetch the average properties for the group
+        n, avg_mz, avg_rt, avg_dt, avg_ccs = _precursor_group_average_properties(cur, pre_ids)
+        # add an entry to DIAFeatureGroups
+        cur.execute(
+            "INSERT INTO DIAFeatureGroups VALUES (?,?,?,?,?,?);", 
+            (label, avg_mz, avg_rt, avg_dt, avg_ccs, n)
+        )
+        # add mapping from individual precursors to this group
+        # TODO: In the cases where there are somehow multiple DIA features from the same
+        #       data file that have really close m/z, rt, and dt and that are members of
+        #       the same group, only include the feature with the highest dt peak height
+        #       in the mapping.
+        for pre_id in pre_ids:
+            cur.execute(
+                "INSERT INTO DIAPrecursorToGroup VALUES (?,?);", 
+                (label, pre_id)
+            )
+    # update the analysis log
+    update_analysis_log(
+        cur, 
+        AnalysisStep.DIA_FEAT_GRP,
+        {
+            "mz_tol": mz_tol,
+            "rt_tol": rt_tol,
+            "dt_tol": dt_tol
+        }
+    )
+    # clean up
+    con.commit()
+    con.close()
+
+
+#------------------------------------------------------------------------------
 # results export
+
+
+# TODO: Feature grouping logic is now a separate function. Do not repeat it here, 
+#       the export logic should just take those existing feature groups, apply any
+#       necessary filtering and reformatting, then dump to file.
+
 
 def _map_dfile_names_to_ids(data_file_names: List[str],
                             cur: ResultsDbCursor
@@ -535,4 +697,3 @@ def export_results_table(results_db: ResultsDbPath,
     # TODO: (filter dataframe? replace NAs?)
     df.write_csv(out_csv)
     return df.shape[0]
-

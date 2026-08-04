@@ -26,7 +26,8 @@ dependencies = [
     "matplotlib",
     "mzapy",
     "pyyaml",
-    "polars"
+    "polars",
+    "pyinstaller>=6.21.0",
 ]
 
 [project.urls]
@@ -38,3 +39,6 @@ where = ["src"]
 
 [tool.setuptools.dynamic]
 version = { attr = "lipidimea.__version__" }
+
+[project.scripts]
+lipidimea-review = "lipidimea.review.__main__:main"

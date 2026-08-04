@@ -518,7 +518,7 @@ def consolidate_dda_features(results_db: ResultsDbPath,
     drop_fids: List[int] = []
     for group in grouped:
         if len(group) > 1:
-            # only consider groups with multiple features in them
+            # groups with multiple features in them
             if sum([_[4] for _ in group]) > 0:
                 # at least one feature has MSMS
                 for feat in group:
@@ -563,6 +563,12 @@ def consolidate_dda_features(results_db: ResultsDbPath,
                     else:
                         # drop all of these features if we are not keeping features that lack MS2 scans
                         drop_fids.append(ffid)
+        else:
+            # groups with a single feature in them
+            feat = group[0]
+            # optionally remove DDA features without MS2 spectra
+            if feat[4] < 1 and P.drop_if_no_ms2:
+                drop_fids.append(feat[0])            
     n_post: int = n_dda_features - len(drop_fids)                        
     debug_handler(debug_flag, debug_cb, f"CONSOLIDATING DDA FEATURES: {n_dda_features} features -> {n_post} features")
     # step 3, drop features from database
