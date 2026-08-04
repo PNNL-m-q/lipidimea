@@ -116,8 +116,21 @@ class ReviewApp(tk.Tk):
         outer = ttk.PanedWindow(self, orient="horizontal")
         outer.pack(side="top", fill="both", expand=True, padx=4, pady=4)
 
-        self.group_panel = GroupPanel(outer)
-        outer.add(self.group_panel, weight=2)
+        # Group column: button strip on top, panel below.
+        group_col = ttk.Frame(outer)
+        outer.add(group_col, weight=2)
+
+        group_actions = ttk.Frame(group_col)
+        group_actions.pack(side="top", fill="x", padx=4, pady=(2, 0))
+        self._btn_delete_unannotated = ttk.Button(
+            group_actions,
+            text="delete unannotated",
+            command=self._on_delete_unannotated,
+        )
+        self._btn_delete_unannotated.pack(side="left")
+
+        self.group_panel = GroupPanel(group_col)
+        self.group_panel.pack(side="top", fill="both", expand=True)
 
         self.plot_panel = PlotStackPanel(outer)
         outer.add(self.plot_panel, weight=3)
@@ -333,6 +346,39 @@ class ReviewApp(tk.Tk):
         self._update_button_state()
         self._refresh_status()
 
+    def _on_delete_unannotated(self) -> None:
+        if self.session is None:
+            return
+        # Collect live groups with no annotations.
+        targets = [
+            g.id
+            for g in self.session.iter_live_groups()
+            if g.n_annotations == 0
+        ]
+        if not targets:
+            messagebox.showinfo(
+                "Nothing to delete",
+                "No unannotated feature groups remaining.",
+                parent=self,
+            )
+            return
+        if not messagebox.askyesno(
+            "Mark unannotated groups for deletion",
+            f"Mark {len(targets)} unannotated feature group(s) "
+            f"for deletion?\n\n"
+            f"They will remain visible (greyed out) until you commit "
+            f"deletions via 'save results'.",
+            parent=self,
+        ):
+            return
+        for gid in targets:
+            self.session.delete_group(gid)
+            item = self.group_panel.get_item(gid)
+            if item is not None:
+                self.group_panel.update_row(item)
+        self._update_button_state()
+        self._refresh_status()
+
     # ================================================================== #
     # Undo
     # ================================================================== #
@@ -539,6 +585,9 @@ class ReviewApp(tk.Tk):
         dirty = loaded and self.session.dirty
         self._btn_save.configure(state=("normal" if dirty else "disabled"))
         self._btn_export.configure(state=("normal" if loaded else "disabled"))
+        self._btn_delete_unannotated.configure(
+            state=("normal" if loaded else "disabled")
+        )
 
     # ================================================================== #
     # Close
