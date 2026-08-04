@@ -124,7 +124,8 @@ class SumCompLipidDB():
                              min_c: int, 
                              max_c: int, 
                              odd_c: bool, 
-                             max_u: Optional[int] = None
+                             min_u: int,
+                             max_u: Optional[int]
                              ) -> Generator[Tuple[int, int], None, None] :
         """ 
         yields all unique sum compositions from combinations of fatty acids that are iterated over
@@ -144,8 +145,9 @@ class SumCompLipidDB():
             min/max number of carbons in an acyl chain
         odd_c
             whether to include odd # C for FAs
-        [max_u]
-            restrict maximum number of unsaturations (in sum composition, not individual FAs)
+        min_u, max_u
+            restrict minimum/maximum number of unsaturations (in sum composition, not individual FAs)
+            if max_u is None, then uses a heuristic (self.max_u) to determine max unsaturation level
 
         Yields
         ------
@@ -156,7 +158,7 @@ class SumCompLipidDB():
         for n_c in range(min_c, max_c + 1):
             if odd_c or n_c % 2 == 0:
                 max_u = self.max_u(n_c) if max_u is None else min(max_u, self.max_u(n_c))
-                for n_u in range(0, self.max_u(n_c) + 1):
+                for n_u in range(min_u, max_u + 1):
                     fas.append((n_c, n_u))
         # permute over acyl chains
         sum_comp = set()
@@ -219,10 +221,20 @@ class SumCompLipidDB():
             INSERT INTO SumCompLipids VALUES (?,?,?,?,?,?,?)
         --endsql"""
         for lmaps_prefix, adducts in cnf.items():
-            # adjust min unsaturation level for sphingolipids
-            max_u = 2 if lmaps_prefix[:4] == 'LMSP' else None
+            min_u = 0
+            max_u = None
+            # adjust min/max unsaturation level for sphingolipids
+            if lmaps_prefix[:4] == "LMSP":
+                min_u = 1
+                max_u = 3
+            # limit unsaturation level for saturated FAs
+            if lmaps_prefix == "LMFA0101":
+                max_u = 0
+            # require unsaturations for unsaturated FAs
+            if lmaps_prefix == "LMFA0103":
+                min_u = 1 
             n_chains = LMAPS[lmaps_prefix]['n_chains']
-            for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, max_u=max_u):
+            for sumc, sumu in self.gen_sum_compositions(n_chains, min_c, max_c, odd_c, min_u, max_u):
                 lpd = Lipid(lmaps_prefix, sumc, sumu)
                 for adduct in adducts:
                     mz = ms_adduct_mz(lpd.formula, adduct)
@@ -377,9 +389,9 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
     cur = con.cursor()
     # check that DIA feature extraction has been completed first
     check_analysis_log(cur, AnalysisStep.DIA_EXT)
-    # iterate through DIA features and get putative annotations
+    # iterate through DIA feature groups and get putative annotations
     qry_sel = """--beginsql
-        SELECT dia_pre_id, mz FROM DIAPrecursors
+        SELECT dia_fgroup_id, mz FROM DIAFeatureGroups
     --endsql"""
     qry_ins = """--beginsql
         INSERT INTO Lipids VALUES (?,?,?,?,?,?,?,?,?)
@@ -388,7 +400,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
         INSERT INTO LipidSumComp VALUES (?,?,?,?)
     --endsql"""
     n_feats, n_feats_annotated, n_anns = 0, 0, 0
-    for dia_feat_id, mz, in cur.execute(qry_sel).fetchall():
+    for dia_fg_id, mz, in cur.execute(qry_sel).fetchall():
         n_feats += 1
         annotated = False
         # TODO: this ugly
@@ -399,7 +411,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
             # composition instead of unknown
             chains_flag = "inferred" if cchains == 1 else None
             qdata = (
-                None, dia_feat_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), 
+                None, dia_fg_id, clmidp, cname, cadduct, _ppm_error(cmz, mz), 
                 # ccs_rel_err, ccs_lit_trend, chains 
                 None, None, chains_flag
             )
@@ -412,7 +424,7 @@ def annotate_lipids_sum_composition(results_db: ResultsDbPath,
             n_feats_annotated += 1
     # report how many features were annotated
     debug_handler(debug_flag, debug_cb, 
-                  f"ANNOTATED: {n_feats_annotated} / {n_feats} DIA features ({n_anns} annotations total)")
+                  f"ANNOTATED: {n_feats_annotated} / {n_feats} DIA feature groups ({n_anns} annotations total)")
     # update analysis log
     update_analysis_log(
         cur, 
@@ -488,7 +500,7 @@ def filter_annotations_by_rt_range(results_db: ResultsDbPath,
             rt 
         FROM 
             Lipids 
-            JOIN DIAPrecursors USING(dia_pre_id)
+            JOIN DIAFeatureGroups USING(dia_fgroup_id)
     --endsql"""
     # track annotations kept and filtered
     n_kept, n_filt = 0, 0
@@ -628,7 +640,7 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
         FROM 
             LipidMapsShort 
             JOIN Lipids USING(lipid_id) 
-            JOIN DIAPrecursors USING(dia_pre_id)
+            JOIN DIAFeatureGroups USING(dia_fgroup_id)
         WHERE 
             ccs IS NOT NULL
     --endsql"""
@@ -638,7 +650,7 @@ def filter_annotations_by_ccs_subclass_trend(results_db: ResultsDbPath,
         FROM 
             Lipids 
             JOIN LipidMapsShort USING(lipid_id) 
-            JOIN DIAPrecursors USING(dia_pre_id)
+            JOIN DIAFeatureGroups USING(dia_fgroup_id)
         WHERE 
             lm_sub=?
             AND adduct=?
@@ -963,10 +975,11 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
             GROUP_CONCAT(dia_frag_id) AS frag_ids,
             GROUP_CONCAT(fmz)
         FROM 
-            Lipids 
+            Lipids AS L
             JOIN LipidSumComp USING(lipid_id)
-            JOIN DIAPrecursors USING(dia_pre_id) 
-            LEFT JOIN DIAFragments USING(dia_pre_id)
+            JOIN DIAFeatureGroups AS DFG ON L.dia_fgroup_id=DFG.dia_fgroup_id
+            JOIN DIAPrecursorToGroup AS DPG ON DFG.dia_fgroup_id=DPG.dia_fgroup_id
+            LEFT JOIN DIAFragments AS DF ON DF.dia_pre_id=DPG.dia_pre_id
         GROUP BY 
             lipid_id
         HAVING
@@ -979,7 +992,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
         INSERT INTO LipidFragments VALUES (?,?,?,?,?,?,?)
     --endsql"""
     assert params.ionization is not None, "ionization must be set (POS or NEG)"
-    for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fids, fmzs in cur.execute(qry_sel1).fetchall():
+    for lipid_id, lmid_prefix, sum_c, sum_u, n_chains, pmz, fgids, fmzs in cur.execute(qry_sel1).fetchall():
         update = False
         if fmzs is not None:
             # load fragmentation rules
@@ -991,7 +1004,7 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                                              params.frag_rules.fa_odd_c,
                                              max_u=SumCompLipidDB.max_u))
             ffmzs = list(map(float, fmzs.split(",")))
-            ifids = list(map(int, fids.split(",")))
+            ifgids = list(map(int, fgids.split(",")))
             _, rules = load_rules(lmid_prefix, params.ionization)
             diag_flag = 0
             # go through each rule and see if it matches any fragments
@@ -999,14 +1012,14 @@ def update_lipid_ids_with_frag_rules(results_db: ResultsDbPath,
                 diag_flag = int(rule.diagnostic)
                 if rule.static:
                     rmz = rule.mz(pmz)  # type: ignore
-                    for ffmz, ifid in zip(ffmzs, ifids):
+                    for ffmz, ifid in zip(ffmzs, ifgids):
                         ppm = _ppm_error(rmz, ffmz)
                         if abs(ppm) <= params.frag_rules.mz_ppm:
                             cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(), rmz, ppm, diag_flag, None))  # type: ignore
                 else:
                     for c, u in sorted(c_u_combos):
                         rmz = rule.mz(pmz, c, u) # type: ignore
-                        for ffmz, ifid in zip(ffmzs, ifids):
+                        for ffmz, ifid in zip(ffmzs, ifgids):
                             ppm = _ppm_error(rmz, ffmz)
                             if abs(ppm) <= params.frag_rules.mz_ppm:
                                 cur.execute(qry_add_frag, (lipid_id, ifid, rule.label(c, u), rmz, ppm, diag_flag, f"{c}:{u}"))  # type: ignore

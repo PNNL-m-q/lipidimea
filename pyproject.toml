@@ -1,16 +1,44 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lipidimea"
 dynamic = ["version"]
+authors = [
+    { name = "Dylan Ross", email = "dylan.ross@pnnl.gov" }
+]
+description = "Lipidomics Integrated Multi-Experiment Analysis tool"
+readme = "README.md"
 requires-python = ">=3.12"
+license = { text = "BSD License" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "h5py",
+    "hdf5plugin",
+    "pandas",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "mzapy",
+    "pyyaml",
+    "polars",
+    "pyinstaller>=6.21.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/PNNL-m-q/lipidimea"
+"Bug Tracker" = "https://github.com/PNNL-m-q/lipidimea/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "lipidimea.__version__"}
+version = { attr = "lipidimea.__version__" }
 
-[tool.setuptools.package-data]
-lipidimea = [
-    "_include/**"
-]
+[project.scripts]
+lipidimea-review = "lipidimea.review.__main__:main"

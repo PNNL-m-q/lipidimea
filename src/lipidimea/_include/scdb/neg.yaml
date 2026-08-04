@@ -8,6 +8,6 @@ LMGP0206: ["[M-H]-"]                  # LPE O-
 LMGP0401: ["[M-H]-"]                  # PG
 LMGP0405: ["[M-H]-"]                  # LPG 
 LMGP0601: ["[M-H]-"]                  # PI
-LMGP0605: ["[M-H]-"]                  # LPI 
+LMGP0605: ["[M-H]-"]                  # LPI
 LMGP1001: ["[M-H]-"]                  # PA
 LMSP0201: ["[M+CH3COO]-", "[M-H]-"]   # Cer

@@ -83,7 +83,7 @@ class Lipid():
         fatty acid unsaturation count (all acyl chains)
     fa_mod : ``str``
         fatty acid modifier, if any (indicates things like ether/plasmenyl lipids: "O-", "P-"), "" otherwise
-    oxy_suffix : ``str``
+    oxy_suffix : ``list[str]``
         useful for sphingolipids to indicate the type of backbone (should mostly be "O2" for mammalian
         sphingolipids based on sphingosine), but also applies to oxidized phospholipids (hydroxy, epoxide,
         hydroperoxy). "" if no such oxy suffix is needed
@@ -140,7 +140,11 @@ class Lipid():
         self.fa_carbon = fa_carbon
         self.fa_unsat = fa_unsat
         self.fa_mod = lipid_info.get("fa_mod", "")
-        self.oxy_suffix = lipid_info.get("oxy_suffix", "")
+        self.oxy_suffix = (
+            [oxs]
+            if type(oxs := lipid_info.get("oxy_suffix", [])) is str 
+            else oxs
+        )
         # fetch classification information using lipid class abbrev and fa modifier
         self.lmaps_category, self.lmaps_class, self.lmaps_subclass = lipid_info["classification"]
         self.lmaps_id_prefix = lmid_prefix
@@ -172,7 +176,12 @@ class Lipid():
     def __str__(self
                 ) -> str :
         s = "{} {}{}:{}{}"
-        oxy_suffix = ";" + self.oxy_suffix if self.oxy_suffix != "" else ""
+        oxy_suffix = ""
+        if type(self.oxy_suffix) is list:
+            # TODO: Bad fix, take the first if list
+            oxy_suffix = ";" + self.oxy_suffix[0]
+        elif type(self.oxy_suffix) is str and self.oxy_suffix != "":
+            oxy_suffix = ";" + self.oxy_suffix
         return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat, oxy_suffix)
     
     def _id_level(self
@@ -233,7 +242,7 @@ class LipidWithChains(Lipid):
                  fa_unsat_pos: Optional[List[List[int]]] = None, 
                  fa_unsat_stereo: Optional[List[List[str]]] = None, 
                  sn_pos_is_known: bool = False, 
-                 oxy_suffix_chains: Optional[List[str]] = None
+                 oxy_suffix_chains: Optional[List[List[str]]] = None
                  ) -> None :
         """
         inits a new instance of a LipidWithChains object using lipid class, fatty acid composition (split by FA chain), 
@@ -256,8 +265,8 @@ class LipidWithChains(Lipid):
             requires fa_unsat_pos to be set
         sn_pos_is_known : ``bool``, default=False
             indicates whether the sn position of the chains is known or ambiguous
-        oxy_suffix_chains : ``list(str)``, optional
-            oxidation suffix (str, "" if no modification) for individual chains. Defaults to empty strings if
+        oxy_suffix_chains : ``list(list(str))``, optional
+            oxidation suffix (empty list if no modification) for individual chains. Defaults to empty lists if
             not provided
         """
         # init superclass using sum FA composion
@@ -267,7 +276,11 @@ class LipidWithChains(Lipid):
         # store the chain-specific fatty acid compositions
         self.fa_carbon_chains = fa_carbon_chains
         self.fa_unsat_chains = fa_unsat_chains
-        self.oxy_suffix_chains = oxy_suffix_chains if oxy_suffix_chains is not None else ["" for _ in range(self.n_chains_full)]
+        self.oxy_suffix_chains = (
+            oxy_suffix_chains 
+            if oxy_suffix_chains is not None 
+            else [[] for _ in range(self.n_chains_full)]
+        )
         self.fa_unsat_pos = fa_unsat_pos
         self.fa_unsat_stereo = fa_unsat_stereo
         self.sn_pos_is_known = sn_pos_is_known
@@ -380,7 +393,11 @@ class LipidWithChains(Lipid):
                         s += "{},".format(c)
                 s = s.rstrip(",")
                 s += ")"
-            oxsf = ";" + oxsf if oxsf != "" else ""
+            oxsf = (
+                ";" + ",".join(oxsf) 
+                if oxsf != [] 
+                else ""
+            )
             s += oxsf
             s += sep
         s = s.rstrip(sep)
@@ -434,7 +451,7 @@ class LipidWithChains(Lipid):
         # NOTE: For now this is only True if there are no oxy suffix labels,
         #       i.e., if there are no functional groups present then we know
         #       their identities.
-        fgids = "".join(self.oxy_suffix_chains) == ""
+        fgids = "".join(["".join(_) for _ in self.oxy_suffix_chains]) == ""
         # are functional group positions known?
         fgpos = False
         # is functional group stereochem known?
