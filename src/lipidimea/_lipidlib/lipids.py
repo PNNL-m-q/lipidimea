@@ -176,11 +176,12 @@ class Lipid():
     def __str__(self
                 ) -> str :
         s = "{} {}{}:{}{}"
-        oxy_suffix = (
-            ";" + ",".join(self.oxy_suffix) 
-            if len(self.oxy_suffix) > 0 
-            else ""
-        )
+        oxy_suffix = ""
+        if type(self.oxy_suffix) is list:
+            # TODO: Bad fix, take the first if list
+            oxy_suffix = ";" + self.oxy_suffix[0]
+        elif type(self.oxy_suffix) is str and self.oxy_suffix != "":
+            oxy_suffix = ";" + self.oxy_suffix
         return s.format(self.lipid_class_abbrev, self.fa_mod, self.fa_carbon, self.fa_unsat, oxy_suffix)
     
     def _id_level(self
