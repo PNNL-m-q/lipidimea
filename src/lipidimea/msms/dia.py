@@ -421,17 +421,19 @@ def _single_target_analysis(n: int,
                     n_ms2_peaks = len(dia_ms2_peaks[0])
                     if n_ms2_peaks > 0:
                         dtmsg += f"# DIA MS2 peaks: {n_ms2_peaks} -> "
-                        # try to match peaks from DDA spectrum
-                        # do it this way in an attempt to avoid overcounting fragments
+                        # try to match peaks from DDA spectrum (rounded to 3 decimal places)
+                        # do it this way in an attempt to avoid overcounting DDA fragments
                         # not perfect but should help
                         dda_fmzs = set([
                             round(r[0], 3) 
                             for r in cur.execute(qry_sel_dda_frags.format(dda_pid)).fetchall()
                         ])
+                        # as written, this keeps all DIA MS/MS peaks that are close enough to any peak from the
+                        # DDA spectra which could include redundant peaks, but we will call that OK for now
                         for ddam in dda_fmzs:
                             if ddam < dda_mz + 25:  # only consider MS2 peaks that are less than precursor + 25
                                 for diam, diah, diaw in zip(*dia_ms2_peaks):
-                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching.mz_ppm)
+                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching_ppm)
                                     if abs(diam - ddam) <= frg_tol:
                                         sel_ms2_mzs.append(diam)
                                         sel_ms2_ints.append(diah)
