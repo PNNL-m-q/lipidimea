@@ -1,12 +1,12 @@
 # LipidIMEA
 Lipidomics Integrated Multi-Experiment Analysis tool
 
-- [CLI documentation](cli.md) 
+- [CLI documentation](docs/cli.md) 
+- [GUI documentation](docs/gui.md)
 
 ### Tutorials
 - [CLI](tutorials/cli_tutorial.md)
 - [Python script](tutorials/script_tutorial.md)
-- _GUI coming soon..._
 
 
 ### Contributors:
