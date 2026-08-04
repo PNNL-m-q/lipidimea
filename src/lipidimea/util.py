@@ -82,7 +82,8 @@ def create_results_db(results_file: ResultsDbPath,
 
 def add_data_file_to_db(cur: ResultsDbCursor,
                         data_file_type: str,
-                        data_file_path: MzaFilePath
+                        data_file_path: MzaFilePath, 
+                        data_file_id: Optional[int] = None
                         ) -> MzaFileId :
     """
     add a data file to the results database (DataFiles table) and return the corresponding
@@ -91,7 +92,7 @@ def add_data_file_to_db(cur: ResultsDbCursor,
     qry = """--beginsql
         INSERT INTO DataFiles VALUES (?,?,?,?,?)
     --endsql"""
-    cur.execute(qry, (None, data_file_type, data_file_path, None, None))
+    cur.execute(qry, (data_file_id, data_file_type, data_file_path, None, None))
     rowid = cur.lastrowid
     # lastrowid can be None, but that should not happen because we run an insert
     # query first. lastrowid should only be None if something goes wrong with the

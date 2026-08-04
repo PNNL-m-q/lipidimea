@@ -271,11 +271,150 @@ def _add_single_target_results_to_db(cur: ResultsDbCursor,
                 pre_blob,       # binary data for the arrays (BLOB)
             )
             cur.execute(_RAW_INSERT_QRY, raw_qdata)
-   
 
-# TODO (Dylan Ross): This function could probably benefit from being broken up into a couple
-#                    smaller functions. In particular, probably one for extracting/fitting
-#                    chromatograms, and another for extracting/fitting ATDs
+
+def single_target_analysis(
+    cur: ResultsDbCursor, 
+    dia_file_id: MzaFileId, 
+    rdr: MZA, 
+    target_mz: float,
+    params: DiaParams,
+    target_rts: Optional[List[float]] = None,
+    dda_fmzs: Optional[List[float]] = None,
+    top_n_dia_fragments: int = 10,
+    debug_flag: Optional[str] = None, 
+    debug_cb: Optional[Callable] = None
+) -> int :
+    """
+    """
+    n_features: int = 0
+    pid = os.getpid()
+    msg = f"... target m/z: {target_mz:.4f} -> "
+    # extract the XIC, fit 
+    # optionally, still use some bounds on XIC extraction, saves time
+    rt_bounds = None
+    if target_rts is not None:
+        assert params.extract_and_fit_chroms.rt_tol is not None, "extract_and_fit_chroms.rt_tol must be set"
+        rt_bounds = (min(target_rts) - params.extract_and_fit_chroms.rt_tol, 
+                    max(target_rts) + params.extract_and_fit_chroms.rt_tol)
+    assert params.extract_and_fit_chroms.mz_ppm is not None, "the m/z ppm parameter must be set"
+    pre_mzt = tol_from_ppm(target_mz, params.extract_and_fit_chroms.mz_ppm)
+    pre_xic = rdr.collect_xic_arrays_by_mz(target_mz - pre_mzt, target_mz + pre_mzt, rt_bounds=rt_bounds)
+    # handle case where XIC is empty 
+    # (tight enough bounds and high enough threshold can do that)
+    if len(pre_xic[0]) < 2:
+        debug_handler(debug_flag, debug_cb, msg +  'empty XIC', pid)
+        return 0
+    pre_pkrts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(
+        *pre_xic,
+        params.extract_and_fit_chroms.min_rel_height,
+        params.extract_and_fit_chroms.min_abs_height,
+        params.extract_and_fit_chroms.fwhm.min,
+        params.extract_and_fit_chroms.fwhm.max,
+        params.extract_and_fit_chroms.max_peaks, 
+        True
+    )
+    # Proceed with all XIC peaks, we can assign to DDA features later on.
+    found_xic_peak = False
+    for xic_rt, xic_ht, xic_wt in zip(pre_pkrts, pre_pkhts, pre_pkwts):
+        found_xic_peak = True
+        rtmsg = msg + f"RT: {xic_rt:.2f} +/- {xic_wt:.2f} min ({xic_ht:.2e}) -> "
+        xic_psnr = calc_gauss_psnr(*pre_xic, (xic_rt, xic_ht, xic_wt))
+        # extract the ATD, fit
+        rt_min, rt_max = xic_rt - xic_wt, xic_rt + xic_wt
+        pre_atd = rdr.collect_atd_arrays_by_rt_mz(target_mz - pre_mzt, target_mz + pre_mzt, rt_min, rt_max)
+        # handle case where ATD is empty 
+        # (tight enough bounds and high enough threshold can do that)
+        if len(pre_atd[0]) < 2:
+            debug_handler(debug_flag, debug_cb, msg +  'empty ATD', pid)
+            return 0
+        pre_pkdts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(
+            *pre_atd, 
+            params.extract_and_fit_atds.min_rel_height,
+            params.extract_and_fit_atds.min_abs_height,
+            params.extract_and_fit_atds.fwhm.min,
+            params.extract_and_fit_atds.fwhm.max,
+            params.extract_and_fit_atds.max_peaks, 
+            True
+        )
+        # consider each ATD peak as separate features
+        for atd_dt, atd_ht, atd_wt in zip(pre_pkdts, pre_pkhts, pre_pkwts):
+            dtmsg = rtmsg +  f"DT: {atd_dt:.2f} +/- {atd_wt:.2f} ms ({atd_ht:.2e}) -> "
+            atd_psnr = calc_gauss_psnr(*pre_atd, (atd_dt, atd_ht, atd_wt))
+            # extract partial MS1 spectrum from M-1.5 to M+2.5, with RT and DT selection
+            ms1 = rdr.collect_ms1_arrays_by_rt_dt(rt_min, rt_max, 
+                                                  atd_dt - atd_wt, atd_dt + atd_wt, 
+                                                  mz_bounds=(target_mz - 1.5, target_mz + 2.5))
+            ms2 = None
+            n_ms2_peaks = None
+            sel_ms2_mzs = []
+            sel_ms2_ints = []
+            deconvolved = []
+            frag_raws = []
+            # extract MS2 spectrum (before deconvolution)
+            ms2 = rdr.collect_ms2_arrays_by_rt_dt(xic_rt - xic_wt, xic_rt + xic_wt, 
+                                                    atd_dt - atd_wt, atd_dt + atd_wt, 
+                                                    mz_bounds=[50, target_mz + 25])
+            if len(ms2[0]) > 1:
+                dia_ms2_peaks = find_peaks_1d_localmax(
+                    *ms2,
+                    params.extract_and_fit_ms2_spectra.min_rel_height,
+                    params.extract_and_fit_ms2_spectra.min_abs_height,
+                    params.extract_and_fit_ms2_spectra.fwhm.min,
+                    params.extract_and_fit_ms2_spectra.fwhm.max,
+                    params.extract_and_fit_ms2_spectra.peak_min_dist
+                )
+                n_ms2_peaks = len(dia_ms2_peaks[0])
+                if n_ms2_peaks > 0:
+                    dtmsg += f"# DIA MS2 peaks: {n_ms2_peaks} -> "
+                    # optionally try to match peaks from DDA spectrum
+                    if dda_fmzs is not None:
+                        for ddam in dda_fmzs:
+                            if ddam < dda_mz + 25:  # only consider MS2 peaks that are less than precursor + 25
+                                for diam, diah, diaw in zip(*dia_ms2_peaks):
+                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching_ppm)
+                                    if abs(diam - ddam) <= frg_tol:
+                                        sel_ms2_mzs.append(diam)
+                                        sel_ms2_ints.append(diah)
+                    else:
+                        # otherwise consider all of the top N DIA MS/MS fragments
+                        # if there are less fragments than top N, then consider them all
+                        _top_n_dia_fragments = min(len(dia_ms2_peaks[0]), top_n_dia_fragments)
+                        top_n_idx = np.argsort(dia_ms2_peaks[1])[::-1][:_top_n_dia_fragments]
+                        sel_ms2_mzs = dia_ms2_peaks[0][top_n_idx]
+                        sel_ms2_ints = dia_ms2_peaks[1][top_n_idx]
+                    dtmsg += f"selected: {len(sel_ms2_mzs)}"
+                # deconvolve peaks that were selected
+                if len(sel_ms2_mzs) > 0:
+                    deconvolved, frag_raws = _deconvolve_ms2_peaks(
+                        rdr, 
+                        sel_ms2_mzs, 
+                        pre_xic, 
+                        xic_rt, 
+                        xic_wt, 
+                        pre_atd,
+                        params
+                    )
+                    dtmsg += f" -> deconvolved: {len([_ for _ in deconvolved if _[0]])}"
+            debug_handler(debug_flag, debug_cb, dtmsg, pid)
+            # add the results for this target to the database
+            _add_single_target_results_to_db(
+                cur, 
+                None, 
+                dia_file_id,
+                target_mz,
+                xic_rt, xic_wt, xic_ht, xic_psnr, 
+                atd_dt, atd_wt, atd_ht, atd_psnr, 
+                (ms1, pre_xic, pre_atd),
+                sel_ms2_mzs, sel_ms2_ints, deconvolved, frag_raws,
+                params.store_blobs
+            )
+            n_features += 1
+    if not found_xic_peak:
+        debug_handler(debug_flag, debug_cb, msg + 'no XIC peak found', pid)
+    # return the count of features extracted
+    return n_features
+
 
 def _single_target_analysis(n: int, 
                             i: int, 
@@ -337,135 +476,29 @@ def _single_target_analysis(n: int,
     --endsql"""
     n_features: int = 0
     pid = os.getpid()
-    msg = f"({i + 1}/{n}) DDA precursor ID: {dda_pid}, m/z: {dda_mz:.4f}, RT: {dda_rts} min -> "
+    msg = f"({i + 1}/{n}) DDA precursor ID: {dda_pid}, m/z: {dda_mz:.4f}, RT: {dda_rts} min ..."
+    debug_handler(debug_flag, debug_cb, msg, pid)
     # extract the XIC, fit 
     # still use some bounds on XIC extraction, saves time
     _dda_rts: List[float] = [float(_) for _ in dda_rts.split(",")]
-    assert params.extract_and_fit_chroms.rt_tol is not None, "extract_and_fit_chroms.rt_tol must be set"
-    rt_bounds = (min(_dda_rts) - params.extract_and_fit_chroms.rt_tol, 
-                 max(_dda_rts) + params.extract_and_fit_chroms.rt_tol)
-    assert params.extract_and_fit_chroms.mz_ppm is not None, "the m/z ppm parameter must be set"
-    pre_mzt = tol_from_ppm(dda_mz, params.extract_and_fit_chroms.mz_ppm)
-    pre_xic = rdr.collect_xic_arrays_by_mz(dda_mz - pre_mzt, dda_mz + pre_mzt, rt_bounds=rt_bounds)
-    # handle case where XIC is empty 
-    # (tight enough bounds and high enough threshold can do that)
-    if len(pre_xic[0]) < 2:
-        debug_handler(debug_flag, debug_cb, msg +  'empty XIC', pid)
-        return 0
-    pre_pkrts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_xic,
-                                                          params.extract_and_fit_chroms.min_rel_height,
-                                                          params.extract_and_fit_chroms.min_abs_height,
-                                                          params.extract_and_fit_chroms.fwhm.min,
-                                                          params.extract_and_fit_chroms.fwhm.max,
-                                                          params.extract_and_fit_chroms.max_peaks, 
-                                                          True)
-    # determine the closest XIC peak (if any)
-    # target_rt = dda_rt + params.select_chrom_peaks_params.target_rt_shift
-    # xic_rt, xic_ht, xic_wt = _select_xic_peak(target_rt, params.select_chrom_peaks_params.target_rt_tol,
-    #                                           pre_pkrts, pre_pkhts, pre_pkwts)
-    # proceed if XIC peak was selected
-    # if xic_rt is not None:
-    # Proceed with all XIC peaks, regardless of whether they were matched with DDA feature. We can assign later on.
-    for xic_rt, xic_ht, xic_wt in zip(pre_pkrts, pre_pkhts, pre_pkwts):
-        rtmsg = msg + f"RT: {xic_rt:.2f} +/- {xic_wt:.2f} min ({xic_ht:.2e}) -> "
-        xic_psnr = calc_gauss_psnr(*pre_xic, (xic_rt, xic_ht, xic_wt))
-        # extract the ATD, fit
-        rt_min, rt_max = xic_rt - xic_wt, xic_rt + xic_wt
-        pre_atd = rdr.collect_atd_arrays_by_rt_mz(dda_mz - pre_mzt, dda_mz + pre_mzt, rt_min, rt_max)
-        # handle case where ATD is empty 
-        # (tight enough bounds and high enough threshold can do that)
-        if len(pre_atd[0]) < 2:
-            debug_handler(debug_flag, debug_cb, msg +  'empty ATD', pid)
-            return 0
-        pre_pkdts, pre_pkhts, pre_pkwts = find_peaks_1d_gauss(*pre_atd, 
-                                                              params.extract_and_fit_atds.min_rel_height,
-                                                              params.extract_and_fit_atds.min_abs_height,
-                                                              params.extract_and_fit_atds.fwhm.min,
-                                                              params.extract_and_fit_atds.fwhm.max,
-                                                              params.extract_and_fit_atds.max_peaks, 
-                                                              True)
-        # consider each ATD peak as separate features
-        for atd_dt, atd_ht, atd_wt in zip(pre_pkdts, pre_pkhts, pre_pkwts):
-            dtmsg = rtmsg +  f"DT: {atd_dt:.2f} +/- {atd_wt:.2f} ms ({atd_ht:.2e}) -> "
-            atd_psnr = calc_gauss_psnr(*pre_atd, (atd_dt, atd_ht, atd_wt))
-            # extract partial MS1 spectrum from M-1.5 to M+2.5, with RT and DT selection
-            ms1 = rdr.collect_ms1_arrays_by_rt_dt(rt_min, rt_max, 
-                                                  atd_dt - atd_wt, atd_dt + atd_wt, 
-                                                  mz_bounds=(dda_mz - 1.5, dda_mz + 2.5))
-            ms2 = None
-            n_ms2_peaks = None
-            sel_ms2_mzs = []
-            sel_ms2_ints = []
-            deconvolved = []
-            frag_raws = []
-            if dda_ms2_n_peaks is not None and dda_ms2_n_peaks > 0:
-                # extract MS2 spectrum (before deconvolution)
-                # only if there are MS/MS peaks from DDA spectrum
-                # use those as targets? Not really. Currently we are just extracting the whole
-                # MS2 spectrum then doing peak picking and trying to match those up with the DDA
-                # MS2 peaks. So, not really a targeted approach.
-                # one thing we can do though is grab the min/max mz from the DDA MS2 spectrum peaks
-                # and only extract from that range. Could really reduce the amount of data we need 
-                # to pull out of the DIA file, therefore speeding things up.
-                min_fmz, max_fmz = cur.execute(qry_sel_min_max_dda_frags.format(dda_pid)).fetchall()[0]
-                ms2 = rdr.collect_ms2_arrays_by_rt_dt(xic_rt - xic_wt, xic_rt + xic_wt, 
-                                                      atd_dt - atd_wt, atd_dt + atd_wt, 
-                                                      mz_bounds=[min_fmz - 1, max_fmz + 1])
-                if len(ms2[0]) > 1:
-                    dia_ms2_peaks = find_peaks_1d_localmax(*ms2,
-                                                           params.extract_and_fit_ms2_spectra.min_rel_height,
-                                                           params.extract_and_fit_ms2_spectra.min_abs_height,
-                                                           params.extract_and_fit_ms2_spectra.fwhm.min,
-                                                           params.extract_and_fit_ms2_spectra.fwhm.max,
-                                                           params.extract_and_fit_ms2_spectra.peak_min_dist)
-                    n_ms2_peaks = len(dia_ms2_peaks[0])
-                    if n_ms2_peaks > 0:
-                        dtmsg += f"# DIA MS2 peaks: {n_ms2_peaks} -> "
-                        # try to match peaks from DDA spectrum (rounded to 3 decimal places)
-                        # do it this way in an attempt to avoid overcounting DDA fragments
-                        # not perfect but should help
-                        dda_fmzs = set([
-                            round(r[0], 3) 
-                            for r in cur.execute(qry_sel_dda_frags.format(dda_pid)).fetchall()
-                        ])
-                        # as written, this keeps all DIA MS/MS peaks that are close enough to any peak from the
-                        # DDA spectra which could include redundant peaks, but we will call that OK for now
-                        for ddam in dda_fmzs:
-                            if ddam < dda_mz + 25:  # only consider MS2 peaks that are less than precursor + 25
-                                for diam, diah, diaw in zip(*dia_ms2_peaks):
-                                    frg_tol = tol_from_ppm(ddam, params.ms2_peak_matching_ppm)
-                                    if abs(diam - ddam) <= frg_tol:
-                                        sel_ms2_mzs.append(diam)
-                                        sel_ms2_ints.append(diah)
-                        dtmsg += f"matched with DDA: {len(sel_ms2_mzs)}"
-                        # deconvolve peaks that were matched from DDA spectrum
-                        if len(sel_ms2_mzs) > 0:
-                            deconvolved, frag_raws = _deconvolve_ms2_peaks(rdr, 
-                                                                           sel_ms2_mzs, 
-                                                                           pre_xic, xic_rt, xic_wt, pre_atd,
-                                                                           params)
-                            dtmsg += f" -> deconvolved: {len([_ for _ in deconvolved if _[0]])}"
-            debug_handler(debug_flag, debug_cb, dtmsg, pid)
-            # add the results for this target to the database
-            # NOTE: No need to store the full MS2 spectrum as a blob, as it may only be a partial spectrum anyways
-            #       because the data extraction is semi-targeted based on fragments from the DDA MS2 spectrum.
-            #       The fragment info that already gets stored is more than sufficient. Plus at a conceptual level
-            #       we are only dealing in centroided MS2 spectra in this package as a whole, so it does not make
-            #       sense to store the profile data as well (plus plus it takes up a ton of space).
-            _add_single_target_results_to_db(cur, 
-                                             None, 
-                                             dia_file_id,
-                                             dda_mz,
-                                             xic_rt, xic_wt, xic_ht, xic_psnr, 
-                                             atd_dt, atd_wt, atd_ht, atd_psnr, 
-                                             (ms1, pre_xic, pre_atd),
-                                             sel_ms2_mzs, sel_ms2_ints, deconvolved, frag_raws,
-                                             params.store_blobs)
-            n_features += 1
-    else:
-        debug_handler(debug_flag, debug_cb, msg + 'no XIC peak found', pid)
-    # return the count of features extracted
-    return n_features
+    # try to match peaks from DDA spectrum
+    # do it this way in an attempt to avoid overcounting fragments
+    # not perfect but should help
+    dda_fmzs = list(set([
+        round(r[0], 3) 
+        for r in cur.execute(qry_sel_dda_frags.format(dda_pid)).fetchall()
+    ]))
+    return single_target_analysis(
+        cur,
+        dia_file_id, 
+        rdr,
+        dda_mz,
+        params,
+        _dda_rts,
+        dda_fmzs,
+        debug_flag=debug_flag,
+        debug_cb=debug_cb
+    )
 
 
 def extract_dia_features(dia_data_file: MzaFilePath, 
