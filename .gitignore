@@ -159,3 +159,8 @@ gui/src/docs/*
 
 
 .vscode/
+
+uv.lock
+
+tutorials/compref/
+

@@ -9,7 +9,7 @@ Dylan Ross (dylan.ross@pnnl.gov)
 import argparse
 
 from lipidimea.params import DdaParams, DiaParams, AnnotationParams
-from lipidimea.util import create_results_db, export_results_table
+from lipidimea.util import create_results_db, export_results_table, group_dia_precursors
 
 
 #------------------------------------------------------------------------------
@@ -78,6 +78,37 @@ def _setup_create_db_subparser(parser: argparse.ArgumentParser):
         help="overwrite the results database file if it already exists"
     )
 
+#------------------------------------------------------------------------------
+# utility group_features subcommand
+
+
+_GROUP_FEATURES_DESCRIPTION = """
+    create DIA feature groups from individual DIA precursors
+"""
+
+
+def _setup_group_features_subparser(parser: argparse.ArgumentParser):
+    """ set up the subparser for utility group_features subcommand """
+    parser.add_argument(
+        "RESULTS_DB",
+        help="results database file (.db)"
+    )
+    parser.add_argument(
+        "MZ_TOL",
+        type=float,
+        help="m/z tolerance for grouping DIA precursors"
+    )
+    parser.add_argument(
+        "RT_TOL",
+        type=float,
+        help="retention time tolerance for grouping DIA precursors"
+    )
+    parser.add_argument(
+        "DT_TOL",
+        type=float,
+        help="drift time tolerance for grouping DIA precursors"
+    )
+
 
 #------------------------------------------------------------------------------
 # utility export subcommand
@@ -99,38 +130,12 @@ def _setup_export_subparser(parser: argparse.ArgumentParser):
         help="export to file name (.csv)"
     )
     parser.add_argument(
-        "--mz-tol", 
-        type=float,
-        default=0.025,
-        help="m/z tolerance for grouping features (default=0.025)"
-    )
-    parser.add_argument(
-        "--rt-tol", 
-        type=float,
-        default=0.25,
-        help="retention time tolerance for grouping features (default=0.25)"
-    )
-    parser.add_argument(
-        "--at-tol", 
-        type=float,
-        default=2.5,
-        help="arrival time tolerance for grouping features (default=2.5)"
-    )
-    parser.add_argument(
         "--abundance",
         choices=[
             "height", "area"
         ],
         default="area",
         help="use arrival time peak height or area for feature abundance (default='area')"
-    )
-    parser.add_argument(
-        "--annotation-combine-strategy",
-        choices=[
-            "intersection", "union"
-        ],
-        default="union",
-        help="strategy for combining annotations among grouped features (default='union')"
     )
     parser.add_argument(
         "--max-precursor-ppm",
@@ -157,13 +162,11 @@ def _export_run(args: argparse.Namespace):
     _ = export_results_table(
         args.RESULTS_DB, 
         args.OUT_CSV, 
-        (args.mz_tol, args.rt_tol, args.at_tol), 
-        select_data_files=args.DFILE_ID, 
+        args.DFILE_ID,
         # it's dt_height or dt_area, add the dt_ to the front
-        abundance_value="dt_" + args.abundance, 
+        "dt_" + args.abundance, 
         include_unknowns=args.include_unknowns, 
-        limit_precursor_mz_ppm=args.max_precursor_ppm, 
-        annotation_combine_strategy=args.annotation_combine_strategy
+        limit_precursor_mz_ppm=args.max_precursor_ppm
     )
 
 
@@ -199,6 +202,14 @@ def setup_utility_subparser(parser: argparse.ArgumentParser):
             description=_CREATE_DB_DESCRIPTION
         )
     )
+    # set up group_features subparser
+    _setup_group_features_subparser(
+            _subparsers.add_parser(
+            "group_features", 
+            help="group DIA precursors",
+            description=_GROUP_FEATURES_DESCRIPTION
+        )
+    )
     # set up export subparser
     _setup_export_subparser(
             _subparsers.add_parser(
@@ -217,5 +228,10 @@ def utility_run(args: argparse.Namespace):
         case "create_db":
             # no need for separate "run" function
             create_results_db(args.RESULTS_DB, overwrite=args.overwrite)
+        case "group_features":
+            # no need for separate "run" function
+            group_dia_precursors(
+                args.RESULTS_DB, args.MZ_TOL, args.RT_TOL, args.DT_TOL
+            )
         case "export":
             _export_run(args)

@@ -249,7 +249,6 @@ def _get_lmid_prefix(lipid_class_abbrev: str, fa_mod: str, n_unsat: int, oxy_suf
     for lmid_prefix, data in LMAPS.items():
         lipid_class_abbrev_ = data["class_abbrev"]
         fa_mod_ = data.get("fa_mod", "")
-        n_chains_ = data["n_chains"]
         oxy_suffix_ = data.get("oxy_suffix", "")
         # enable multiple valid oxy suffices
         oxy_flag = oxy_suffix in oxy_suffix_ if type(oxy_suffix_) is list else oxy_suffix == oxy_suffix_

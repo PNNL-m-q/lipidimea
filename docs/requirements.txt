@@ -1,4 +1,0 @@
-lipidimea
-numpydoc
-nbsphinx
-sphinx-js
