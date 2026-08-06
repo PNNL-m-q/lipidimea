@@ -48,3 +48,4 @@ dev = [
 
 [project.scripts]
 lipidimea-review = "lipidimea.review.__main__:main"
+lipidimea = "lipidimea._cli.__init__:run"

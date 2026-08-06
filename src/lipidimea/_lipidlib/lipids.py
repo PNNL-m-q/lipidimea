@@ -177,7 +177,7 @@ class Lipid():
                 ) -> str :
         s = "{} {}{}:{}{}"
         oxy_suffix = ""
-        if type(self.oxy_suffix) is list:
+        if type(self.oxy_suffix) is list and self.oxy_suffix != []:
             # TODO: Bad fix, take the first if list
             oxy_suffix = ";" + self.oxy_suffix[0]
         elif type(self.oxy_suffix) is str and self.oxy_suffix != "":

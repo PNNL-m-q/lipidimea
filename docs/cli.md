@@ -58,10 +58,25 @@ options:
   --overwrite  overwrite the results database file if it already exists
 ```
 
+### > `LipidIMEA utility group_features --help`
+```
+usage: LipidIMEA utility group_features [-h] RESULTS_DB MZ_TOL RT_TOL DT_TOL
+
+create DIA feature groups from individual DIA precursors
+
+positional arguments:
+  RESULTS_DB  results database file (.db)
+  MZ_TOL      m/z tolerance for grouping DIA precursors
+  RT_TOL      retention time tolerance for grouping DIA precursors
+  DT_TOL      drift time tolerance for grouping DIA precursors
+
+options:
+  -h, --help  show this help message and exit
+```
+
 ### > `LipidIMEA utility export --help`
 ```
-usage: LipidIMEA utility export [-h] [--mz-tol MZ_TOL] [--rt-tol RT_TOL] [--at-tol AT_TOL] [--abundance {height,area}] [--annotation-combine-strategy {intersection,union}] [--max-precursor-ppm MAX_PRECURSOR_PPM] [--include-unknowns]
-                                RESULTS_DB OUT_CSV DFILE_ID [DFILE_ID ...]
+usage: LipidIMEA utility export [-h] [--abundance {height,area}] [--max-precursor-ppm MAX_PRECURSOR_PPM] [--include-unknowns] RESULTS_DB OUT_CSV DFILE_ID [DFILE_ID ...]
 
 Export analysis results to CSV
 
@@ -72,13 +87,8 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --mz-tol MZ_TOL       m/z tolerance for grouping features (default=0.025)
-  --rt-tol RT_TOL       retention time tolerance for grouping features (default=0.25)
-  --at-tol AT_TOL       arrival time tolerance for grouping features (default=2.5)
   --abundance {height,area}
                         use arrival time peak height or area for feature abundance (default='area')
-  --annotation-combine-strategy {intersection,union}
-                        strategy for combining annotations among grouped features (default='union')
   --max-precursor-ppm MAX_PRECURSOR_PPM
                         max ppm error for annotated precursor m/z (default=40.)
   --include-unknowns    set this to export DIA features that do not have any lipid annotations
