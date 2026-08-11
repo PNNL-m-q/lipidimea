@@ -40,6 +40,11 @@ where = ["src"]
 [tool.setuptools.dynamic]
 version = { attr = "lipidimea.__version__" }
 
+[tool.setuptools.package-data]
+lipidimea = [
+    "_include/**"
+]
+
 [dependency-groups]
 dev = [
     "build>=1.5.0",
